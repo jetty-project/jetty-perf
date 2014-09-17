@@ -1,0 +1,5 @@
+== Jetty Performance Repository
+
+A repository for Jetty performance testing,
+with automated tools to perform regression
+performance testing among Jetty releases.

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>org.eclipse.jetty.perf</groupId>
+        <artifactId>jetty-perf-project</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>jetty-perf-http-parent</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>jetty-perf-http-client</module>
+        <module>jetty-perf-http-server</module>
+        <module>jetty-perf-http-server-8</module>
+        <module>jetty-perf-http-server-9-2</module>
+        <module>jetty-perf-http-server-9-3</module>
+    </modules>
+
+</project>
