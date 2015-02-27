@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "## User is `id`"
+echo "## Uname is `uname -a`"
 echo "## PWD is `pwd`"
 
 echo "## JAVA_HOME is ${JAVA_HOME}"
