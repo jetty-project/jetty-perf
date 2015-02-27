@@ -7,7 +7,8 @@ echo "## PWD is `pwd`"
 echo "## JAVA_HOME is ${JAVA_HOME}"
 JAVA_EXEC="${JAVA_HOME}/bin/java"
 if [ -e "${JAVA_EXEC}" ] ; then
-    echo "  Exec Exist: ${JAVA_EXEC}"
+    echo "  Exec Exists: ${JAVA_EXEC}"
+    ls -la "${JAVA_EXEC}"
 else
     echo "  Exec Missing: ${JAVA_EXEC}"
 fi
@@ -16,6 +17,7 @@ echo "## M2_HOME is ${M2_HOME}"
 M2_EXEC="${M2_HOME}/bin/mvn"
 if [ -e "${M2_EXEC}" ] ; then
     echo "  Exec Exists: ${M2_EXEC}"
+    ls -la "${M2_EXEC}"
 else
     echo "  Exec Missing: ${M2_EXEC}"
 fi
