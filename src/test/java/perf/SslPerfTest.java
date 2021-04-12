@@ -40,7 +40,7 @@ public class SslPerfTest
     public static final int RUN_REQUEST_COUNT = 3_000_000;
 
     @Test
-    void sslPerf() throws Exception
+    public void testSslPerf() throws Exception
     {
         System.setProperty("angela.rootDir", System.getProperty("user.home") + "/.angela");
         System.setProperty("angela.java.version", "1.11");
