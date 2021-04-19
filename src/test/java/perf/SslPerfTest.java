@@ -9,18 +9,13 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
 import org.codehaus.plexus.logging.AbstractLogger;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -129,25 +124,14 @@ public class SslPerfTest implements Serializable
         HttpClient httpClient = new HttpClient(transport);
         httpClient.setCookieStore(new HttpCookieStore.Empty());
         httpClient.start();
-        ExecutorService executorService = Executors.newFixedThreadPool(8);
 
-        List<Future<Object>> futures = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++)
         {
-            Future<Object> f = executorService.submit(() ->
-            {
-                ContentResponse response = httpClient.GET(uri);
-                return null;
-            });
-            futures.add(f);
+            httpClient.newRequest(uri).send(r -> latch.countDown());
         }
+        latch.await();
 
-        for (Future<Object> future : futures)
-        {
-            future.get();
-        }
-
-        executorService.shutdownNow();
         httpClient.stop();
         long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - before);
         System.out.println("Stopped client; ran for " + elapsedSeconds + " seconds");
