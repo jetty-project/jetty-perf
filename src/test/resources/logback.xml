@@ -1,28 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <!-- disable logback's internal logging -->
-  <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
-
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread]%-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread][%X{NodeId}]%-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
 
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>/home/lorban/logs/logs.txt</file>
-    <append>true</append>
-    <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread]%-5level %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
+  <logger name="org.mortbay.jetty.orchestrator.nodefs.InMemoryFile" level="error" />
+  <logger name="org.zeroturnaround.process" level="error" />
+  <logger name="net.schmizz.sshj" level="error" />
+  <logger name="org.apache.zookeeper" level="error" />
+  <logger name="org.apache.curator" level="error" />
 
-  <logger name="org.terracotta.angela.external.client" level="info" additivity="false">
-    <appender-ref ref="STDOUT"/>
-  </logger>
-
-  <root level="warn">
+  <root level="info">
     <appender-ref ref="STDOUT" />
   </root>
-
 </configuration>
