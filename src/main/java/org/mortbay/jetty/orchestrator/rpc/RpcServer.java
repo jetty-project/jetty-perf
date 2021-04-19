@@ -21,10 +21,10 @@ import java.io.ObjectOutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.mortbay.jetty.orchestrator.rpc.command.Command;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;

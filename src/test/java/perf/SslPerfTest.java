@@ -24,6 +24,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -41,6 +42,7 @@ public class SslPerfTest implements Serializable
     public static final int WARMUP_REQUEST_COUNT = 1_500_000;
     public static final int RUN_REQUEST_COUNT = 3_000_000;
 
+    @Disabled
     @Test
     public void testSslPerf() throws Exception
     {

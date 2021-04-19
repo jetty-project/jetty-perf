@@ -40,7 +40,18 @@ import org.mortbay.jetty.orchestrator.util.IOUtil;
 public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 {
     private final Map<String, RemoteNodeHolder> nodes = new HashMap<>();
+    private final String username;
     private Jvm jvm;
+
+    public SshRemoteHostLauncher()
+    {
+        this(System.getProperty("user.name"));
+    }
+
+    public SshRemoteHostLauncher(String username)
+    {
+        this.username = username;
+    }
 
     @Override
     public void close()
@@ -63,7 +74,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
     }
 
     @Override
-    public void launch(String hostname, String hostId, String rendezVous) throws Exception
+    public void launch(String hostname, String hostId, String connectString) throws Exception
     {
         if (nodes.containsKey(hostname))
             throw new IllegalArgumentException("ssh launcher already launched node on host " + hostname);
@@ -73,14 +84,14 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         sshClient.loadKnownHosts();
         sshClient.connect(hostname);
 
-        // key auth
-        sshClient.authPublickey(System.getProperty("user.name"));
+        // public key auth
+        sshClient.authPublickey(username);
 
         // try remote port forwarding
         String remoteConnectString;
         try
         {
-            int zkPort = Integer.parseInt(rendezVous.split(":")[1]);
+            int zkPort = Integer.parseInt(connectString.split(":")[1]);
             RemotePortForwarder.Forward forward = sshClient.getRemotePortForwarder().bind(
                 new RemotePortForwarder.Forward(0), // remote port, dynamically choose one
                 new SocketForwardingConnectListener(new InetSocketAddress("localhost", zkPort))
@@ -90,7 +101,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         catch (Exception e)
         {
             // remote port forwarding failed, try direct TCP connection
-            remoteConnectString = rendezVous;
+            remoteConnectString = connectString;
         }
 
         List<String> remoteClasspathEntries = new ArrayList<>();
@@ -101,10 +112,10 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             {
                 File cpFile = new File(classpathEntry);
                 remoteClasspathEntries.add(".wtc/" + hostId + "/lib/" + cpFile.getName());
-                if (!cpFile.isDirectory())
-                    copyFile(sftpClient, hostId, cpFile.getName(), new FileSystemFile(cpFile));
-                else
+                if (cpFile.isDirectory())
                     copyDir(sftpClient, hostId, cpFile, 1);
+                else
+                    copyFile(sftpClient, hostId, cpFile.getName(), new FileSystemFile(cpFile));
             }
         }
         String remoteClasspath = String.join(":", remoteClasspathEntries);
@@ -158,7 +169,11 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
         for (File file : files)
         {
-            if (!file.isDirectory())
+            if (file.isDirectory())
+            {
+                copyDir(sftpClient, hostId, file, depth + 1);
+            }
+            else
             {
                 String filename = file.getName();
                 File currentFile = file;
@@ -168,10 +183,6 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                     filename = currentFile.getName() + "/" + filename;
                 }
                 copyFile(sftpClient, hostId, filename, new FileSystemFile(file));
-            }
-            else
-            {
-                copyDir(sftpClient, hostId, file, depth + 1);
             }
         }
     }

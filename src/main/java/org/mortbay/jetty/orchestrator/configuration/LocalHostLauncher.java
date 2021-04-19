@@ -42,17 +42,17 @@ public class LocalHostLauncher implements HostLauncher
         for (String classpathEntry : classpathEntries)
         {
             File cpFile = new File(classpathEntry);
-            if (!cpFile.isDirectory())
+            if (cpFile.isDirectory())
+            {
+                copyDir(hostId, cpFile, 1);
+            }
+            else
             {
                 String filename = cpFile.getName();
                 try (InputStream is = new FileInputStream(cpFile))
                 {
                     copyFile(hostId, filename, is);
                 }
-            }
-            else
-            {
-                copyDir(hostId, cpFile, 1);
             }
         }
 
@@ -113,7 +113,11 @@ public class LocalHostLauncher implements HostLauncher
 
         for (File file : files)
         {
-            if (!file.isDirectory())
+            if (file.isDirectory())
+            {
+                copyDir(hostId, file, depth + 1);
+            }
+            else
             {
 
                 String filename = file.getName();
@@ -127,10 +131,6 @@ public class LocalHostLauncher implements HostLauncher
                 {
                     copyFile(hostId, filename, is);
                 }
-            }
-            else
-            {
-                copyDir(hostId, file, depth + 1);
             }
         }
     }
