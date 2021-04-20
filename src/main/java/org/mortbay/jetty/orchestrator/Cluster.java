@@ -13,7 +13,6 @@
 
 package org.mortbay.jetty.orchestrator;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -112,14 +111,21 @@ public class Cluster implements AutoCloseable
                 nodes.put(node.getId(), new NodeArray.Node(nodeId, new RpcClient(curator, nodeId), localNode));
 
                 RpcClient rpcClient = hostClients.get(hostId);
-                NodeProcess remoteProcess = (NodeProcess)rpcClient.call(new SpawnNodeCommand(nodeArrayConfiguration.jvm(), hostId, nodeId, connectString));
-                remoteProcesses.compute(hostId, (key, nodeProcesses) ->
+                try
                 {
-                    if (nodeProcesses == null)
-                        nodeProcesses = new ArrayList<>();
-                    nodeProcesses.add(remoteProcess);
-                    return nodeProcesses;
-                });
+                    NodeProcess remoteProcess = (NodeProcess)rpcClient.call(new SpawnNodeCommand(nodeArrayConfiguration.jvm(), hostId, nodeId, connectString));
+                    remoteProcesses.compute(hostId, (key, nodeProcesses) ->
+                    {
+                        if (nodeProcesses == null)
+                            nodeProcesses = new ArrayList<>();
+                        nodeProcesses.add(remoteProcess);
+                        return nodeProcesses;
+                    });
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Error spawning node '" + nodeId + "'", e);
+                }
             }
             nodeArrays.put(nodeArrayConfiguration.id(), new NodeArray(nodes));
         }
