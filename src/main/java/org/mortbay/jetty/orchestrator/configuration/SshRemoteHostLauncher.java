@@ -14,6 +14,8 @@
 package org.mortbay.jetty.orchestrator.configuration;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.StreamCopier;
@@ -120,17 +123,21 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             }
         }
         String remoteClasspath = String.join(":", remoteClasspathEntries);
-        String cmdLine = String.join(" ", buildCommandLine(jvm, remoteClasspath, hostId, remoteConnectString));
+        String readyEchoString = "Node is ready";
+        String cmdLine = String.join(" ", buildCommandLine(jvm, remoteClasspath, hostId, remoteConnectString, readyEchoString));
 
         Session session = sshClient.startSession();
         session.allocateDefaultPTY();
         Session.Command cmd = session.exec(cmdLine);
-        new StreamCopier(cmd.getInputStream(), System.out, net.schmizz.sshj.common.LoggerFactory.DEFAULT)
-            .bufSize(1)
+
+        SshLogOutputStream sshLogOutputStream = new SshLogOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, System.out);
+        new StreamCopier(cmd.getInputStream(), sshLogOutputStream, net.schmizz.sshj.common.LoggerFactory.DEFAULT)
+            .bufSize(80)
             .spawnDaemon("stdout-" + hostname);
         new StreamCopier(cmd.getErrorStream(), System.err, net.schmizz.sshj.common.LoggerFactory.DEFAULT)
-            .bufSize(1)
+            .bufSize(80)
             .spawnDaemon("stderr-" + hostname);
+        sshLogOutputStream.waitForExpectedString();
 
         HashMap<String, Object> env = new HashMap<>();
         env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
@@ -140,16 +147,17 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         nodes.put(hostname, remoteNodeHolder);
     }
 
-    private static List<String> buildCommandLine(Jvm jvm, String remoteClasspath, String nodeId, String connectString)
+    private static List<String> buildCommandLine(Jvm jvm, String remoteClasspath, String nodeId, String connectString, String readyEchoString)
     {
         List<String> cmdLine = new ArrayList<>();
         cmdLine.add(jvm.executable());
         cmdLine.addAll(jvm.getOpts());
         cmdLine.add("-classpath");
-        cmdLine.add(remoteClasspath);
+        cmdLine.add("\"" + remoteClasspath + "\"");
         cmdLine.add(NodeProcess.class.getName());
-        cmdLine.add(nodeId);
-        cmdLine.add(connectString);
+        cmdLine.add("\"" + nodeId + "\"");
+        cmdLine.add("\"" + connectString + "\"");
+        cmdLine.add("\"" + readyEchoString + "\"");
         return cmdLine;
     }
 
@@ -232,6 +240,102 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             IOUtil.close(command);
             IOUtil.close(session);
             IOUtil.close(sshClient);
+        }
+    }
+
+    private static class SshLogOutputStream extends OutputStream
+    {
+        private final String hostname;
+        private final byte[] expectedSequence;
+        private final byte[] accumulator;
+        private int counter;
+        private final Session.Command cmd;
+        private final OutputStream delegate;
+        private final AtomicBoolean matched = new AtomicBoolean(false);
+        private final AtomicBoolean failed = new AtomicBoolean(false);
+
+        private SshLogOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
+        {
+            this.hostname = hostname;
+            this.expectedSequence = expectedSequence;
+            this.accumulator = new byte[expectedSequence.length];
+            this.cmd = cmd;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int cc) throws IOException
+        {
+            if (!matched.get() && !failed.get())
+            {
+                if (cc != expectedSequence[counter])
+                {
+                    delegate.write(accumulator, 0, counter);
+                    delegate.write(cc);
+                    failed.set(true);
+                }
+                else
+                {
+                    accumulator[counter] = (byte)cc;
+                    counter++;
+                }
+                if (counter == expectedSequence.length)
+                    matched.set(true);
+            }
+            else
+            {
+                delegate.write(cc);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException
+        {
+            if (!matched.get() && !failed.get())
+            {
+                for (int i = off; i < len; i++)
+                {
+                    int cc = b[i];
+                    if (cc != expectedSequence[counter])
+                    {
+                        delegate.write(accumulator, 0, counter);
+                        delegate.write(b, off + i, len);
+                        failed.set(true);
+                        break;
+                    }
+                    else
+                    {
+                        accumulator[counter] = (byte)cc;
+                        counter++;
+                    }
+                    if (counter == expectedSequence.length)
+                    {
+                        matched.set(true);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                delegate.write(b, off, len);
+            }
+        }
+
+        public void waitForExpectedString()
+        {
+            while (!matched.get())
+            {
+                if (failed.get() || !cmd.isOpen())
+                    throw new IllegalStateException("Node failed to start on host '" + hostname + "'");
+                try
+                {
+                    Thread.sleep(10);
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 }
