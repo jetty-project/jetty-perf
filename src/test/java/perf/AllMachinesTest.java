@@ -23,7 +23,7 @@ public class AllMachinesTest
                 String javaHome = System.getenv("JAVA_HOME");
                 if (javaHome != null)
                     return javaHome + "/bin/java";
-                return "/home/ubuntu/programs/jdk1.8.0_144/bin/java";
+                return "/home/ubuntu/programs/openjdk-12.0.0/bin/java";
             }))
             .hostLauncher(new SshRemoteHostLauncher("ubuntu"))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
