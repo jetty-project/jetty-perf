@@ -6,14 +6,14 @@ pipeline {
         stage('ssl-perf') {
             agent { node { label 'load-master' } }
             steps {
-                withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
+                /*withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
                                                              keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
                                                              passphraseVariable: '', \
-                                                             usernameVariable: '')]) {            
-                    sh "mkdir ~/.ssh"
-                    sh "cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa"
+                                                             usernameVariable: '')]) {     */       
+                    //sh "mkdir ~/.ssh"
+                    //sh "cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa"
                     mavenBuild( "jdk11", "clean verify", "maven3")
-                }                    
+                //}                    
             }
         }
     }
