@@ -5,6 +5,7 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
+import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
@@ -17,6 +18,13 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
+            .jvm(new Jvm(()->
+            {
+                String javaHome = System.getenv("JAVA_HOME");
+                if (javaHome != null)
+                    return javaHome + "/bin/java";
+                throw new RuntimeException("Missing JAVA_HOME");
+            }))
             .hostLauncher(new SshRemoteHostLauncher("ubuntu"))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
