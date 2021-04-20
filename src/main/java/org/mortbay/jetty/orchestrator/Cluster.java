@@ -47,6 +47,19 @@ public class Cluster implements AutoCloseable
     private TestingServer zkServer;
     private CuratorFramework curator;
 
+    public Cluster(ClusterConfiguration configuration) throws Exception
+    {
+        this(generateId(), configuration);
+    }
+
+    private static String generateId()
+    {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String className = stackTrace[3].getClassName();
+        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
+        return sanitize(simpleClassName + "::" + stackTrace[3].getMethodName());
+    }
+
     public Cluster(String id, ClusterConfiguration configuration) throws Exception
     {
         this.id = sanitize(id);

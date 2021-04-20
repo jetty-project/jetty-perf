@@ -25,7 +25,7 @@ public class AllMachinesTest
                 new Node("5", "load-4")
             )));
 
-        try (Cluster cluster = new Cluster(getClass().getSimpleName() + "::" + getClass().getEnclosingMethod().getName(), cfg))
+        try (Cluster cluster = new Cluster(cfg))
         {
             NodeArray nodeArray = cluster.nodeArray("server-array");
 
