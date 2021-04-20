@@ -80,7 +80,7 @@ public class Cluster implements AutoCloseable
     private void init() throws Exception
     {
         zkServer = new TestingServer(true);
-        String connectString = InetAddress.getLocalHost().getHostName() + ":" + zkServer.getPort();
+        String connectString = "localhost:" + zkServer.getPort();
         curator = CuratorFrameworkFactory.newClient(connectString, new RetryNTimes(0, 0));
         curator.start();
         curator.blockUntilConnected();
