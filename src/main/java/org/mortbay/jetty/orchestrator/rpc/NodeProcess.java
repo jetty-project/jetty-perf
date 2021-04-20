@@ -95,7 +95,7 @@ public class NodeProcess implements Serializable, AutoCloseable
 
         if (readyEchoString != null)
         {
-            System.out.print(readyEchoString);
+            System.out.println(readyEchoString);
             System.out.flush();
         }
         rpcServer.run();
