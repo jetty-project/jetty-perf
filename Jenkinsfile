@@ -9,7 +9,7 @@ pipeline {
                                                              keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
                                                              passphraseVariable: '', \
                                                              usernameVariable: '')]) {            
-                    sh "mkdir ~/.ssh/id_rsa"
+                    sh "mkdir ~/.ssh"
                     sh "cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa"
                     mavenBuild( "jdk11", "clean verify", "maven3")
                 }                    
