@@ -19,10 +19,10 @@ public class AllMachinesTest
             .hostLauncher(new SshRemoteHostLauncher("ubuntu"))
             .nodeArray(new SimpleNodeArrayConfiguration("server-array").topology(new NodeArrayTopology(
                 new Node("1", "10.0.0.20")//, //"load-master"),
-                //new Node("2", "10.0.0.21"), //"load-1"),
-                //new Node("3", "10.0.0.22"), //"load-2"),
-                //new Node("4", "10.0.0.23"), //"load-3"),
-                //new Node("5", "10.0.0.24") //"load-4")
+                new Node("2", "10.0.0.21"), //"load-1"),
+                new Node("3", "10.0.0.22"), //"load-2"),
+                new Node("4", "10.0.0.23"), //"load-3"),
+                new Node("5", "10.0.0.24") //"load-4")
             )));
 
         try (Cluster cluster = new Cluster(cfg))
