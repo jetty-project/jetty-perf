@@ -81,7 +81,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
         SSHClient sshClient = new SSHClient();
         sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-        sshClient.loadKnownHosts();
+        //sshClient.loadKnownHosts();
         sshClient.connect(hostname);
 
         // public key auth
@@ -101,7 +101,8 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         catch (Exception e)
         {
             // remote port forwarding failed, try direct TCP connection
-            remoteConnectString = connectString;
+            //remoteConnectString = connectString;
+            throw new Exception("Error setting up reverse ssh tunnel on host " + hostname, e);
         }
 
         List<String> remoteClasspathEntries = new ArrayList<>();
