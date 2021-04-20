@@ -5,7 +5,13 @@ pipeline {
     stages {
         stage('ssl-perf') {
             steps {
-                mavenBuild( "jdk11", "clean verify", "maven3")
+                withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
+                                                             keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
+                                                             passphraseVariable: '', \
+                                                             usernameVariable: '')]) {            
+                    sh "cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa"
+                    mavenBuild( "jdk11", "clean verify", "maven3")
+                }                    
             }
         }
     }
