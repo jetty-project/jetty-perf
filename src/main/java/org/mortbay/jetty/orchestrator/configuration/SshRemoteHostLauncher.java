@@ -78,7 +78,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
     }
 
     @Override
-    public void launch(String hostname, String hostId, String connectString) throws Exception
+    public String launch(String hostname, String hostId, String connectString) throws Exception
     {
         if (nodes.containsKey(hostname))
             throw new IllegalArgumentException("ssh launcher already launched node on host " + hostname);
@@ -146,6 +146,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
         RemoteNodeHolder remoteNodeHolder = new RemoteNodeHolder(hostId, fileSystem, sshClient, session, cmd);
         nodes.put(hostname, remoteNodeHolder);
+        return remoteConnectString;
     }
 
     private static List<String> buildCommandLine(Jvm jvm, String remoteClasspath, String nodeId, String connectString, String readyEchoString)

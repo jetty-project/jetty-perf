@@ -30,7 +30,7 @@ public class LocalHostLauncher implements HostLauncher
     private String hostId;
 
     @Override
-    public void launch(String hostname, String hostId, String connectString) throws Exception
+    public String launch(String hostname, String hostId, String connectString) throws Exception
     {
         if (!HOSTNAME.equals(hostname))
             throw new IllegalArgumentException("local launcher can only work with 'localhost' hostname");
@@ -64,6 +64,7 @@ public class LocalHostLauncher implements HostLauncher
         {
             throw new RuntimeException(e);
         }
+        return connectString;
     }
 
     @Override

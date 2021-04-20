@@ -42,6 +42,7 @@ public class Cluster implements AutoCloseable
     private final HostLauncher hostLauncher;
     private final Map<String, NodeArray> nodeArrays = new HashMap<>();
     private final Map<String, RpcClient> hostClients = new HashMap<>();
+    private final Map<String, String> connectStrings = new HashMap<>();
     private final Map<String, List<NodeProcess>> remoteProcesses = new HashMap<>();
     private TestingServer zkServer;
     private CuratorFramework curator;
@@ -95,8 +96,9 @@ public class Cluster implements AutoCloseable
             HostLauncher launcher = hostname.equals(LocalHostLauncher.HOSTNAME) ? localHostLauncher : hostLauncher;
             if (launcher == null)
                 throw new IllegalStateException("No configured host launcher to start node on " + hostname);
-            launcher.launch(hostname, hostId, connectString);
+            String remoteConnectString = launcher.launch(hostname, hostId, connectString);
             hostClients.put(hostId, new RpcClient(curator, hostId));
+            connectStrings.put(hostId, remoteConnectString);
         }
 
         for (NodeArrayConfiguration nodeArrayConfiguration : configuration.nodeArrays())
@@ -113,7 +115,8 @@ public class Cluster implements AutoCloseable
                 RpcClient rpcClient = hostClients.get(hostId);
                 try
                 {
-                    NodeProcess remoteProcess = (NodeProcess)rpcClient.call(new SpawnNodeCommand(nodeArrayConfiguration.jvm(), hostId, nodeId, connectString));
+                    String remoteConnectString = connectStrings.get(hostId);
+                    NodeProcess remoteProcess = (NodeProcess)rpcClient.call(new SpawnNodeCommand(nodeArrayConfiguration.jvm(), hostId, nodeId, remoteConnectString));
                     remoteProcesses.compute(hostId, (key, nodeProcesses) ->
                     {
                         if (nodeProcesses == null)
