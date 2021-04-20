@@ -4,6 +4,7 @@ pipeline {
     agent any
     stages {
         stage('ssl-perf') {
+            agent { node { label 'load-master' } }
             steps {
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
                                                              keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
