@@ -3,6 +3,7 @@ package perf;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
+import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
@@ -17,23 +18,44 @@ public class AllMachinesTest
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .hostLauncher(new SshRemoteHostLauncher("ubuntu"))
-            .nodeArray(new SimpleNodeArrayConfiguration("server-array").topology(new NodeArrayTopology(
-                new Node("1", "10.0.0.20")//, //"load-master"),
-                new Node("2", "10.0.0.21"), //"load-1"),
-                new Node("3", "10.0.0.22"), //"load-2"),
-                new Node("4", "10.0.0.23"), //"load-3"),
-                new Node("5", "10.0.0.24") //"load-4")
-            )));
+            .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
+                new Node("1", "load-master")
+            )))
+            .nodeArray(new SimpleNodeArrayConfiguration("loaders").topology(new NodeArrayTopology(
+                new Node("1", "load-1"),
+                new Node("2", "load-2"),
+                new Node("3", "load-3")
+            )))
+            .nodeArray(new SimpleNodeArrayConfiguration("probe").topology(new NodeArrayTopology(
+                new Node("1", "load-4")
+            )))
+            ;
 
         try (Cluster cluster = new Cluster(cfg))
         {
-            NodeArray nodeArray = cluster.nodeArray("server-array");
+            NodeArray serverArray = cluster.nodeArray("server");
+            NodeArray loadersArray = cluster.nodeArray("loaders");
+            NodeArray probeArray = cluster.nodeArray("probe");
 
-            nodeArray.executeOnAll(tools ->
+            NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
                 String javaVersion = System.getProperty("java.version");
-                System.out.println("hello, world! from java " + javaVersion);
-            }).get();
+                System.out.println("server running java " + javaVersion);
+            });
+            NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
+            {
+                String javaVersion = System.getProperty("java.version");
+                System.out.println("loaders running java " + javaVersion);
+            });
+            NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
+            {
+                String javaVersion = System.getProperty("java.version");
+                System.out.println("probe running java " + javaVersion);
+            });
+
+            serverFuture.get();
+            loadersFuture.get();
+            probeFuture.get();
         }
     }
 }
