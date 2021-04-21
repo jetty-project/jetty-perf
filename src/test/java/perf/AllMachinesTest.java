@@ -20,12 +20,9 @@ public class AllMachinesTest
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(() ->
             {
-                String javaHome = System.getenv("JAVA_HOME");
-                if (javaHome != null)
-                    return javaHome + "/bin/java";
-                return "/home/ubuntu/programs/openjdk-12.0.0/bin/java";
+                return "jenkins_home/tools/hudson.model.JDK/jdk11/jdk-11.0.9+11/bin/java";
             }))
-            .hostLauncher(new SshRemoteHostLauncher("jenkins"))
+            .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
