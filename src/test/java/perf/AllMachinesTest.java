@@ -18,7 +18,7 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(()->
+            .jvm(new Jvm(() ->
             {
                 String javaHome = System.getenv("JAVA_HOME");
                 if (javaHome != null)
@@ -39,6 +39,12 @@ public class AllMachinesTest
             )))
             ;
 
+        {
+            String javaVersion = System.getProperty("java.version");
+            String username = System.getProperty("user.name");
+            System.out.println("jenkins running java " + javaVersion + " with user " + username);
+        }
+
         try (Cluster cluster = new Cluster(cfg))
         {
             NodeArray serverArray = cluster.nodeArray("server");
@@ -48,17 +54,20 @@ public class AllMachinesTest
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
                 String javaVersion = System.getProperty("java.version");
-                System.out.println("server running java " + javaVersion);
+                String username = System.getProperty("user.name");
+                System.out.println("server running java " + javaVersion + " with user " + username);
             });
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
                 String javaVersion = System.getProperty("java.version");
-                System.out.println("loaders running java " + javaVersion);
+                String username = System.getProperty("user.name");
+                System.out.println("loaders running java " + javaVersion + " with user " + username);
             });
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
                 String javaVersion = System.getProperty("java.version");
-                System.out.println("probe running java " + javaVersion);
+                String username = System.getProperty("user.name");
+                System.out.println("probe running java " + javaVersion + " with user " + username);
             });
 
             serverFuture.get();
