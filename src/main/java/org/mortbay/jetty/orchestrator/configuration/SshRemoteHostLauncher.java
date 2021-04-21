@@ -15,6 +15,7 @@ package org.mortbay.jetty.orchestrator.configuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -28,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.common.StreamCopier;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.connection.channel.forwarded.RemotePortForwarder;
@@ -131,12 +131,8 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         Session.Command cmd = session.exec(cmdLine);
 
         SshLogOutputStream sshLogOutputStream = new SshLogOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, System.out);
-        new StreamCopier(cmd.getInputStream(), sshLogOutputStream, net.schmizz.sshj.common.LoggerFactory.DEFAULT)
-            .bufSize(80)
-            .spawnDaemon("stdout-" + hostname);
-        new StreamCopier(cmd.getErrorStream(), System.err, net.schmizz.sshj.common.LoggerFactory.DEFAULT)
-            .bufSize(80)
-            .spawnDaemon("stderr-" + hostname);
+        new StreamCopier(cmd.getInputStream(), sshLogOutputStream).spawnDaemon(hostname + "stdout");
+        new StreamCopier(cmd.getErrorStream(), System.err).spawnDaemon(hostname + "stderr");
         sshLogOutputStream.waitForExpectedString();
 
         HashMap<String, Object> env = new HashMap<>();
@@ -337,6 +333,35 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                     throw new Exception("Interrupted while starting node on host '" + hostname + "'", e);
                 }
             }
+        }
+    }
+
+    private static class StreamCopier
+    {
+        private final InputStream is;
+        private final OutputStream os;
+
+        public StreamCopier(InputStream is, OutputStream os)
+        {
+            this.is = is;
+            this.os = os;
+        }
+
+        public void spawnDaemon(String name)
+        {
+            Thread thread = new Thread(() ->
+            {
+                try
+                {
+                    IOUtil.copy(is, os, 80);
+                }
+                catch (Exception e)
+                {
+                    // ignore
+                }
+            }, name);
+            thread.setDaemon(true);
+            thread.start();
         }
     }
 }

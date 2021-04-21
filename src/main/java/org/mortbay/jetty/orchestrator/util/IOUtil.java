@@ -41,7 +41,12 @@ public class IOUtil
 
     public static void copy(InputStream is, OutputStream os) throws IOException
     {
-        byte[] buffer = new byte[1024];
+        copy(is, os, 1024);
+    }
+
+    public static void copy(InputStream is, OutputStream os, int bufferSize) throws IOException
+    {
+        byte[] buffer = new byte[bufferSize];
         while (true)
         {
             int read = is.read(buffer);
