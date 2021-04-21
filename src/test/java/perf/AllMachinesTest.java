@@ -25,7 +25,7 @@ public class AllMachinesTest
                     return javaHome + "/bin/java";
                 return "/home/ubuntu/programs/openjdk-12.0.0/bin/java";
             }))
-            .hostLauncher(new SshRemoteHostLauncher("ubuntu"))
+            .hostLauncher(new SshRemoteHostLauncher("jenkins"))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
