@@ -17,12 +17,9 @@ public class AllMachinesTest
     @Test
     public void testAllMachines() throws Exception
     {
+        String javaHome = System.getenv("JAVA_HOME");
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(() ->
-            {
-                String jenkinsHome = System.getProperty("user.home");
-                return jenkinsHome + "/jenkins_home/tools/hudson.model.JDK/jdk11/jdk-11.0.9+11/bin/java";
-            }))
+            .jvm(new Jvm(() -> javaHome + "/bin/java"))
             .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
@@ -40,7 +37,7 @@ public class AllMachinesTest
         {
             String javaVersion = System.getProperty("java.version");
             String username = System.getProperty("user.name");
-            System.out.println("jenkins running java " + javaVersion + " with user " + username);
+            System.out.println("jenkins running java " + javaVersion + " with user " + username + " and JAVA_HOME=" + javaHome);
         }
 
         try (Cluster cluster = new Cluster(cfg))
