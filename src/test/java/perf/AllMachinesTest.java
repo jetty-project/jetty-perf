@@ -20,7 +20,8 @@ public class AllMachinesTest
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(() ->
             {
-                return "jenkins_home/tools/hudson.model.JDK/jdk11/jdk-11.0.9+11/bin/java";
+                String jenkinsHome = System.getProperty("user.home");
+                return jenkinsHome + "/jenkins_home/tools/hudson.model.JDK/jdk11/jdk-11.0.9+11/bin/java";
             }))
             .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
