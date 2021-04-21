@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -29,10 +31,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.connection.channel.Channel;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
+import net.schmizz.sshj.connection.channel.forwarded.ConnectListener;
 import net.schmizz.sshj.connection.channel.forwarded.RemotePortForwarder;
-import net.schmizz.sshj.connection.channel.forwarded.SocketForwardingConnectListener;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.FileSystemFile;
@@ -84,6 +87,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
         FileSystem fileSystem = null;
         SSHClient sshClient = null;
+        SocketForwardingConnectListener forwardingConnectListener = null;
         AutoCloseable forwarding = null;
         Session.Command cmd = null;
         Session session = null;
@@ -98,9 +102,10 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
             // do remote port forwarding
             int zkPort = Integer.parseInt(connectString.split(":")[1]);
+            forwardingConnectListener = new SocketForwardingConnectListener(hostname, new InetSocketAddress("localhost", zkPort));
             RemotePortForwarder.Forward forward = sshClient.getRemotePortForwarder().bind(
                 new RemotePortForwarder.Forward(0), // remote port, dynamically choose one
-                new SocketForwardingConnectListener(new InetSocketAddress("localhost", zkPort))
+                forwardingConnectListener
             );
             SSHClient finalSshClient = sshClient;
             forwarding = () -> finalSshClient.getRemotePortForwarder().cancel(forward);
@@ -137,13 +142,13 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
             fileSystem = FileSystems.newFileSystem(URI.create("wtc:" + hostId), env);
 
-            RemoteNodeHolder remoteNodeHolder = new RemoteNodeHolder(hostId, fileSystem, sshClient, forwarding, session, cmd);
+            RemoteNodeHolder remoteNodeHolder = new RemoteNodeHolder(hostId, fileSystem, sshClient, forwardingConnectListener, forwarding, session, cmd);
             nodes.put(hostname, remoteNodeHolder);
             return remoteConnectString;
         }
         catch (Exception e)
         {
-            IOUtil.close(fileSystem, cmd, session, forwarding, sshClient);
+            IOUtil.close(fileSystem, cmd, session, forwardingConnectListener, forwarding, sshClient);
             throw new Exception("Error launching host '" + hostname + "'", e);
         }
     }
@@ -201,14 +206,16 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         private final String hostId;
         private final FileSystem fileSystem;
         private final SSHClient sshClient;
+        private final SocketForwardingConnectListener forwardingConnectListener;
         private final AutoCloseable forwarding;
         private final Session session;
         private final Session.Command command;
 
-        private RemoteNodeHolder(String hostId, FileSystem fileSystem, SSHClient sshClient, AutoCloseable forwarding, Session session, Session.Command command) {
+        private RemoteNodeHolder(String hostId, FileSystem fileSystem, SSHClient sshClient, SocketForwardingConnectListener forwardingConnectListener, AutoCloseable forwarding, Session session, Session.Command command) {
             this.hostId = hostId;
             this.fileSystem = fileSystem;
             this.sshClient = sshClient;
+            this.forwardingConnectListener = forwardingConnectListener;
             this.forwarding = forwarding;
             this.session = session;
             this.command = command;
@@ -241,6 +248,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                     cmd.join();
                 }
             }
+            IOUtil.close(forwardingConnectListener);
             IOUtil.close(forwarding);
             IOUtil.close(sshClient);
         }
@@ -346,11 +354,18 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
     {
         private final InputStream is;
         private final OutputStream os;
+        private final int bufferSize;
 
-        public StreamCopier(InputStream is, OutputStream os)
+        private StreamCopier(InputStream is, OutputStream os)
+        {
+            this(is, os, 80);
+        }
+
+        private StreamCopier(InputStream is, OutputStream os, int bufferSize)
         {
             this.is = is;
             this.os = os;
+            this.bufferSize = bufferSize;
         }
 
         public void spawnDaemon(String name)
@@ -359,7 +374,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             {
                 try
                 {
-                    IOUtil.copy(is, os, 80);
+                    IOUtil.copy(is, os, bufferSize);
                 }
                 catch (Exception e)
                 {
@@ -368,6 +383,44 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             }, name);
             thread.setDaemon(true);
             thread.start();
+        }
+    }
+
+    private static class SocketForwardingConnectListener implements ConnectListener, AutoCloseable
+    {
+        private final String threadNamePrefix;
+        private final SocketAddress addr;
+        private Socket socket;
+        private Channel.Forwarded channel;
+
+        private SocketForwardingConnectListener(String threadNamePrefix, SocketAddress addr)
+        {
+            this.threadNamePrefix = threadNamePrefix;
+            this.addr = addr;
+        }
+
+        @Override
+        public void close()
+        {
+            IOUtil.close(channel, socket);
+        }
+
+        @Override
+        public void gotConnect(Channel.Forwarded channel) throws IOException
+        {
+            this.channel = channel;
+            socket = new Socket();
+            socket.setSendBufferSize(channel.getLocalMaxPacketSize());
+            socket.setReceiveBufferSize(channel.getRemoteMaxPacketSize());
+            socket.connect(addr);
+
+            channel.confirm();
+
+            new SshRemoteHostLauncher.StreamCopier(socket.getInputStream(), channel.getOutputStream(), channel.getRemoteMaxPacketSize())
+                .spawnDaemon(threadNamePrefix + "-soc2chan");
+
+            new SshRemoteHostLauncher.StreamCopier(channel.getInputStream(), socket.getOutputStream(), channel.getLocalMaxPacketSize())
+                .spawnDaemon(threadNamePrefix + "-chan2soc");
         }
     }
 }
