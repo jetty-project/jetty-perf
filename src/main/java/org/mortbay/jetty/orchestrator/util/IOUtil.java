@@ -47,20 +47,20 @@ public class IOUtil
 
     public static void copy(InputStream is, OutputStream os) throws IOException
     {
-        copy(is, os, 1024);
+        copy(is, os, 1024, false);
     }
 
-    public static void copy(InputStream is, OutputStream os, int bufferSize) throws IOException
+    public static void copy(InputStream is, OutputStream os, int bufferSize, boolean flushOnWrite) throws IOException
     {
         byte[] buffer = new byte[bufferSize];
         while (true)
         {
             int read = is.read(buffer);
             if (read == -1)
-            {
                 return;
-            }
             os.write(buffer, 0, read);
+            if (flushOnWrite)
+                os.flush();
         }
     }
 

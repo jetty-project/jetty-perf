@@ -374,7 +374,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             {
                 try
                 {
-                    IOUtil.copy(is, os, bufferSize);
+                    IOUtil.copy(is, os, bufferSize, true);
                 }
                 catch (Exception e)
                 {
