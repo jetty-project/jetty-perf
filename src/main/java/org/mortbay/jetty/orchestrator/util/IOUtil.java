@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,11 @@ public class IOUtil
             if (LOG.isDebugEnabled())
                 LOG.debug("", e);
         }
+    }
+
+    public static void close(AutoCloseable... closeables)
+    {
+        Arrays.stream(closeables).forEach(IOUtil::close);
     }
 
     public static void copy(InputStream is, OutputStream os) throws IOException
