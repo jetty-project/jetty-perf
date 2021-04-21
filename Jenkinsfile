@@ -12,7 +12,7 @@ pipeline {
                                                              usernameVariable: '')]) {     */       
                     //sh "mkdir ~/.ssh"
                     //sh "cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa"
-                    mavenBuild( "jdk11", "clean verify", "maven3")
+                    mavenBuild( "jdk16", "clean verify", "maven3")
                 //}                    
             }
         }
