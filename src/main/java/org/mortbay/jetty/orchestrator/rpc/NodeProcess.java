@@ -71,6 +71,13 @@ public class NodeProcess implements Serializable, AutoCloseable
         String nodeId = args[0];
         String connectString = args[1];
         String readyEchoString = args.length > 2 ? args[2] : null;
+        if (readyEchoString != null)
+        {
+            // This must be the very first printed thing, before any log.
+            System.out.print(readyEchoString);
+            System.out.flush();
+        }
+
         MDC.put("NodeId", nodeId);
         if (LOG.isDebugEnabled())
             LOG.debug("Starting node [{}] with JVM version '{}' connecting to {}", nodeId, System.getProperty("java.version"), connectString);
@@ -93,11 +100,6 @@ public class NodeProcess implements Serializable, AutoCloseable
         };
         Runtime.getRuntime().addShutdownHook(new Thread(shutdown));
 
-        if (readyEchoString != null)
-        {
-            System.out.println(readyEchoString);
-            System.out.flush();
-        }
         rpcServer.run();
         if (LOG.isDebugEnabled())
             LOG.debug("Node [{}] disconnecting from {}", nodeId, connectString);

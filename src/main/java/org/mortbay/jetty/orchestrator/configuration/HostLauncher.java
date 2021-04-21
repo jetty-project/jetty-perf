@@ -15,5 +15,8 @@ package org.mortbay.jetty.orchestrator.configuration;
 
 public interface HostLauncher extends AutoCloseable
 {
+    /**
+     * @return the modified {@code connectString} that nodes running on this host must connect to.
+     */
     String launch(String hostname, String hostId, String connectString) throws Exception;
 }

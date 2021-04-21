@@ -28,8 +28,6 @@ public class SimpleClusterConfiguration implements ClusterConfiguration, JvmDepe
     public SimpleClusterConfiguration jvm(Jvm jvm)
     {
         this.jvm = jvm;
-        ensureJvmSet(hostLauncher);
-        nodeArrayConfigurations.values().forEach(this::ensureJvmSet);
         return this;
     }
 
@@ -42,12 +40,14 @@ public class SimpleClusterConfiguration implements ClusterConfiguration, JvmDepe
     @Override
     public Collection<NodeArrayConfiguration> nodeArrays()
     {
+        nodeArrayConfigurations.values().forEach(this::ensureJvmSet);
         return nodeArrayConfigurations.values();
     }
 
     @Override
     public HostLauncher hostLauncher()
     {
+        ensureJvmSet(hostLauncher);
         return hostLauncher;
     }
 

@@ -8,11 +8,9 @@
 
   <logger name="org.mortbay.jetty.orchestrator.nodefs.InMemoryFile" level="error" />
   <logger name="org.zeroturnaround.process" level="error" />
-<!--
   <logger name="net.schmizz.sshj" level="error" />
   <logger name="org.apache.zookeeper" level="error" />
   <logger name="org.apache.curator" level="error" />
--->
 
   <root level="info">
     <appender-ref ref="STDOUT" />

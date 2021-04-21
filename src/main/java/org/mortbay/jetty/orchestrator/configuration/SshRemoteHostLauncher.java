@@ -39,7 +39,6 @@ import net.schmizz.sshj.xfer.FileSystemFile;
 import net.schmizz.sshj.xfer.LocalSourceFile;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
 public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 {
@@ -131,7 +130,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         session.allocateDefaultPTY();
         Session.Command cmd = session.exec(cmdLine);
 
-        SshLogOutputStream sshLogOutputStream = new SshLogOutputStream(hostname, readyEchoString, cmd, System.out);
+        SshLogOutputStream sshLogOutputStream = new SshLogOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, System.out);
         new StreamCopier(cmd.getInputStream(), sshLogOutputStream, net.schmizz.sshj.common.LoggerFactory.DEFAULT)
             .bufSize(80)
             .spawnDaemon("stdout-" + hostname);
@@ -245,56 +244,97 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         }
     }
 
-    private static class SshLogOutputStream extends LogOutputStream
+    private static class SshLogOutputStream extends OutputStream
     {
         private final String hostname;
-        private final String expectedSequence;
+        private final byte[] expectedSequence;
+        private final byte[] accumulator;
+        private int counter;
         private final Session.Command cmd;
         private final OutputStream delegate;
         private final AtomicBoolean matched = new AtomicBoolean(false);
+        private final AtomicBoolean failed = new AtomicBoolean(false);
 
-        private SshLogOutputStream(String hostname, String expectedSequence, Session.Command cmd, OutputStream delegate)
+        private SshLogOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
         {
             this.hostname = hostname;
             this.expectedSequence = expectedSequence;
+            this.accumulator = new byte[expectedSequence.length];
             this.cmd = cmd;
             this.delegate = delegate;
         }
 
         @Override
-        protected void processLine(String line)
-        {
-            if (line.equals(expectedSequence))
-                matched.set(true);
-        }
-
-        @Override
         public void write(int cc) throws IOException
         {
-            delegate.write(cc);
-            super.write(cc);
+            if (!matched.get() && !failed.get())
+            {
+                if (cc != expectedSequence[counter])
+                {
+                    delegate.write(accumulator, 0, counter);
+                    delegate.write(cc);
+                    failed.set(true);
+                }
+                else
+                {
+                    accumulator[counter] = (byte)cc;
+                    counter++;
+                }
+                if (counter == expectedSequence.length)
+                    matched.set(true);
+            }
+            else
+            {
+                delegate.write(cc);
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException
         {
-            delegate.write(b, off, len);
-            super.write(b, off, len);
+            if (!matched.get() && !failed.get())
+            {
+                for (int i = off; i < len; i++)
+                {
+                    int cc = b[i];
+                    if (cc != expectedSequence[counter])
+                    {
+                        delegate.write(accumulator, 0, counter);
+                        delegate.write(b, off + i, len);
+                        failed.set(true);
+                        break;
+                    }
+                    else
+                    {
+                        accumulator[counter] = (byte)cc;
+                        counter++;
+                    }
+                    if (counter == expectedSequence.length)
+                    {
+                        matched.set(true);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                delegate.write(b, off, len);
+            }
         }
 
-        public void waitForExpectedString()
+        public void waitForExpectedString() throws Exception
         {
             while (!matched.get())
             {
-                if (!cmd.isOpen())
-                    throw new IllegalStateException("Node failed to start on host '" + hostname + "'");
+                if (failed.get() || !cmd.isOpen())
+                    throw new Exception("Node failed to start on host '" + hostname + "'");
                 try
                 {
                     Thread.sleep(10);
                 }
                 catch (InterruptedException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new Exception("Interrupted while starting node on host '" + hostname + "'", e);
                 }
             }
         }
