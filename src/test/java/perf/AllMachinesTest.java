@@ -89,7 +89,7 @@ public class AllMachinesTest
             File jdkFolderFile = new File(home + "/jenkins_home/tools/hudson.model.JDK/" + toolName);
             if (!jdkFolderFile.isDirectory())
                 throw new RuntimeException("Jenkins tool '" + toolName + "' not installed");
-            File[] files = jdkFolderFile.listFiles();
+            File[] files = jdkFolderFile.listFiles((dir, name) -> !name.startsWith(".timestamp"));
             if (files == null || files.length == 0)
                 throw new RuntimeException("Jenkins tool '" + toolName + "' not found");
             File executableFile = new File(files[0], "bin/java");
