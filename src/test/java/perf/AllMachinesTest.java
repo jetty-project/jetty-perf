@@ -13,7 +13,6 @@ import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
-import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.mortbay.jetty.orchestrator.util.SerializableSupplier;
 
 public class AllMachinesTest
