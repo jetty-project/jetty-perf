@@ -83,7 +83,7 @@ public class AsyncProfiler implements AutoCloseable
                     return null;
                 }
             });
-            ua.setDestDirectory(tarGzFile.getParentFile());
+            ua.setDestDirectory(new File("."));
             ua.extract();
         }
     }
