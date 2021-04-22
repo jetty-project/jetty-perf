@@ -18,6 +18,7 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         String javaHome = System.getenv("JAVA_HOME");
+        String jenkinsHome = System.getenv("JENKINS_HOME");
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(() -> javaHome + "/bin/java"))
             .hostLauncher(new SshRemoteHostLauncher())

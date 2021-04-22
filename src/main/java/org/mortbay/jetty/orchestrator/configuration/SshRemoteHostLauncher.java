@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.Channel;
+import net.schmizz.sshj.connection.channel.direct.DirectConnection;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.connection.channel.forwarded.ConnectListener;
@@ -95,10 +96,27 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         {
             sshClient = new SSHClient();
             sshClient.addHostKeyVerifier(new PromiscuousVerifier()); // or loadKnownHosts() instead?
-            sshClient.connect(hostname);
 
-            // public key auth
-            sshClient.authPublickey(username);
+            boolean useTunnel = System.getProperty("connect.via.hostname") != null;
+
+            if (useTunnel)
+            {
+                SSHClient first = new SSHClient();
+                first.addHostKeyVerifier(new PromiscuousVerifier());
+                first.connect(System.getProperty("connect.via.hostname"), Integer.getInteger("connect.via.port"));
+                first.authPublickey(System.getProperty("connect.via.user"));
+                DirectConnection tunnel = first.newDirectConnection(System.getProperty("connect.via.hostname"),
+                                                                     Integer.getInteger("connect.via.port"));
+
+                sshClient.connectVia(tunnel, hostname, 22);
+                // public key auth
+                sshClient.authPublickey(System.getProperty("connect.via.user"));
+            }
+            else
+            {
+                sshClient.connect(hostname);
+                sshClient.authPublickey(username);
+            }
 
             // do remote port forwarding
             int zkPort = Integer.parseInt(connectString.split(":")[1]);

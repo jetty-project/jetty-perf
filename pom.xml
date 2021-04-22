@@ -10,6 +10,11 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <jetty.version>10.0.2</jetty.version>
+
+    <!-- the values need to be defined in ~/.m2/settings.xml -->
+    <connect.via.hostname></connect.via.hostname>
+    <connect.via.user></connect.via.user>
+    <connect.via.port></connect.via.port>
   </properties>
 
   <dependencies>
@@ -93,5 +98,40 @@
       <version>1.10</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M5</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>local</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <configuration>
+                <systemPropertyVariables>
+                  <connect.via.hostname>${connect.via.hostname}</connect.via.hostname>
+                  <connect.via.user>${connect.via.user}</connect.via.user>
+                  <connect.via.port>${connect.via.port}</connect.via.port>
+                </systemPropertyVariables>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
