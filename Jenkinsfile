@@ -2,13 +2,14 @@
 
 pipeline {
     agent any
+    tools {
+      jdk 'jdk8'
+      jdk 'jdk11'
+      jdk 'jdk16'
+    }
     stages {
         stage('ssl-perf') {
             agent { node { label 'load-master' } }
-            tools {
-              jdk 'jdk8'
-              jdk 'jdk11'
-            }
             steps {
                 /*withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
                                                              keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
@@ -31,7 +32,7 @@ def mavenBuild(jdk, cmdline, mvnName) {
                "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
         configFileProvider(
                 [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-          sh "mvn --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -Pci -V -B -e $cmdline"
+          sh "mvn --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e $cmdline"
         }
       }
     }
