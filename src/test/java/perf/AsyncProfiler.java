@@ -14,23 +14,21 @@ import org.mortbay.jetty.orchestrator.util.IOUtil;
 
 public class AsyncProfiler implements AutoCloseable
 {
-    private Process process;
+    private final String flamegraphFilename;
+    private final long pid;
 
-    public AsyncProfiler(String fgFilename, long pid) throws IOException
+    public AsyncProfiler(String flamegraphFilename, long pid) throws Exception
     {
+        this.flamegraphFilename = flamegraphFilename;
+        this.pid = pid;
         installAsyncProfilerIfNeeded();
-        process = spawnAsyncProfiler(fgFilename, pid);
+        startAsyncProfiler(pid);
     }
 
     @Override
     public void close() throws Exception
     {
-        if (process != null)
-        {
-            process.destroy();
-            process.waitFor();
-        }
-        process = null;
+        stopAsyncProfiler(flamegraphFilename, pid);
     }
 
     private static void installAsyncProfilerIfNeeded() throws IOException
@@ -88,13 +86,22 @@ public class AsyncProfiler implements AutoCloseable
         }
     }
 
-    private static Process spawnAsyncProfiler(String fgFilename, long pid) throws IOException
+    private static void startAsyncProfiler(long pid) throws IOException, InterruptedException
     {
         File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
-        File fgFile = new File(fgFilename);
-        return new ProcessBuilder("./profiler.sh", "-d", "3600", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
+        new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
             .directory(asyncProfilerHome)
-            .redirectErrorStream(true)
-            .start();
+            .start()
+            .waitFor();
+    }
+
+    private static void stopAsyncProfiler(String flamegraphFilename, long pid) throws IOException, InterruptedException
+    {
+        File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
+        File fgFile = new File(flamegraphFilename);
+        new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
+            .directory(asyncProfilerHome)
+            .start()
+            .waitFor();
     }
 }

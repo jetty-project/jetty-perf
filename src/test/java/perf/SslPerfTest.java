@@ -93,7 +93,7 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("server-async-profiler-barrier", 2);
+                    tools.barrier("server-async-profiler-barrier", 2).await();
                 }
             });
 
@@ -106,7 +106,7 @@ public class SslPerfTest implements Serializable
             });
 
             loadersRun.get();
-            cluster.tools().barrier("server-async-profiler-barrier", 2); // kill the async profiler on the server
+            cluster.tools().barrier("server-async-profiler-barrier", 2).await(); // kill the async profiler on the server
             serverAsyncProfiler.get();
 
             // download server FG
