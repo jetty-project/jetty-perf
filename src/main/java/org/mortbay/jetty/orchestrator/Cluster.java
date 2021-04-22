@@ -109,7 +109,7 @@ public class Cluster implements AutoCloseable
                 boolean localNode = hostname.equals(LocalHostLauncher.HOSTNAME);
                 String hostId = hostIdFor(hostname);
                 String nodeId = hostId + "/" + sanitize(nodeArrayConfiguration.id()) + "/" + sanitize(node.getId());
-                nodes.put(node.getId(), new NodeArray.Node(nodeId, new RpcClient(curator, nodeId), localNode));
+                nodes.put(node.getId(), new NodeArray.Node(hostname, nodeId, new RpcClient(curator, nodeId), localNode));
 
                 Map.Entry<String, RpcClient> entry = hostClients.get(hostId);
                 RpcClient rpcClient = entry.getValue();

@@ -35,6 +35,14 @@ public class NodeArray
         this.nodes = nodes;
     }
 
+    public String hostnameOf(String id)
+    {
+        Node node = nodes.get(id);
+        if (node == null)
+            throw new IllegalArgumentException("No such node with ID " + id);
+        return node.hostname;
+    }
+
     public Path rootPathOf(String id)
     {
         Node node = nodes.get(id);
@@ -69,12 +77,14 @@ public class NodeArray
 
     static class Node
     {
+        private final String hostname;
         private final String nodeId;
         private final RpcClient rpcClient;
         private final boolean local;
 
-        Node(String nodeId, RpcClient rpcClient, boolean local)
+        Node(String hostname, String nodeId, RpcClient rpcClient, boolean local)
         {
+            this.hostname = hostname;
             this.nodeId = nodeId;
             this.rpcClient = rpcClient;
             this.local = local;
