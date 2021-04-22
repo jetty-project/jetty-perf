@@ -38,8 +38,8 @@ public class SslPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(SslPerfTest.class);
 
-    public static final int WARMUP_REQUEST_COUNT = 1_500;
-    public static final int RUN_REQUEST_COUNT = 30_000;
+    public static final int WARMUP_REQUEST_COUNT = 1_000;
+    public static final int RUN_REQUEST_COUNT = 100_000;
 
     @Test
     public void testSslPerf() throws Exception
