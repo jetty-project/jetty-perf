@@ -103,16 +103,15 @@ public class SslPerfTest implements Serializable
                 }
             });
 
-            NodeArrayFuture loadersRun = loadersArray.executeOnAll(tools ->
+            loadersArray.executeOnAll(tools ->
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
                     runClient(RUN_REQUEST_COUNT, serverUri);
                 }
-            });
+            }).get();
 
-            loadersRun.get();
-            cluster.tools().barrier("server-async-profiler-barrier", 2).await(); // kill the async profiler on the server
+            cluster.tools().barrier("server-async-profiler-barrier", 2).await(); // stop the async profiler on the server
             serverAsyncProfiler.get();
 
             // download server FG

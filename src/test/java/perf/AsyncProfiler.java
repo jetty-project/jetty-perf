@@ -93,6 +93,7 @@ public class AsyncProfiler implements AutoCloseable
     {
         LOG.info("starting async profiler...");
         File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
+        System.load(asyncProfilerHome.getAbsolutePath() + "/build/libAsyncProfiler.so");
         new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
             .directory(asyncProfilerHome)
             .redirectErrorStream(true)
