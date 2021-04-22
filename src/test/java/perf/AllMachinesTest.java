@@ -13,6 +13,7 @@ import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
+import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.mortbay.jetty.orchestrator.util.SerializableSupplier;
 
 public class AllMachinesTest
@@ -21,7 +22,7 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsJdkTool("jdk11")))
+            .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
             .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
@@ -73,11 +74,11 @@ public class AllMachinesTest
         }
     }
 
-    private static class JenkinsJdkTool implements SerializableSupplier<String>
+    private static class JenkinsToolJdk implements SerializableSupplier<String>
     {
         private final String toolName;
 
-        private JenkinsJdkTool(String toolName)
+        private JenkinsToolJdk(String toolName)
         {
             this.toolName = toolName;
         }
