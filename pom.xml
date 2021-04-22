@@ -15,6 +15,7 @@
     <connect.via.hostname></connect.via.hostname>
     <connect.via.user></connect.via.user>
     <connect.via.port></connect.via.port>
+    <remote.java.home></remote.java.home>
   </properties>
 
   <dependencies>
@@ -125,6 +126,7 @@
                   <connect.via.hostname>${connect.via.hostname}</connect.via.hostname>
                   <connect.via.user>${connect.via.user}</connect.via.user>
                   <connect.via.port>${connect.via.port}</connect.via.port>
+                  <remote.java.home>${remote.java.home}</remote.java.home>
                 </systemPropertyVariables>
               </configuration>
             </plugin>
