@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class AsyncProfiler implements AutoCloseable
 {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProfiler.class);
+    public static final String VERSION = "1.8.5";
 
     private final String flamegraphFilename;
     private final long pid;
@@ -36,12 +37,12 @@ public class AsyncProfiler implements AutoCloseable
 
     private static void installAsyncProfilerIfNeeded() throws IOException
     {
-        File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
+        File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         if (!asyncProfilerHome.isDirectory())
         {
             LOG.info("installing async profiler...");
-            File tarGzFile = new File("async-profiler-2.0-linux-x64.tar.gz");
-            try (InputStream is = new URL("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v2.0/async-profiler-2.0-linux-x64.tar.gz").openStream();
+            File tarGzFile = new File("async-profiler-" + VERSION + "-linux-x64.tar.gz");
+            try (InputStream is = new URL("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v" + VERSION + "/async-profiler-" + VERSION + "-linux-x64.tar.gz").openStream();
                  OutputStream os = new FileOutputStream(tarGzFile))
             {
                 IOUtil.copy(is, os);
@@ -92,8 +93,8 @@ public class AsyncProfiler implements AutoCloseable
     private static void startAsyncProfiler(long pid) throws IOException, InterruptedException
     {
         LOG.info("starting async profiler...");
-        File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
-        System.load(asyncProfilerHome.getAbsolutePath() + "/build/libAsyncProfiler.so");
+        File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
+        //System.load(asyncProfilerHome.getAbsolutePath() + "/build/libAsyncProfiler.so");
         new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
             .directory(asyncProfilerHome)
             .redirectErrorStream(true)
@@ -105,7 +106,7 @@ public class AsyncProfiler implements AutoCloseable
     private static void stopAsyncProfiler(String flamegraphFilename, long pid) throws IOException, InterruptedException
     {
         LOG.info("stopping async profiler...");
-        File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
+        File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         File fgFile = new File(flamegraphFilename);
         new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
             .directory(asyncProfilerHome)
