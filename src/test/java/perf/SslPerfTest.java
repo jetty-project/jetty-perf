@@ -89,7 +89,13 @@ public class SslPerfTest implements Serializable
 
             LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
-            loadersArray.executeOnAll(tools -> runClient(WARMUP_REQUEST_COUNT, serverUri)).get();
+            loadersArray.executeOnAll(tools ->
+            {
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("warmup-loader.html", ProcessHandle.current().pid()))
+                {
+                    runClient(RUN_REQUEST_COUNT, serverUri);
+                }
+            }).get();
 
             LOG.info("Running...");
             long before = System.nanoTime();
