@@ -31,9 +31,13 @@ import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SslPerfTest implements Serializable
 {
+    private static final Logger LOG = LoggerFactory.getLogger(SslPerfTest.class);
+
     public static final int WARMUP_REQUEST_COUNT = 1_500_000;
     public static final int RUN_REQUEST_COUNT = 3_000_000;
 
@@ -60,7 +64,7 @@ public class SslPerfTest implements Serializable
 
         try (Cluster cluster = new Cluster(cfg))
         {
-            System.out.println("Initializing...");
+            LOG.info("Initializing...");
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
 
@@ -83,11 +87,11 @@ public class SslPerfTest implements Serializable
                 server.start();
             }).get();
 
-            System.out.println("Warming up...");
+            LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
             loadersArray.executeOnAll(tools -> runClient(WARMUP_REQUEST_COUNT, serverUri)).get();
 
-            System.out.println("Running...");
+            LOG.info("Running...");
             long before = System.nanoTime();
 
             // start the async profiler on the server
@@ -135,14 +139,14 @@ public class SslPerfTest implements Serializable
             }
 
             long after = System.nanoTime();
-            System.out.println("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
+            LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
         }
     }
 
     private void runClient(int count, URI uri) throws Exception
     {
         long before = System.nanoTime();
-        System.out.println("Running client; " + count + " requests...");
+        LOG.info("Running client on URI " + uri + "; " + count + " requests...");
 
         SslContextFactory.Client clientSslContextFactory = new SslContextFactory.Client();
         String path = getClass().getResource("/keystore.p12").getPath();
@@ -166,6 +170,6 @@ public class SslPerfTest implements Serializable
 
         httpClient.stop();
         long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - before);
-        System.out.println("Stopped client; ran for " + elapsedSeconds + " seconds");
+        LOG.info("Stopped client; ran for " + elapsedSeconds + " seconds");
     }
 }
