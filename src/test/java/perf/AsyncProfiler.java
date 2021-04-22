@@ -9,11 +9,14 @@ import java.net.URL;
 
 import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
 import org.codehaus.plexus.logging.AbstractLogger;
-import org.codehaus.plexus.logging.Logger;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsyncProfiler implements AutoCloseable
 {
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncProfiler.class);
+
     private final String flamegraphFilename;
     private final long pid;
 
@@ -36,7 +39,7 @@ public class AsyncProfiler implements AutoCloseable
         File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
         if (!asyncProfilerHome.isDirectory())
         {
-            System.out.println("installing async profiler...");
+            LOG.info("installing async profiler...");
             File tarGzFile = new File("async-profiler-2.0-linux-x64.tar.gz");
             try (InputStream is = new URL("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v2.0/async-profiler-2.0-linux-x64.tar.gz").openStream();
                  OutputStream os = new FileOutputStream(tarGzFile))
@@ -76,7 +79,7 @@ public class AsyncProfiler implements AutoCloseable
                 }
 
                 @Override
-                public Logger getChildLogger(String s)
+                public org.codehaus.plexus.logging.Logger getChildLogger(String s)
                 {
                     return null;
                 }
@@ -88,20 +91,26 @@ public class AsyncProfiler implements AutoCloseable
 
     private static void startAsyncProfiler(long pid) throws IOException, InterruptedException
     {
+        LOG.info("starting async profiler...");
         File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
         new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
             .directory(asyncProfilerHome)
+            .redirectErrorStream(true)
             .start()
             .waitFor();
+        LOG.info("started async profiler...");
     }
 
     private static void stopAsyncProfiler(String flamegraphFilename, long pid) throws IOException, InterruptedException
     {
+        LOG.info("stopping async profiler...");
         File asyncProfilerHome = new File("async-profiler-2.0-linux-x64");
         File fgFile = new File(flamegraphFilename);
         new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
             .directory(asyncProfilerHome)
+            .redirectErrorStream(true)
             .start()
             .waitFor();
+        LOG.info("stopped async profiler...");
     }
 }
