@@ -8,19 +8,6 @@ pipeline {
       jdk 'jdk16'
     }
     stages {
-        stage('ssl-perf') {
-            agent { node { label 'load-master' } }
-            steps {
-                /*withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
-                                                             keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
-                                                             passphraseVariable: '', \
-                                                             usernameVariable: '')]) {     */       
-                    //sh "mkdir ~/.ssh"
-                    //sh 'cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa'
-                    mavenBuild( "jdk11", "clean verify", "maven3")
-                //}                    
-            }
-        }
         stage('install load-1') {
           agent { node { label 'load-1' } }
           steps {
@@ -44,6 +31,19 @@ pipeline {
           steps {
             sh "echo load-4"
           }
+        }
+        stage('ssl-perf') {
+            agent { node { label 'load-master' } }
+            steps {
+                /*withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
+                                                             keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
+                                                             passphraseVariable: '', \
+                                                             usernameVariable: '')]) {     */
+                //sh "mkdir ~/.ssh"
+                //sh 'cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa'
+                mavenBuild( "jdk11", "clean verify", "maven3")
+                //}
+            }
         }
     }
 }
