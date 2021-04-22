@@ -95,11 +95,13 @@ public class AsyncProfiler implements AutoCloseable
         LOG.debug("starting async profiler...");
         File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         //System.load(asyncProfilerHome.getAbsolutePath() + "/build/libAsyncProfiler.so");
-        new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
+        int rc = new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
             .directory(asyncProfilerHome)
             .redirectErrorStream(true)
             .start()
             .waitFor();
+        if (rc != 0)
+            LOG.warn("async profiler start failed with code " + rc);
         LOG.debug("started async profiler...");
     }
 
@@ -108,11 +110,13 @@ public class AsyncProfiler implements AutoCloseable
         LOG.debug("stopping async profiler...");
         File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         File fgFile = new File(flamegraphFilename);
-        new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
+        int rc = new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
             .directory(asyncProfilerHome)
             .redirectErrorStream(true)
             .start()
             .waitFor();
+        if (rc != 0)
+            LOG.warn("async profiler stop failed with code " + rc);
         LOG.debug("stopped async profiler...");
     }
 }
