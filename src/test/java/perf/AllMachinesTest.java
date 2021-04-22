@@ -22,7 +22,7 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
+            .jvm(new Jvm(new JenkinsToolJdk("jdk16")))
             .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
