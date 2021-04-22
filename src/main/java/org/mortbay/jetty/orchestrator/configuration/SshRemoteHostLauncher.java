@@ -265,12 +265,15 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             }
             IOUtil.close(command);
             IOUtil.close(session);
-            try (Session session = sshClient.startSession())
+            if (!Boolean.getBoolean("jetty.orchestrator.skipCleanup"))
             {
-                String folderName = ".wtc/" + hostId;
-                try (Session.Command cmd = session.exec("rm -fr \"" + folderName + "\""))
+                try (Session session = sshClient.startSession())
                 {
-                    cmd.join();
+                    String folderName = ".wtc/" + hostId;
+                    try (Session.Command cmd = session.exec("rm -fr \"" + folderName + "\""))
+                    {
+                        cmd.join();
+                    }
                 }
             }
             IOUtil.close(forwardingConnectListener);

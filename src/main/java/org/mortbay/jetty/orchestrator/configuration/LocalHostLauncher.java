@@ -76,13 +76,16 @@ public class LocalHostLauncher implements HostLauncher
             thread.join();
             thread = null;
 
-            File rootPath = rootPathOf(hostId);
-            File parentPath = rootPath.getParentFile();
-            if (IOUtil.deltree(rootPath) && parentPath != null)
+            if (!Boolean.getBoolean("jetty.orchestrator.skipCleanup"))
             {
-                String[] files = parentPath.list();
-                if (files != null && files.length == 0)
-                    IOUtil.deltree(parentPath);
+                File rootPath = rootPathOf(hostId);
+                File parentPath = rootPath.getParentFile();
+                if (IOUtil.deltree(rootPath) && parentPath != null)
+                {
+                    String[] files = parentPath.list();
+                    if (files != null && files.length == 0)
+                        IOUtil.deltree(parentPath);
+                }
             }
             hostId = null;
         }

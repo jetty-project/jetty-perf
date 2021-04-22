@@ -36,12 +36,10 @@ public class NodeProcess implements Serializable, AutoCloseable
 {
     private static final Logger LOG = LoggerFactory.getLogger(NodeProcess.class);
     
-    private final File rootPath;
     private final int pid;
 
-    private NodeProcess(File rootPath, Process process)
+    private NodeProcess(Process process)
     {
-        this.rootPath = rootPath;
         this.pid = Processes.newPidProcess(process).getPid();
     }
 
@@ -56,13 +54,6 @@ public class NodeProcess implements Serializable, AutoCloseable
         catch (Exception e)
         {
             // ignore
-        }
-        File parentPath = rootPath.getParentFile();
-        if (IOUtil.deltree(rootPath) && parentPath != null)
-        {
-            String[] files = parentPath.list();
-            if (files != null && files.length == 0)
-                IOUtil.deltree(parentPath);
         }
     }
 
@@ -112,7 +103,7 @@ public class NodeProcess implements Serializable, AutoCloseable
         nodeRootPath.mkdirs();
 
         List<String> cmdLine = buildCommandLine(jvm, defaultLibPath(hostId), nodeId, connectString);
-        return new NodeProcess(nodeRootPath, new ProcessBuilder(cmdLine)
+        return new NodeProcess(new ProcessBuilder(cmdLine)
             .directory(nodeRootPath)
             .inheritIO()
             .start());
