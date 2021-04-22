@@ -40,7 +40,7 @@ public class AsyncProfiler implements AutoCloseable
         File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         if (!asyncProfilerHome.isDirectory())
         {
-            LOG.info("installing async profiler...");
+            LOG.debug("installing async profiler...");
             File tarGzFile = new File("async-profiler-" + VERSION + "-linux-x64.tar.gz");
             try (InputStream is = new URL("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v" + VERSION + "/async-profiler-" + VERSION + "-linux-x64.tar.gz").openStream();
                  OutputStream os = new FileOutputStream(tarGzFile))
@@ -92,7 +92,7 @@ public class AsyncProfiler implements AutoCloseable
 
     private static void startAsyncProfiler(long pid) throws IOException, InterruptedException
     {
-        LOG.info("starting async profiler...");
+        LOG.debug("starting async profiler...");
         File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         //System.load(asyncProfilerHome.getAbsolutePath() + "/build/libAsyncProfiler.so");
         new ProcessBuilder("./profiler.sh", "start", Long.toString(pid))
@@ -100,12 +100,12 @@ public class AsyncProfiler implements AutoCloseable
             .redirectErrorStream(true)
             .start()
             .waitFor();
-        LOG.info("started async profiler...");
+        LOG.debug("started async profiler...");
     }
 
     private static void stopAsyncProfiler(String flamegraphFilename, long pid) throws IOException, InterruptedException
     {
-        LOG.info("stopping async profiler...");
+        LOG.debug("stopping async profiler...");
         File asyncProfilerHome = new File("async-profiler-" + VERSION + "-linux-x64");
         File fgFile = new File(flamegraphFilename);
         new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
@@ -113,6 +113,6 @@ public class AsyncProfiler implements AutoCloseable
             .redirectErrorStream(true)
             .start()
             .waitFor();
-        LOG.info("stopped async profiler...");
+        LOG.debug("stopped async profiler...");
     }
 }
