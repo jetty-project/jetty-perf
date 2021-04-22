@@ -1,7 +1,5 @@
 package perf;
 
-import java.io.File;
-
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -13,7 +11,6 @@ import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
-import org.mortbay.jetty.orchestrator.util.SerializableSupplier;
 
 public class AllMachinesTest
 {
@@ -70,30 +67,6 @@ public class AllMachinesTest
             serverFuture.get();
             loadersFuture.get();
             probeFuture.get();
-        }
-    }
-
-    private static class JenkinsToolJdk implements SerializableSupplier<String>
-    {
-        private final String toolName;
-
-        private JenkinsToolJdk(String toolName)
-        {
-            this.toolName = toolName;
-        }
-
-        @Override
-        public String get()
-        {
-            String home = System.getProperty("user.home");
-            File jdkFolderFile = new File(home + "/jenkins_home/tools/hudson.model.JDK/" + toolName);
-            if (!jdkFolderFile.isDirectory())
-                throw new RuntimeException("Jenkins tool '" + toolName + "' not installed");
-            File[] files = jdkFolderFile.listFiles((dir, name) -> !name.startsWith(".timestamp"));
-            if (files == null || files.length == 0)
-                throw new RuntimeException("Jenkins tool '" + toolName + "' not found");
-            File executableFile = new File(files[0], "bin/java");
-            return executableFile.getAbsolutePath();
         }
     }
 }
