@@ -93,6 +93,21 @@ public class AtomicCounter
         }
     }
 
+    public long decrementAndGet()
+    {
+        try
+        {
+            AtomicValue<Long> result = distributedAtomicLong.add(-1L);
+            if (result.succeeded())
+                return result.postValue();
+            throw new IllegalStateException("node " + nodeId + " failed to decrement and get counter " + name);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("node " + nodeId + " failed to decrement and get counter " + name, e);
+        }
+    }
+
     public long getAndIncrement()
     {
         try
@@ -105,6 +120,21 @@ public class AtomicCounter
         catch (Exception e)
         {
             throw new IllegalStateException("node " + nodeId + " failed to get and increment counter " + name, e);
+        }
+    }
+
+    public long getAndDecrement()
+    {
+        try
+        {
+            AtomicValue<Long> result = distributedAtomicLong.add(-1L);
+            if (result.succeeded())
+                return result.preValue();
+            throw new IllegalStateException("node " + nodeId + " failed to get and decrement counter " + name);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("node " + nodeId + " failed to get and decrement counter " + name, e);
         }
     }
 

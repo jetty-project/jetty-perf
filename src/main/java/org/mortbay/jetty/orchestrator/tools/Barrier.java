@@ -16,19 +16,27 @@ package org.mortbay.jetty.orchestrator.tools;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.barriers.DistributedDoubleBarrier;
+import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 
 public class Barrier
 {
-    private final DistributedDoubleBarrier distributedDoubleBarrier;
+    private final DistributedBarrier distributedBarrier;
     private final AtomicCounter atomicCounter;
     private final int parties;
 
     public Barrier(CuratorFramework curator, String nodeId, String name, int parties)
     {
-        this.parties = parties;
-        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name, parties);
-        atomicCounter = new AtomicCounter(curator, nodeId, "Barrier/Counter", name, 0L);
+        try
+        {
+            this.parties = parties;
+            distributedBarrier = new DistributedBarrier(curator, "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name);
+            distributedBarrier.setBarrier();
+            atomicCounter = new AtomicCounter(curator, nodeId, "Barrier/Counter", name, parties);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("Error initializing barrier '" + name + "'");
+        }
     }
 
     private static String clusterIdOf(String nodeId)
@@ -38,21 +46,29 @@ public class Barrier
 
     private int calculateArrivalIndex()
     {
-        int arrivalIndex = (int)atomicCounter.getAndIncrement();
-        if (arrivalIndex == parties - 1)
-            atomicCounter.set(0L);
+        int arrivalIndex = (int)atomicCounter.decrementAndGet();
+        if (arrivalIndex == 0)
+            atomicCounter.set(parties);
         return arrivalIndex;
     }
 
     public int await() throws Exception
     {
-        distributedDoubleBarrier.enter();
-        return calculateArrivalIndex();
+        int arrival = calculateArrivalIndex();
+        if (arrival == 0)
+            distributedBarrier.removeBarrier();
+        else
+            distributedBarrier.waitOnBarrier();
+        return arrival;
     }
 
     public int await(long timeout, TimeUnit unit) throws Exception
     {
-        distributedDoubleBarrier.enter(timeout, unit);
-        return calculateArrivalIndex();
+        int arrival = calculateArrivalIndex();
+        if (arrival == 0)
+            distributedBarrier.removeBarrier();
+        else
+            distributedBarrier.waitOnBarrier(timeout, unit);
+        return arrival;
     }
 }
