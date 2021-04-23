@@ -106,37 +106,41 @@ public class SslPerfTest implements Serializable
             long before = System.nanoTime();
 
             // start the async profiler on the server
-            NodeArrayFuture serverAsyncProfiler = serverArray.executeOnAll(tools ->
+            NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
                     tools.barrier("async-profiler-barrier", participantCount).await();
+                    tools.barrier("async-profiler-barrier", participantCount).await();
                 }
-                tools.barrier("async-profiler-barrier", participantCount).await();
             });
 
-            loadersArray.executeOnAll(tools ->
+            NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
                     tools.barrier("async-profiler-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION);
+                    tools.barrier("async-profiler-barrier", participantCount).await();
                 }
-                tools.barrier("async-profiler-barrier", participantCount).await();
             });
 
-            probeArray.executeOnAll(tools ->
+            NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html", ProcessHandle.current().pid()))
                 {
                     tools.barrier("async-profiler-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION);
+                    tools.barrier("async-profiler-barrier", participantCount).await();
                 }
-                tools.barrier("async-profiler-barrier", participantCount).await();
             });
 
             cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // signal all participants to start
             cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // wait for all participants to be done
+
+            serverFuture.get();
+            loadersFuture.get();
+            probeFuture.get();
 
             // download servers FGs
             download(serverArray, new File("target/report/server"), "server.html");
