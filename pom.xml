@@ -14,8 +14,6 @@
     <!-- 2.0.0 is the version working with jetty-10 artifacts -->
     <loadgenerator.version>2.0.0</loadgenerator.version>
 
-    <perf.useLoadGenerator>false</perf.useLoadGenerator>
-
     <!-- the values need to be defined in ~/.m2/settings.xml -->
     <connect.via.hostname></connect.via.hostname>
     <connect.via.user></connect.via.user>
