@@ -13,7 +13,9 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -74,7 +76,11 @@ public class SslPerfTest implements Serializable
             {
                 Server server = new Server();
 
-                HttpConnectionFactory http = new HttpConnectionFactory();
+                HttpConfiguration httpConfiguration = new HttpConfiguration();
+                SecureRequestCustomizer customizer = new SecureRequestCustomizer();
+                customizer.setSniHostCheck(false);
+                httpConfiguration.addCustomizer(customizer);
+                HttpConnectionFactory http = new HttpConnectionFactory(httpConfiguration);
 
                 SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
                 String path = getClass().getResource("/keystore.p12").getPath();
