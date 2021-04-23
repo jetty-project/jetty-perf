@@ -12,7 +12,7 @@ pipeline {
     }
     parameters {
       string(defaultValue: '*', description: 'Junit test to run -Dtest=', name: 'TEST_TO_RUN')
-      string(defaultValue: 'false', description: 'Junit test to run -Dtest=', name: 'USE_LOADGENERATOR')
+      string(defaultValue: 'false', description: 'use load generator', name: 'USE_LOADGENERATOR')
     }
     stages {
         stage('install load-1') {

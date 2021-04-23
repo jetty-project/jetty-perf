@@ -155,6 +155,7 @@ public class SslPerfTest implements Serializable
     {
         if (Boolean.getBoolean("perf.useLoadGenerator"))
         {
+            LOG.info("Use loadgenerator");
             runLoadGenerator(count, uri);
             return;
         }
