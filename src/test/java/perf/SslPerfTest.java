@@ -8,21 +8,17 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
-import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.junit.jupiter.api.Test;
+import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -41,17 +37,13 @@ public class SslPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(SslPerfTest.class);
 
-    public static final int WARMUP_REQUEST_COUNT = 1_000;
-    public static final int RUN_REQUEST_COUNT = 100_000;
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(10);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(20);
 
     @Test
     public void testSslPerf() throws Exception
     {
         System.setProperty("jetty.orchestrator.skipCleanup", "false");
-
-        boolean useLoadGenerator = Boolean.getBoolean("perf.useLoadGenerator");
-        if (useLoadGenerator) LOG.info("Use loadgenerator");
-
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
@@ -100,9 +92,7 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("warmup-loader.html", ProcessHandle.current().pid()))
                 {
-                    if(!useLoadGenerator)
-                        runClient(RUN_REQUEST_COUNT, serverUri);
-
+                    runLoadGenerator(serverUri, WARMUP_DURATION);
                 }
             }).get();
 
@@ -122,10 +112,7 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
-                    if(useLoadGenerator)
-                        runLoadGenerator(RUN_REQUEST_COUNT, serverUri);
-                    else
-                        runClient(RUN_REQUEST_COUNT, serverUri);
+                    runLoadGenerator(serverUri, RUN_DURATION);
                 }
             }).get();
 
@@ -160,42 +147,12 @@ public class SslPerfTest implements Serializable
         }
     }
 
-    private void runClient(int count, URI uri) throws Exception
-    {
-        long before = System.nanoTime();
-        LOG.info("Running client on URI " + uri + "; " + count + " requests...");
-
-        SslContextFactory.Client clientSslContextFactory = new SslContextFactory.Client();
-        String path = getClass().getResource("/keystore.p12").getPath();
-        clientSslContextFactory.setKeyStorePath(path);
-        clientSslContextFactory.setKeyStorePassword("storepwd");
-
-        ClientConnector clientConnector = new ClientConnector();
-        clientConnector.setSslContextFactory(clientSslContextFactory);
-
-        HttpClientTransportOverHTTP transport = new HttpClientTransportOverHTTP(clientConnector);
-        HttpClient httpClient = new HttpClient(transport);
-        httpClient.setCookieStore(new HttpCookieStore.Empty());
-        httpClient.start();
-
-        CountDownLatch latch = new CountDownLatch(count);
-        for (int i = 0; i < count; i++)
-        {
-            httpClient.newRequest(uri).send(r -> latch.countDown());
-        }
-        latch.await();
-
-        httpClient.stop();
-        long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - before);
-        LOG.info("Stopped client; ran for " + elapsedSeconds + " seconds");
-    }
-
-    private void runLoadGenerator(int count, URI uri) throws Exception
+    private void runLoadGenerator(URI uri, Duration duration)
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .host(uri.getHost())
             .port(uri.getPort())
-            .runFor(3, TimeUnit.MINUTES)
+            .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(1)
             .resource(new Resource("/"))
             .rateRampUpPeriod(5);
@@ -213,7 +170,6 @@ public class SslPerfTest implements Serializable
             {
                 LOG.info("load generation failure", f);
             }
-
         }).join();
     }
 }
