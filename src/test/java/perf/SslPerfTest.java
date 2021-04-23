@@ -49,7 +49,7 @@ public class SslPerfTest implements Serializable
     {
         System.setProperty("jetty.orchestrator.skipCleanup", "false");
 
-        boolean useLoadGenerator = Boolean.getBoolean("perf.useLoadGenerator"))
+        boolean useLoadGenerator = Boolean.getBoolean("perf.useLoadGenerator");
         if (useLoadGenerator) LOG.info("Use loadgenerator");
 
 
