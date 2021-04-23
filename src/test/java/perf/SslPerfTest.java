@@ -40,8 +40,8 @@ public class SslPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(SslPerfTest.class);
 
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(10);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(20);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     @Test
     public void testSslPerf() throws Exception
