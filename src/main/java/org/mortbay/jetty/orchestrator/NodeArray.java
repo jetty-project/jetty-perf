@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.mortbay.jetty.orchestrator.configuration.LocalHostLauncher;
+import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.RpcClient;
 import org.mortbay.jetty.orchestrator.rpc.command.ExecuteNodeJobCommand;
 
@@ -54,7 +55,7 @@ public class NodeArray
         }
         else
         {
-            URI uri = URI.create("wtc:" + node.nodeId + "!/");
+            URI uri = URI.create(NodeFileSystemProvider.PREFIX + ":" + node.nodeId + "!/");
             return Paths.get(uri);
         }
     }

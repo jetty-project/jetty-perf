@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
 
@@ -76,16 +77,13 @@ public class LocalHostLauncher implements HostLauncher
             thread.join();
             thread = null;
 
-            if (!Boolean.getBoolean("jetty.orchestrator.skipCleanup"))
+            File rootPath = rootPathOf(hostId);
+            File parentPath = rootPath.getParentFile();
+            if (IOUtil.deltree(rootPath) && parentPath != null)
             {
-                File rootPath = rootPathOf(hostId);
-                File parentPath = rootPath.getParentFile();
-                if (IOUtil.deltree(rootPath) && parentPath != null)
-                {
-                    String[] files = parentPath.list();
-                    if (files != null && files.length == 0)
-                        IOUtil.deltree(parentPath);
-                }
+                String[] files = parentPath.list();
+                if (files != null && files.length == 0)
+                    IOUtil.deltree(parentPath);
             }
             hostId = null;
         }
@@ -93,13 +91,13 @@ public class LocalHostLauncher implements HostLauncher
 
     public static File rootPathOf(String hostId)
     {
-        return new File(System.getProperty("user.home") + "/.wtc/" + hostId);
+        return new File(System.getProperty("user.home") + "/." + NodeFileSystemProvider.PREFIX + "/" + hostId);
     }
 
     private void copyFile(String hostId, String filename, InputStream contents) throws Exception
     {
         File rootPath = rootPathOf(hostId);
-        File libPath = new File(rootPath, "lib");
+        File libPath = new File(rootPath, NodeProcess.CLASSPATH_FOLDER_NAME);
 
         File file = new File(libPath, filename);
         file.getParentFile().mkdirs();

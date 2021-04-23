@@ -40,6 +40,8 @@ import net.schmizz.sshj.sftp.SFTPClient;
 
 public class NodeFileSystemProvider extends FileSystemProvider
 {
+    public static final String PREFIX = "jco";
+
     private final Map<String, NodeFileSystem> fileSystems = new HashMap<>();
 
     public NodeFileSystemProvider()
@@ -162,7 +164,7 @@ public class NodeFileSystemProvider extends FileSystemProvider
     @Override
     public String getScheme()
     {
-        return "wtc";
+        return PREFIX;
     }
 
     @Override

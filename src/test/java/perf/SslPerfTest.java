@@ -46,8 +46,6 @@ public class SslPerfTest implements Serializable
     @Test
     public void testSslPerf() throws Exception
     {
-        System.setProperty("jetty.orchestrator.skipCleanup", "false");
-
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(

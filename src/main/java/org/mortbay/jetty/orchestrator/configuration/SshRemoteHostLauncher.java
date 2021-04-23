@@ -42,6 +42,7 @@ import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.FileSystemFile;
 import net.schmizz.sshj.xfer.LocalSourceFile;
+import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
 
@@ -137,7 +138,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 for (String classpathEntry : classpathEntries)
                 {
                     File cpFile = new File(classpathEntry);
-                    remoteClasspathEntries.add(".wtc/" + hostId + "/lib/" + cpFile.getName());
+                    remoteClasspathEntries.add("." + NodeFileSystemProvider.PREFIX + "/" + hostId + "/" + NodeProcess.CLASSPATH_FOLDER_NAME + "/" + cpFile.getName());
                     if (cpFile.isDirectory())
                         copyDir(sftpClient, hostId, cpFile, 1);
                     else
@@ -159,7 +160,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
             HashMap<String, Object> env = new HashMap<>();
             env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
-            fileSystem = FileSystems.newFileSystem(URI.create("wtc:" + hostId), env);
+            fileSystem = FileSystems.newFileSystem(URI.create(NodeFileSystemProvider.PREFIX + ":" + hostId), env);
 
             RemoteNodeHolder remoteNodeHolder = new RemoteNodeHolder(hostId, fileSystem, sshClient, forwardingConnectListener, forwarding, session, cmd);
             nodes.put(hostname, remoteNodeHolder);
@@ -188,7 +189,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
     private void copyFile(SFTPClient sftpClient, String hostId, String filename, LocalSourceFile localSourceFile) throws Exception
     {
-        String destFilename = ".wtc/" + hostId + "/lib/" + filename;
+        String destFilename = "." + NodeFileSystemProvider.PREFIX + "/" + hostId + "/" + NodeProcess.CLASSPATH_FOLDER_NAME + "/" + filename;
         String parentFilename = destFilename.substring(0, destFilename.lastIndexOf('/'));
 
         sftpClient.mkdirs(parentFilename);
@@ -265,15 +266,12 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             }
             IOUtil.close(command);
             IOUtil.close(session);
-            if (!Boolean.getBoolean("jetty.orchestrator.skipCleanup"))
+            try (Session session = sshClient.startSession())
             {
-                try (Session session = sshClient.startSession())
+                String folderName = "." + NodeFileSystemProvider.PREFIX + "/" + hostId;
+                try (Session.Command cmd = session.exec("rm -fr \"" + folderName + "\""))
                 {
-                    String folderName = ".wtc/" + hostId;
-                    try (Session.Command cmd = session.exec("rm -fr \"" + folderName + "\""))
-                    {
-                        cmd.join();
-                    }
+                    cmd.join();
                 }
             }
             IOUtil.close(forwardingConnectListener);
