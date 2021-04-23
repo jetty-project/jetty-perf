@@ -25,6 +25,7 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
+import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
@@ -46,14 +47,14 @@ public class SslPerfTest implements Serializable
         System.setProperty("jetty.orchestrator.skipCleanup", "false");
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            //.jvm(new Jvm(new JenkinsToolJdk("jdk11")))
+            .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
             .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
-                new Node("1", "localhost")
+                new Node("1", "load-master")
             )))
             .nodeArray(new SimpleNodeArrayConfiguration("loaders").topology(new NodeArrayTopology(
-                new Node("1", "localhost"),
-                new Node("2", "load-4"),
+                new Node("1", "load-1"),
+                new Node("2", "load-2"),
                 new Node("3", "load-3")
             )))
             .nodeArray(new SimpleNodeArrayConfiguration("probe").topology(new NodeArrayTopology(
