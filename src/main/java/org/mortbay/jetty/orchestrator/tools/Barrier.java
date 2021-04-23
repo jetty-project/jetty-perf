@@ -13,6 +13,7 @@
 
 package org.mortbay.jetty.orchestrator.tools;
 
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -22,11 +23,9 @@ public class Barrier
 {
     private final DistributedDoubleBarrier distributedDoubleBarrier;
     private final AtomicCounter atomicCounter;
-    private final int parties;
 
     public Barrier(CuratorFramework curator, String nodeId, String name, int parties)
     {
-        this.parties = parties;
         distributedDoubleBarrier = new DistributedDoubleBarrier(curator, "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name, parties);
         atomicCounter = new AtomicCounter(curator, nodeId, "Barrier/Counter", name, parties);
     }
@@ -36,27 +35,19 @@ public class Barrier
         return nodeId.split("/")[0];
     }
 
-    private int calculateArrivalIndex()
-    {
-        int arrivalIndex = (int)atomicCounter.decrementAndGet();
-        if (arrivalIndex == 0)
-            atomicCounter.set(parties);
-        return arrivalIndex;
-    }
-
     public int await() throws Exception
     {
+        if (atomicCounter.get() == 0L)
+            throw new BrokenBarrierException("Barrier is not cyclic");
         distributedDoubleBarrier.enter();
-        int index = calculateArrivalIndex();
-        distributedDoubleBarrier.leave();
-        return index;
+        return (int)atomicCounter.decrementAndGet();
     }
 
     public int await(long timeout, TimeUnit unit) throws Exception
     {
+        if (atomicCounter.get() == 0L)
+            throw new BrokenBarrierException("Barrier is not cyclic");
         distributedDoubleBarrier.enter(timeout, unit);
-        int index = calculateArrivalIndex();
-        distributedDoubleBarrier.leave();
-        return index;
+        return (int)atomicCounter.decrementAndGet();
     }
 }
