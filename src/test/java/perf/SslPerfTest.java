@@ -139,11 +139,11 @@ public class SslPerfTest implements Serializable
             cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // wait for all participants to be done
 
             // download servers FGs
-            download(loadersArray, new File("target/report/server"), "server.html");
+            download(serverArray, new File("target/report/server"), "server.html");
             // download loaders FGs
             download(loadersArray, new File("target/report/loader"), "loader.html");
             // download probes FGs
-            download(loadersArray, new File("target/report/probe"), "probe.html");
+            download(probeArray, new File("target/report/probe"), "probe.html");
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
