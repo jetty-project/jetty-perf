@@ -49,6 +49,10 @@ public class SslPerfTest implements Serializable
     {
         System.setProperty("jetty.orchestrator.skipCleanup", "false");
 
+        boolean useLoadGenerator = Boolean.getBoolean("perf.useLoadGenerator"))
+        if (useLoadGenerator) LOG.info("Use loadgenerator");
+
+
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
             .hostLauncher(new SshRemoteHostLauncher())
@@ -96,7 +100,11 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("warmup-loader.html", ProcessHandle.current().pid()))
                 {
-                    runClient(RUN_REQUEST_COUNT, serverUri);
+                    if(useLoadGenerator)
+                        runLoadGenerator(RUN_REQUEST_COUNT, serverUri);
+                    else
+                        runClient(RUN_REQUEST_COUNT, serverUri);
+
                 }
             }).get();
 
@@ -116,7 +124,10 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
-                    runClient(RUN_REQUEST_COUNT, serverUri);
+                    if(useLoadGenerator)
+                        runLoadGenerator(RUN_REQUEST_COUNT, serverUri);
+                    else
+                        runClient(RUN_REQUEST_COUNT, serverUri);
                 }
             }).get();
 
@@ -153,12 +164,6 @@ public class SslPerfTest implements Serializable
 
     private void runClient(int count, URI uri) throws Exception
     {
-        if (Boolean.getBoolean("perf.useLoadGenerator"))
-        {
-            LOG.info("Use loadgenerator");
-            runLoadGenerator(count, uri);
-            return;
-        }
         long before = System.nanoTime();
         LOG.info("Running client on URI " + uri + "; " + count + " requests...");
 
