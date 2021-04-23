@@ -100,9 +100,7 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("warmup-loader.html", ProcessHandle.current().pid()))
                 {
-                    if(useLoadGenerator)
-                        runLoadGenerator(RUN_REQUEST_COUNT, serverUri);
-                    else
+                    if(!useLoadGenerator)
                         runClient(RUN_REQUEST_COUNT, serverUri);
 
                 }
@@ -197,10 +195,10 @@ public class SslPerfTest implements Serializable
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .host(uri.getHost())
             .port(uri.getPort())
-            .runFor(1, TimeUnit.MINUTES)
+            .runFor(3, TimeUnit.MINUTES)
             .resourceRate(1)
             .resource(new Resource("/"))
-            .rateRampUpPeriod(2);
+            .rateRampUpPeriod(5);
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("load generator config: {}", loadGenerator);
