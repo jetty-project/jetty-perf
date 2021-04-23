@@ -118,7 +118,7 @@ public class SslPerfTest implements Serializable
                 }
                 tools.barrier("async-profiler-barrier", participantCount).await();
             });
-            
+
             probeArray.executeOnAll(tools ->
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html", ProcessHandle.current().pid()))
@@ -185,7 +185,7 @@ public class SslPerfTest implements Serializable
             }
         }).join();
     }
-    
+
     private void runProbeGenerator(URI uri, Duration duration)
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
