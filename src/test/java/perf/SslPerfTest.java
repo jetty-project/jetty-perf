@@ -8,6 +8,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +21,9 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.junit.jupiter.api.Test;
+import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
@@ -150,6 +153,11 @@ public class SslPerfTest implements Serializable
 
     private void runClient(int count, URI uri) throws Exception
     {
+        if (Boolean.getBoolean("perf.useLoadGenerator"))
+        {
+            runLoadGenerator(count, uri);
+            return;
+        }
         long before = System.nanoTime();
         LOG.info("Running client on URI " + uri + "; " + count + " requests...");
 
@@ -176,5 +184,32 @@ public class SslPerfTest implements Serializable
         httpClient.stop();
         long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - before);
         LOG.info("Stopped client; ran for " + elapsedSeconds + " seconds");
+    }
+
+    private void runLoadGenerator(int count, URI uri) throws Exception
+    {
+        LoadGenerator.Builder builder = LoadGenerator.builder()
+            .host(uri.getHost())
+            .port(uri.getPort())
+            .runFor(1, TimeUnit.MINUTES)
+            .resourceRate(1)
+            .resource(new Resource("/"))
+            .rateRampUpPeriod(2);
+
+        LoadGenerator loadGenerator = builder.build();
+        LOG.info("load generator config: {}", loadGenerator);
+        LOG.info("load generation begin");
+        CompletableFuture<Void> cf = loadGenerator.begin();
+        cf.whenComplete((x, f) -> {
+            if (f == null)
+            {
+                LOG.info("load generation complete");
+            }
+            else
+            {
+                LOG.info("load generation failure", f);
+            }
+
+        }).join();
     }
 }
