@@ -131,7 +131,7 @@ public class SslPerfTest implements Serializable
             });
 
             cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal server profiling can be stopped
+            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants profiling can be stopped
 
             // wait for all async profiler reports to be written
             serverFuture.get();
