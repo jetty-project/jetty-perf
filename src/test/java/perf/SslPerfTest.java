@@ -174,7 +174,7 @@ public class SslPerfTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(0)
             .resource(new Resource("/"))
-            .rateRampUpPeriod(5);
+            .rateRampUpPeriod(0);
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("load generator config: {}", loadGenerator);
@@ -202,7 +202,7 @@ public class SslPerfTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(5)
             .resource(new Resource("/"))
-            .rateRampUpPeriod(5);
+            .rateRampUpPeriod(0);
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("probe generator config: {}", loadGenerator);
