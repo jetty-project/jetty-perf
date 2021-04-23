@@ -150,10 +150,12 @@ public class SslPerfTest implements Serializable
     private void runLoadGenerator(URI uri, Duration duration)
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
+            .scheme(uri.getScheme())
             .host(uri.getHost())
             .port(uri.getPort())
+            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .resourceRate(1)
+            .resourceRate(0)
             .resource(new Resource("/"))
             .rateRampUpPeriod(5);
 
