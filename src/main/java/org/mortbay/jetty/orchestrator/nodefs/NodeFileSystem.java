@@ -166,9 +166,16 @@ public class NodeFileSystem extends FileSystem
     {
         String sftpPath = ".wtc/" + path.getNodeId() + path.getRealPath();
         InMemoryFile inMemoryFile = new InMemoryFile();
-        sftpClient.get(sftpPath, inMemoryFile);
-        byte[] data = inMemoryFile.getOutputStream().toByteArray();
-        return new ByteArrayInputStream(data);
+        try
+        {
+            sftpClient.get(sftpPath, inMemoryFile);
+            byte[] data = inMemoryFile.getOutputStream().toByteArray();
+            return new ByteArrayInputStream(data);
+        }
+        catch (IOException e)
+        {
+            throw new IOException("Error opening InputStream for path " + path, e);
+        }
     }
 
     @Override
