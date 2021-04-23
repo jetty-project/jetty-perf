@@ -2,6 +2,7 @@ package perf;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URI;
@@ -24,7 +25,6 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
-import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
@@ -53,12 +53,12 @@ public class SslPerfTest implements Serializable
             )))
             .nodeArray(new SimpleNodeArrayConfiguration("loaders").topology(new NodeArrayTopology(
                 new Node("1", "localhost"),
-                new Node("2", "localhost"),
-                new Node("3", "localhost")
+                new Node("2", "load-4"),
+                new Node("3", "load-3")
             )))
-//            .nodeArray(new SimpleNodeArrayConfiguration("probe").topology(new NodeArrayTopology(
-//                new Node("1", "load-4")
-//            )))
+            .nodeArray(new SimpleNodeArrayConfiguration("probe").topology(new NodeArrayTopology(
+                new Node("1", "load-4")
+            )))
             ;
 
         try (Cluster cluster = new Cluster(cfg))
@@ -66,6 +66,8 @@ public class SslPerfTest implements Serializable
             LOG.info("Initializing...");
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
+            NodeArray probeArray = cluster.nodeArray("probe");
+            int participantCount = cfg.nodeArrays().stream().mapToInt(na -> na.topology().nodes().size()).sum() + 1; // + 1 b/c of the test itself
 
             serverArray.executeOnAll(tools ->
             {
@@ -90,10 +92,7 @@ public class SslPerfTest implements Serializable
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
             loadersArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("warmup-loader.html", ProcessHandle.current().pid()))
-                {
-                    runLoadGenerator(serverUri, WARMUP_DURATION);
-                }
+                runLoadGenerator(serverUri, WARMUP_DURATION);
             }).get();
 
             LOG.info("Running...");
@@ -104,48 +103,57 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("server-async-profiler-barrier", 2).await();
-                    tools.barrier("server-async-profiler-barrier", 2).await();
+                    tools.barrier("async-profiler-barrier", participantCount).await();
                 }
+                tools.barrier("async-profiler-barrier", participantCount).await();
             });
-            cluster.tools().barrier("server-async-profiler-barrier", 2).await(); // wait for the async profiler on the server
 
             loadersArray.executeOnAll(tools ->
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
+                    tools.barrier("async-profiler-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION);
                 }
-            }).get();
-
-            cluster.tools().barrier("server-async-profiler-barrier", 2).await(); // stop the async profiler on the server
-            serverAsyncProfiler.get();
-
-            // download server FG
+                tools.barrier("async-profiler-barrier", participantCount).await();
+            });
+            
+            probeArray.executeOnAll(tools ->
             {
-                Path serverRootPath = serverArray.rootPathOf("1");
-                File reportFolder = new File("target/report/server");
-                reportFolder.mkdirs();
-                try (OutputStream os = new FileOutputStream(new File(reportFolder, "server.html")))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html", ProcessHandle.current().pid()))
                 {
-                    Files.copy(serverRootPath.resolve("server.html"), os);
+                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    runProbeGenerator(serverUri, RUN_DURATION);
                 }
-            }
+                tools.barrier("async-profiler-barrier", participantCount).await();
+            });
 
+            cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // signal all participants to start
+            cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // wait for all participants to be done
+
+            // download servers FGs
+            download(loadersArray, new File("target/report/server"), "server.html");
             // download loaders FGs
-            for (String id : loadersArray.ids())
-            {
-                Path loaderRootPath = loadersArray.rootPathOf(id);
-                File reportFolder = new File("target/report/loader", id);
-                reportFolder.mkdirs();
-                try (OutputStream os = new FileOutputStream(new File(reportFolder, "loader.html")))
-                {
-                    Files.copy(loaderRootPath.resolve("loader.html"), os);
-                }
-            }
+            download(loadersArray, new File("target/report/loader"), "loader.html");
+            // download probes FGs
+            download(loadersArray, new File("target/report/probe"), "probe.html");
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
+        }
+    }
+
+    private void download(NodeArray nodeArray, File targetFolder, String filename) throws IOException
+    {
+        for (String id : nodeArray.ids())
+        {
+            Path loaderRootPath = nodeArray.rootPathOf(id);
+            File reportFolder = new File(targetFolder, id);
+            reportFolder.mkdirs();
+            try (OutputStream os = new FileOutputStream(new File(reportFolder, filename)))
+            {
+                Files.copy(loaderRootPath.resolve(filename), os);
+            }
         }
     }
 
@@ -173,6 +181,34 @@ public class SslPerfTest implements Serializable
             else
             {
                 LOG.info("load generation failure", f);
+            }
+        }).join();
+    }
+    
+    private void runProbeGenerator(URI uri, Duration duration)
+    {
+        LoadGenerator.Builder builder = LoadGenerator.builder()
+            .scheme(uri.getScheme())
+            .host(uri.getHost())
+            .port(uri.getPort())
+            .sslContextFactory(new SslContextFactory.Client(true))
+            .runFor(duration.toSeconds(), TimeUnit.SECONDS)
+            .resourceRate(5)
+            .resource(new Resource("/"))
+            .rateRampUpPeriod(5);
+
+        LoadGenerator loadGenerator = builder.build();
+        LOG.info("probe generator config: {}", loadGenerator);
+        LOG.info("probe generation begin");
+        CompletableFuture<Void> cf = loadGenerator.begin();
+        cf.whenComplete((x, f) -> {
+            if (f == null)
+            {
+                LOG.info("probe generation complete");
+            }
+            else
+            {
+                LOG.info("probe generation failure", f);
             }
         }).join();
     }
