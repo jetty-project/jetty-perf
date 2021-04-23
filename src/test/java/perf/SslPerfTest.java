@@ -46,15 +46,15 @@ public class SslPerfTest implements Serializable
         System.setProperty("jetty.orchestrator.skipCleanup", "false");
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
+            //.jvm(new Jvm(new JenkinsToolJdk("jdk11")))
             .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
-                new Node("1", "load-master")
+                new Node("1", "localhost")
             )))
             .nodeArray(new SimpleNodeArrayConfiguration("loaders").topology(new NodeArrayTopology(
-                new Node("1", "load-1"),
-                new Node("2", "load-2"),
-                new Node("3", "load-3")
+                new Node("1", "localhost"),
+                new Node("2", "localhost"),
+                new Node("3", "localhost")
             )))
 //            .nodeArray(new SimpleNodeArrayConfiguration("probe").topology(new NodeArrayTopology(
 //                new Node("1", "load-4")
@@ -105,8 +105,10 @@ public class SslPerfTest implements Serializable
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
                     tools.barrier("server-async-profiler-barrier", 2).await();
+                    tools.barrier("server-async-profiler-barrier", 2).await();
                 }
             });
+            cluster.tools().barrier("server-async-profiler-barrier", 2).await(); // wait for the async profiler on the server
 
             loadersArray.executeOnAll(tools ->
             {
