@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.net.URL;
 
 import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
+import org.codehaus.plexus.logging.slf4j.Slf4jLogger;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ public class AsyncProfiler implements AutoCloseable
                 IOUtil.copy(is, os);
             }
             TarGZipUnArchiver ua = new TarGZipUnArchiver(tarGzFile);
+            ua.enableLogging(new Slf4jLogger(org.codehaus.plexus.logging.Logger.LEVEL_INFO, LOG));
             ua.setDestDirectory(new File("."));
             ua.extract();
         }
