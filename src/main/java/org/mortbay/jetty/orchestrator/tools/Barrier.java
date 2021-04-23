@@ -13,7 +13,6 @@
 
 package org.mortbay.jetty.orchestrator.tools;
 
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -23,14 +22,12 @@ public class Barrier
 {
     private final DistributedDoubleBarrier distributedDoubleBarrier;
     private final AtomicCounter atomicCounter;
-    private final CuratorFramework curator;
-    private final String barrierPath;
+    private final int parties;
 
     public Barrier(CuratorFramework curator, String nodeId, String name, int parties)
     {
-        this.curator = curator;
-        barrierPath = "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name;
-        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, barrierPath, parties);
+        this.parties = parties;
+        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name, parties);
         atomicCounter = new AtomicCounter(curator, nodeId, "Barrier", name + "/Counter", parties);
     }
 
@@ -41,23 +38,21 @@ public class Barrier
 
     public int await() throws Exception
     {
-        if (atomicCounter.get() == 0L)
-            throw new BrokenBarrierException("Barrier is not cyclic");
-        distributedDoubleBarrier.enter();
         int index = (int)atomicCounter.decrementAndGet();
+        distributedDoubleBarrier.enter();
         if (index == 0)
-            curator.delete().deletingChildrenIfNeeded().forPath(barrierPath);
+            atomicCounter.set(parties);
+        distributedDoubleBarrier.leave();
         return index;
     }
 
     public int await(long timeout, TimeUnit unit) throws Exception
     {
-        if (atomicCounter.get() == 0L)
-            throw new BrokenBarrierException("Barrier is not cyclic");
-        distributedDoubleBarrier.enter(timeout, unit);
         int index = (int)atomicCounter.decrementAndGet();
+        distributedDoubleBarrier.enter(timeout, unit);
         if (index == 0)
-            curator.delete().deletingChildrenIfNeeded().forPath(barrierPath);
+            atomicCounter.set(parties);
+        distributedDoubleBarrier.leave(timeout, unit);
         return index;
     }
 }
