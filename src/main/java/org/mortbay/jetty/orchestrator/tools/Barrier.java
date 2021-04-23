@@ -23,11 +23,15 @@ public class Barrier
 {
     private final DistributedDoubleBarrier distributedDoubleBarrier;
     private final AtomicCounter atomicCounter;
+    private final CuratorFramework curator;
+    private final String barrierPath;
 
     public Barrier(CuratorFramework curator, String nodeId, String name, int parties)
     {
-        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name, parties);
-        atomicCounter = new AtomicCounter(curator, nodeId, "Barrier/Counter", name, parties);
+        this.curator = curator;
+        barrierPath = "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name;
+        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, barrierPath, parties);
+        atomicCounter = new AtomicCounter(curator, nodeId, "Barrier", name + "/Counter", parties);
     }
 
     private static String clusterIdOf(String nodeId)
@@ -40,7 +44,10 @@ public class Barrier
         if (atomicCounter.get() == 0L)
             throw new BrokenBarrierException("Barrier is not cyclic");
         distributedDoubleBarrier.enter();
-        return (int)atomicCounter.decrementAndGet();
+        int index = (int)atomicCounter.decrementAndGet();
+        if (index == 0)
+            curator.delete().deletingChildrenIfNeeded().forPath(barrierPath);
+        return index;
     }
 
     public int await(long timeout, TimeUnit unit) throws Exception
@@ -48,6 +55,9 @@ public class Barrier
         if (atomicCounter.get() == 0L)
             throw new BrokenBarrierException("Barrier is not cyclic");
         distributedDoubleBarrier.enter(timeout, unit);
-        return (int)atomicCounter.decrementAndGet();
+        int index = (int)atomicCounter.decrementAndGet();
+        if (index == 0)
+            curator.delete().deletingChildrenIfNeeded().forPath(barrierPath);
+        return index;
     }
 }
