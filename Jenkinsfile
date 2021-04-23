@@ -7,6 +7,12 @@ pipeline {
       jdk 'jdk11'
       jdk 'jdk16'
     }
+    options {
+      buildDiscarder logRotator( numToKeepStr: '30' )
+    }
+    parameters {
+      string( defaultValue: '*', description: 'Junit test to run -Dtest=', name: 'TEST_TO_RUN' )
+    }
     stages {
         stage('install load-1') {
           agent { node { label 'load-1' } }
@@ -56,7 +62,7 @@ def mavenBuild(jdk, cmdline, mvnName) {
                "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
         configFileProvider(
                 [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-          sh "mvn --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e $cmdline"
+          sh "mvn --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e $cmdline -Dtest=${TEST_TO_RUN}"
         }
       }
     }
