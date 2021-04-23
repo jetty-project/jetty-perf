@@ -106,7 +106,7 @@ public class SslPerfTest implements Serializable
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    tools.barrier("run-end-barrier", participantCount).await();
+                    tools.barrier("run-end-barrier", 2).await();
                 }
             });
 
@@ -116,7 +116,6 @@ public class SslPerfTest implements Serializable
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION);
-                    tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
@@ -126,12 +125,11 @@ public class SslPerfTest implements Serializable
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION);
-                    tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
             cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("run-end-barrier", participantCount).await(); // wait for all participants to be done
+            cluster.tools().barrier("run-end-barrier", 2).await(); // signal server profiling can be stopped
 
             // wait for all async profiler reports to be written
             serverFuture.get();
