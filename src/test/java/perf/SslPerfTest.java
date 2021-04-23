@@ -32,7 +32,7 @@ import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
-import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
+import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,6 @@ public class SslPerfTest implements Serializable
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
-            .hostLauncher(new SshRemoteHostLauncher())
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
@@ -105,39 +104,43 @@ public class SslPerfTest implements Serializable
             LOG.info("Running...");
             long before = System.nanoTime();
 
-            // start the async profiler on the server
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
+                Barrier barrier = tools.barrier("async-profiler-barrier", participantCount);
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("async-profiler-barrier", participantCount).await();
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    barrier.await();
+                    barrier.await();
                 }
             });
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
+                Barrier barrier = tools.barrier("async-profiler-barrier", participantCount);
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    barrier.await();
                     runLoadGenerator(serverUri, RUN_DURATION);
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    barrier.await();
                 }
             });
 
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
+                Barrier barrier = tools.barrier("async-profiler-barrier", participantCount);
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    barrier.await();
                     runProbeGenerator(serverUri, RUN_DURATION);
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    barrier.await();
                 }
             });
 
-            cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // wait for all participants to be done
+            Barrier barrier = cluster.tools().barrier("async-profiler-barrier", participantCount);
+            barrier.await(); // signal all participants to start
+            barrier.await(); // wait for all participants to be done
 
+            // wait for all async profiler reports to be written
             serverFuture.get();
             loadersFuture.get();
             probeFuture.get();
