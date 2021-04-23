@@ -42,7 +42,6 @@ public class Barrier
         distributedDoubleBarrier.enter();
         if (index == 0)
             atomicCounter.set(parties);
-        distributedDoubleBarrier.leave();
         return index;
     }
 
@@ -52,7 +51,6 @@ public class Barrier
         distributedDoubleBarrier.enter(timeout, unit);
         if (index == 0)
             atomicCounter.set(parties);
-        distributedDoubleBarrier.leave(timeout, unit);
         return index;
     }
 }

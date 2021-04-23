@@ -105,8 +105,8 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("async-profiler-barrier", participantCount).await();
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    tools.barrier("run-start-barrier", participantCount).await();
+                    tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
@@ -114,9 +114,9 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION);
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
@@ -124,14 +124,14 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html", ProcessHandle.current().pid()))
                 {
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION);
-                    tools.barrier("async-profiler-barrier", participantCount).await();
+                    tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
-            cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("async-profiler-barrier", participantCount).await(); // wait for all participants to be done
+            cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
+            cluster.tools().barrier("run-end-barrier", participantCount).await(); // wait for all participants to be done
 
             // wait for all async profiler reports to be written
             serverFuture.get();
