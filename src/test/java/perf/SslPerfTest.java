@@ -112,7 +112,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html"))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html"); CpuMonitor cpuMonitor = new CpuMonitor("cpu.txt"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -121,7 +121,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html"))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html"); CpuMonitor cpuMonitor = new CpuMonitor("cpu.txt"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION, "loader.dat");
@@ -131,7 +131,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html"))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html"); CpuMonitor cpuMonitor = new CpuMonitor("cpu.txt"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION, "probe.dat");
@@ -148,12 +148,12 @@ public class SslPerfTest implements Serializable
             probeFuture.get();
 
             // download servers FGs
-            download(serverArray, new File("target/report/server"), "server.html");
+            download(serverArray, new File("target/report/server"), "server.html", "cpu.txt");
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat");
+            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat", "cpu.txt");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.dat");
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat");
+            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat", "cpu.txt");
             xformHisto(probeArray, new File("target/report/probe"), "probe.dat");
 
             long after = System.nanoTime();
