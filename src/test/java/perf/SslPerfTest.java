@@ -134,7 +134,7 @@ public class SslPerfTest implements Serializable
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION);
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.dat");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -152,8 +152,9 @@ public class SslPerfTest implements Serializable
             // download loaders FGs & transform histograms
             download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.dat");
-            // download probes FGs
-            download(probeArray, new File("target/report/probe"), "probe.html");
+            // download probes FGs & transform histograms
+            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat");
+            xformHisto(probeArray, new File("target/report/probe"), "probe.dat");
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
@@ -278,7 +279,7 @@ public class SslPerfTest implements Serializable
         }).join();
     }
 
-    private void runProbeGenerator(URI uri, Duration duration)
+    private void runProbeGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -288,6 +289,7 @@ public class SslPerfTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(5)
             .resource(new Resource("/"))
+            .resourceListener(new ResponseTimeListener(histogramFilename))
             .rateRampUpPeriod(0);
 
         LoadGenerator loadGenerator = builder.build();
