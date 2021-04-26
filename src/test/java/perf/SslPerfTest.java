@@ -1,18 +1,10 @@
 package perf;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
+import org.HdrHistogram.AbstractHistogram;
+import org.HdrHistogram.Histogram;
+import org.HdrHistogram.HistogramLogReader;
+import org.HdrHistogram.HistogramLogWriter;
+import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -34,6 +26,23 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class SslPerfTest implements Serializable
 {
@@ -115,7 +124,7 @@ public class SslPerfTest implements Serializable
                 try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(serverUri, RUN_DURATION);
+                    runLoadGenerator(serverUri, RUN_DURATION, "loader.dat");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -140,8 +149,9 @@ public class SslPerfTest implements Serializable
 
             // download servers FGs
             download(serverArray, new File("target/report/server"), "server.html");
-            // download loaders FGs
-            download(loadersArray, new File("target/report/loader"), "loader.html");
+            // download loaders FGs & transform histograms
+            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat");
+            xformHisto(loadersArray, new File("target/report/loader"), "loader.dat");
             // download probes FGs
             download(probeArray, new File("target/report/probe"), "probe.html");
 
@@ -150,21 +160,91 @@ public class SslPerfTest implements Serializable
         }
     }
 
-    private void download(NodeArray nodeArray, File targetFolder, String filename) throws IOException
+    private void download(NodeArray nodeArray, File targetFolder, String... filenames) throws IOException
     {
         for (String id : nodeArray.ids())
         {
             Path loaderRootPath = nodeArray.rootPathOf(id);
             File reportFolder = new File(targetFolder, id);
             reportFolder.mkdirs();
-            try (OutputStream os = new FileOutputStream(new File(reportFolder, filename)))
+            for (String filename : filenames)
             {
-                Files.copy(loaderRootPath.resolve(filename), os);
+                try (OutputStream os = new FileOutputStream(new File(reportFolder, filename)))
+                {
+                    Files.copy(loaderRootPath.resolve(filename), os);
+                }
             }
         }
     }
 
-    private void runLoadGenerator(URI uri, Duration duration)
+    private void xformHisto(NodeArray nodeArray, File targetFolder, String filename) throws IOException
+    {
+        for (String id : nodeArray.ids())
+        {
+            File reportFolder = new File(targetFolder, id);
+            String inputFileName = new File(reportFolder, filename).getPath();
+
+            HistogramLogReader reader = new HistogramLogReader(inputFileName);
+            Histogram total = new Histogram(3);
+            while (reader.hasNext())
+            {
+                total.add((AbstractHistogram) reader.nextIntervalHistogram());
+            }
+            reader.close();
+
+            try (PrintStream ps = new PrintStream(new FileOutputStream(inputFileName + ".hgrm")))
+            {
+                total.outputPercentileDistribution(ps, 1000.0);
+            }
+        }
+    }
+
+    private static class ResponseTimeListener implements Resource.NodeListener, LoadGenerator.CompleteListener
+    {
+        private final Recorder recorder = new Recorder(3);
+        private final Timer timer = new Timer();
+        private final HistogramLogWriter writer;
+
+        private ResponseTimeListener(String histogramFilename) throws FileNotFoundException
+        {
+            writer = new HistogramLogWriter(histogramFilename);
+            writer.setBaseTime(System.currentTimeMillis());
+            writer.outputBaseTime(System.currentTimeMillis());
+            timer.schedule(new TimerTask()
+            {
+                private final Histogram h = new Histogram(3);
+                @Override
+                public void run()
+                {
+                    recorder.getIntervalHistogramInto(h);
+                    writer.outputIntervalHistogram(h);
+                    h.reset();
+                }
+            }, 1000, 1000);
+        }
+
+        @Override
+        public void onResourceNode(Resource.Info info)
+        {
+            long responseTime = info.getResponseTime() - info.getRequestTime();
+            recorder.recordValue(responseTime);
+        }
+
+        @Override
+        public void onComplete(LoadGenerator generator)
+        {
+            timer.cancel();
+            writer.outputIntervalHistogram(recorder.getIntervalHistogram());
+            writer.close();
+        }
+    }
+
+    private void runLoadGenerator(URI uri, Duration duration) throws FileNotFoundException
+    {
+        runLoadGenerator(uri, duration, null);
+    }
+
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -175,6 +255,12 @@ public class SslPerfTest implements Serializable
             .resourceRate(0)
             .resource(new Resource("/"))
             .rateRampUpPeriod(0);
+
+        if (histogramFilename != null)
+        {
+            ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
+            builder.resourceListener(responseTimeListener);
+        }
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("load generator config: {}", loadGenerator);
