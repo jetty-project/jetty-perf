@@ -103,7 +103,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html", ProcessHandle.current().pid()))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -112,7 +112,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html", ProcessHandle.current().pid()))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION);
@@ -122,7 +122,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html", ProcessHandle.current().pid()))
+                try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html"))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION);
@@ -131,7 +131,7 @@ public class SslPerfTest implements Serializable
             });
 
             cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants profiling can be stopped
+            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants that profiling can be stopped
 
             // wait for all async profiler reports to be written
             serverFuture.get();

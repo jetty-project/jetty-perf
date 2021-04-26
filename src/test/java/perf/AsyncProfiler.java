@@ -21,6 +21,11 @@ public class AsyncProfiler implements AutoCloseable
     private final String flamegraphFilename;
     private final long pid;
 
+    public AsyncProfiler(String flamegraphFilename) throws Exception
+    {
+        this(flamegraphFilename, ProcessHandle.current().pid());
+    }
+
     public AsyncProfiler(String flamegraphFilename, long pid) throws Exception
     {
         this.flamegraphFilename = flamegraphFilename;
