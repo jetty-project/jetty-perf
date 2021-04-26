@@ -55,7 +55,7 @@ public class SslPerfTest implements Serializable
     public void testSslPerf() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk11")))
+            .jvm(new Jvm(new JenkinsToolJdk("jdk11"), "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
