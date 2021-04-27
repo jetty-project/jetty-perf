@@ -1,15 +1,17 @@
-package perf;
+package perf.monitoring;
 
 import java.io.File;
 import java.io.IOException;
 
-public class CpuMonitor implements AutoCloseable
+class CpuMonitor implements AutoCloseable
 {
+    public static final String DEFAULT_FILENAME = "cpu.txt";
+
     private final Process process;
 
-    public CpuMonitor(String filename) throws IOException
+    public CpuMonitor() throws IOException
     {
-        this(filename, 10);
+        this(DEFAULT_FILENAME, 10);
     }
 
     public CpuMonitor(String filename, int interval) throws IOException

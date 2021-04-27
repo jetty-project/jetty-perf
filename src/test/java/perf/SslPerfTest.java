@@ -26,6 +26,8 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import perf.monitoring.AsyncProfiler;
+import perf.monitoring.LinuxMonitor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,6 +41,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
@@ -112,7 +116,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("server.html"); CpuMonitor cpuMonitor = new CpuMonitor("cpu.txt"))
+                try (AsyncProfiler p = new AsyncProfiler("server.html"); LinuxMonitor m = new LinuxMonitor())
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -121,7 +125,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("loader.html"); CpuMonitor cpuMonitor = new CpuMonitor("cpu.txt"))
+                try (AsyncProfiler p = new AsyncProfiler("loader.html"); LinuxMonitor m = new LinuxMonitor())
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION, "loader.dat");
@@ -131,7 +135,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler asyncProfiler = new AsyncProfiler("probe.html"); CpuMonitor cpuMonitor = new CpuMonitor("cpu.txt"))
+                try (AsyncProfiler p = new AsyncProfiler("probe.html"); LinuxMonitor m = new LinuxMonitor())
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION, "probe.dat");
@@ -148,13 +152,16 @@ public class SslPerfTest implements Serializable
             probeFuture.get();
 
             // download servers FGs
-            download(serverArray, new File("target/report/server"), "server.html", "cpu.txt");
+            download(serverArray, new File("target/report/server"), "server.html");
+            download(serverArray, new File("target/report/server"), LinuxMonitor.DEFAULT_FILENAMES);
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat", "cpu.txt");
+            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.dat");
+            download(loadersArray, new File("target/report/loader"), LinuxMonitor.DEFAULT_FILENAMES);
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat", "cpu.txt");
+            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat");
             xformHisto(probeArray, new File("target/report/probe"), "probe.dat");
+            download(probeArray, new File("target/report/probe"), LinuxMonitor.DEFAULT_FILENAMES);
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
@@ -162,6 +169,11 @@ public class SslPerfTest implements Serializable
     }
 
     private void download(NodeArray nodeArray, File targetFolder, String... filenames) throws IOException
+    {
+        download(nodeArray, targetFolder, Arrays.asList(filenames));
+    }
+
+    private void download(NodeArray nodeArray, File targetFolder, List<String> filenames) throws IOException
     {
         for (String id : nodeArray.ids())
         {
@@ -185,13 +197,14 @@ public class SslPerfTest implements Serializable
             File reportFolder = new File(targetFolder, id);
             String inputFileName = new File(reportFolder, filename).getPath();
 
-            HistogramLogReader reader = new HistogramLogReader(inputFileName);
             Histogram total = new Histogram(3);
-            while (reader.hasNext())
+            try (HistogramLogReader reader = new HistogramLogReader(inputFileName))
             {
-                total.add((AbstractHistogram) reader.nextIntervalHistogram());
+                while (reader.hasNext())
+                {
+                    total.add((AbstractHistogram)reader.nextIntervalHistogram());
+                }
             }
-            reader.close();
 
             try (PrintStream ps = new PrintStream(new FileOutputStream(inputFileName + ".hgrm")))
             {
