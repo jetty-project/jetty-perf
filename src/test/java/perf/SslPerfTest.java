@@ -279,6 +279,7 @@ public class SslPerfTest implements Serializable
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
+            .threads(2)
             .resourceRate(0)
             .resource(new Resource("/"))
             .rateRampUpPeriod(0);
