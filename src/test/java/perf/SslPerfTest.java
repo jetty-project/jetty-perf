@@ -5,6 +5,8 @@ import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramLogReader;
 import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
+import org.eclipse.jetty.jmx.ConnectorServer;
+import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -36,6 +38,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -47,6 +50,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.management.remote.JMXServiceURL;
 
 public class SslPerfTest implements Serializable
 {
@@ -59,7 +63,7 @@ public class SslPerfTest implements Serializable
     public void testSslPerf() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk11"), "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints", "-Xlog:gc*:file=gc.log:time,level,tags"))
+            .jvm(new Jvm(new JenkinsToolJdk("jdk11"), "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints", "-Xlog:gc*:file=gc.log:time,level,tags", "-Djava.rmi.server.hostname=localhost"))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
@@ -84,6 +88,13 @@ public class SslPerfTest implements Serializable
             serverArray.executeOnAll(tools ->
             {
                 Server server = new Server();
+
+                MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
+                server.addBean(mbContainer);
+                server.addBean(LoggerFactory.getILoggerFactory());
+
+                ConnectorServer connectorServer = new ConnectorServer(new JMXServiceURL("service:jmx:rmi://localhost:1099/jndi/rmi://localhost:1099/jmxrmi"), "org.eclipse.jetty:name=rmiconnectorserver");
+                server.addBean(connectorServer);
 
                 HttpConfiguration httpConfiguration = new HttpConfiguration();
                 SecureRequestCustomizer customizer = new SecureRequestCustomizer();
