@@ -49,7 +49,16 @@ pipeline {
                                                              usernameVariable: '')]) {     */
                 //sh "mkdir ~/.ssh"
                 //sh 'cp $SSH_KEY_FOR_JENKINS ~/.ssh/id_rsa'
-                mavenBuild( "jdk11", "clean verify", "maven3")
+                withEnv(["JAVA_HOME=${ tool "jdk11" }",
+                         "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
+                         "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                  configFileProvider(
+                          [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e $cmdline "
+                    + "-Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dloadgenerator.version=${LOADGENERATOR_VERSION}"
+                  }
+                }
+                //mavenBuild( "jdk11", "clean verify", "maven3")
                 //}
             }
         }
