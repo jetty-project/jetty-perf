@@ -59,7 +59,7 @@ public class SslPerfTest implements Serializable
     public void testSslPerf() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk11"), "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"))
+            .jvm(new Jvm(new JenkinsToolJdk("jdk11"), "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints", "-Xlog:gc*:file=gc.log:time,level,tags"))
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
@@ -152,14 +152,14 @@ public class SslPerfTest implements Serializable
             probeFuture.get();
 
             // download servers FGs
-            download(serverArray, new File("target/report/server"), "server.html");
+            download(serverArray, new File("target/report/server"), "server.html", "gc.log");
             download(serverArray, new File("target/report/server"), LinuxMonitor.DEFAULT_FILENAMES);
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat");
+            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat", "gc.log");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.dat");
             download(loadersArray, new File("target/report/loader"), LinuxMonitor.DEFAULT_FILENAMES);
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat");
+            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat", "gc.log");
             xformHisto(probeArray, new File("target/report/probe"), "probe.dat");
             download(probeArray, new File("target/report/probe"), LinuxMonitor.DEFAULT_FILENAMES);
 
