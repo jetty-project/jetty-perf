@@ -116,8 +116,8 @@ public class SslPerfTest implements Serializable
 
                 ServerConnector serverConnector = new ServerConnector(server, ssl, http);
                 serverConnector.setPort(8443);
+                serverConnector.addBean(new LatencyRecordingChannelListener("server.dat"));
                 server.addConnector(serverConnector);
-                server.addBean(new LatencyRecordingChannelListener("server.dat"));
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
             }).get();
