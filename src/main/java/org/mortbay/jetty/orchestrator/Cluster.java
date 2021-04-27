@@ -45,6 +45,7 @@ public class Cluster implements AutoCloseable
     private final Map<String, Host> hosts = new HashMap<>(); // keyed by HostId
     private TestingServer zkServer;
     private CuratorFramework curator;
+    private ClusterTools clusterTools;
 
     public Cluster(ClusterConfiguration configuration) throws Exception
     {
@@ -83,6 +84,7 @@ public class Cluster implements AutoCloseable
         curator = CuratorFrameworkFactory.newClient(connectString, new RetryNTimes(0, 0));
         curator.start();
         curator.blockUntilConnected();
+        clusterTools = new ClusterTools(curator, hostIdFor(LocalHostLauncher.HOSTNAME));
 
         Map<String, Map.Entry<String, RpcClient>> hostClients = new HashMap<>();
         List<String> hostnames = configuration.nodeArrays().stream()
@@ -147,7 +149,7 @@ public class Cluster implements AutoCloseable
 
     public ClusterTools tools()
     {
-        return new ClusterTools(curator, hostIdFor(LocalHostLauncher.HOSTNAME));
+        return clusterTools;
     }
 
     @Override

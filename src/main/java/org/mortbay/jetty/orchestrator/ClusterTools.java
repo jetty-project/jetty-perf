@@ -13,6 +13,9 @@
 
 package org.mortbay.jetty.orchestrator;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.mortbay.jetty.orchestrator.tools.AtomicCounter;
 import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.apache.curator.framework.CuratorFramework;
@@ -21,6 +24,7 @@ public class ClusterTools
 {
     private final CuratorFramework curator;
     private final String nodeId;
+    private final ConcurrentMap<String, Object> nodeEnvironment = new ConcurrentHashMap<>();
 
     public ClusterTools(CuratorFramework curator, String nodeId)
     {
@@ -36,5 +40,10 @@ public class ClusterTools
     public AtomicCounter atomicCounter(String name, long initialValue)
     {
         return new AtomicCounter(curator, nodeId, name, initialValue);
+    }
+
+    public ConcurrentMap<String, Object> nodeEnvironment()
+    {
+        return nodeEnvironment;
     }
 }

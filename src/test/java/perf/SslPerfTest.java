@@ -7,12 +7,15 @@ import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
+import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.load.generator.LoadGenerator;
@@ -46,9 +49,11 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import javax.management.remote.JMXServiceURL;
 
@@ -88,6 +93,7 @@ public class SslPerfTest implements Serializable
             serverArray.executeOnAll(tools ->
             {
                 Server server = new Server();
+                tools.nodeEnvironment().put(Server.class.getName(), server);
 
                 MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
                 server.addBean(mbContainer);
@@ -111,6 +117,7 @@ public class SslPerfTest implements Serializable
                 ServerConnector serverConnector = new ServerConnector(server, ssl, http);
                 serverConnector.setPort(8443);
                 server.addConnector(serverConnector);
+                server.addBean(new LatencyRecordingChannelListener("server.dat"));
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
             }).get();
@@ -131,6 +138,8 @@ public class SslPerfTest implements Serializable
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
+                    Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
+                    server.stop();
                 }
             });
 
@@ -162,8 +171,9 @@ public class SslPerfTest implements Serializable
             loadersFuture.get();
             probeFuture.get();
 
-            // download servers FGs
-            download(serverArray, new File("target/report/server"), "server.html", "gc.log");
+            // download servers FGs & transform histograms
+            download(serverArray, new File("target/report/server"), "server.html", "server.dat", "gc.log");
+            xformHisto(serverArray, new File("target/report/server"), "server.dat");
             download(serverArray, new File("target/report/server"), LinuxMonitor.DEFAULT_FILENAMES);
             // download loaders FGs & transform histograms
             download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat", "gc.log");
@@ -221,6 +231,57 @@ public class SslPerfTest implements Serializable
             {
                 total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
             }
+        }
+    }
+
+    private static class LatencyRecordingChannelListener extends AbstractLifeCycle implements HttpChannel.Listener
+    {
+        private final Map<Request, Long> timestamps = new ConcurrentHashMap<>();
+        private final Recorder recorder = new Recorder(3);
+        private final Timer timer = new Timer();
+        private final HistogramLogWriter writer;
+
+        public LatencyRecordingChannelListener(String histogramFilename) throws FileNotFoundException
+        {
+            writer = new HistogramLogWriter(histogramFilename);
+            long now = System.currentTimeMillis();
+            writer.setBaseTime(now);
+            writer.outputBaseTime(now);
+            writer.outputStartTime(now);
+            timer.schedule(new TimerTask()
+            {
+                private final Histogram h = new Histogram(3);
+                @Override
+                public void run()
+                {
+                    recorder.getIntervalHistogramInto(h);
+                    writer.outputIntervalHistogram(h);
+                    h.reset();
+                }
+            }, 1000, 1000);
+        }
+
+        @Override
+        protected void doStop()
+        {
+            timer.cancel();
+            writer.outputIntervalHistogram(recorder.getIntervalHistogram());
+            writer.close();
+        }
+
+        @Override
+        public void onRequestBegin(Request request)
+        {
+            long begin = System.nanoTime();
+            timestamps.put(request, begin);
+        }
+
+        @Override
+        public void onComplete(Request request)
+        {
+            long begin = timestamps.remove(request);
+            long responseTime = System.nanoTime() - begin;
+            recorder.recordValue(responseTime);
         }
     }
 
