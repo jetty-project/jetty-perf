@@ -208,7 +208,7 @@ public class SslPerfTest implements Serializable
 
             try (PrintStream ps = new PrintStream(new FileOutputStream(inputFileName + ".hgrm")))
             {
-                total.outputPercentileDistribution(ps, 1000.0);
+                total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
             }
         }
     }
@@ -222,8 +222,10 @@ public class SslPerfTest implements Serializable
         private ResponseTimeListener(String histogramFilename) throws FileNotFoundException
         {
             writer = new HistogramLogWriter(histogramFilename);
-            writer.setBaseTime(System.currentTimeMillis());
-            writer.outputBaseTime(System.currentTimeMillis());
+            long now = System.currentTimeMillis();
+            writer.setBaseTime(now);
+            writer.outputBaseTime(now);
+            writer.outputStartTime(now);
             timer.schedule(new TimerTask()
             {
                 private final Histogram h = new Histogram(3);
