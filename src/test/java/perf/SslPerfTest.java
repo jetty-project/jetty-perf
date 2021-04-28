@@ -47,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -67,18 +68,20 @@ public class SslPerfTest implements Serializable
     @Test
     public void testSslPerf() throws Exception
     {
-        String[] jvmOpts = {
+        String[] defaultJvmOpts = {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+DebugNonSafepoints",
             "-Xlog:gc*:file=gc.log:time,level,tags",
             "-Djava.rmi.server.hostname=localhost"
-            // "-XX:+UseZGC",
         };
 
         String jdkName = System.getProperty("test.jdk.name", "jdk11");
+        String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", "");
+        List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
+        jvmOpts.addAll(Arrays.asList(jdkExtraArgs.split(" ")));
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts))
+            .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
 
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
