@@ -413,7 +413,8 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Error copying stream", e);
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("Error copying stream", e);
                 }
             }, name);
             thread.setDaemon(true);
