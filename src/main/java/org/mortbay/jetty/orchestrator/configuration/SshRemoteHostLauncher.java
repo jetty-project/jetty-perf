@@ -46,9 +46,13 @@ import net.schmizz.sshj.xfer.LocalSourceFile;
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 {
+    private static final Logger LOG = LoggerFactory.getLogger(SshRemoteHostLauncher.class);
+
     private final Map<String, RemoteNodeHolder> nodes = new HashMap<>();
     private final String username;
     private Jvm jvm;
@@ -369,7 +373,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 try
                 {
                     Thread.sleep(10);
-                    elapsedMs++;
+                    elapsedMs += 10;
                     if (elapsedMs >= 5000)
                         throw new Exception("Node failed to output expected string on host '" + hostname + "' (accumulated <" + new String(accumulator, StandardCharsets.UTF_8) + ">)");
                 }
@@ -389,7 +393,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
         private StreamCopier(InputStream is, OutputStream os)
         {
-            this(is, os, 80);
+            this(is, os, 1);
         }
 
         private StreamCopier(InputStream is, OutputStream os, int bufferSize)
@@ -409,7 +413,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 }
                 catch (Exception e)
                 {
-                    // ignore
+                    LOG.error("Error copying stream", e);
                 }
             }, name);
             thread.setDaemon(true);
