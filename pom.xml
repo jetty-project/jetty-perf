@@ -17,6 +17,9 @@
     <!-- time to run test in minutes -->
     <test.runFor>10</test.runFor>
 
+    <!-- jdk name to use -->
+    <test.jdk.name>jdk11</test.jdk.name>
+
     <!-- the values need to be defined in ~/.m2/settings.xml -->
     <connect.via.hostname></connect.via.hostname>
     <connect.via.user></connect.via.user>
@@ -157,6 +160,7 @@
             <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
             <systemPropertyVariables>
               <test.runFor>${test.runFor}</test.runFor>
+              <test.jdk.name>${test.jdk.name}</test.jdk.name>
             </systemPropertyVariables>
           </configuration>
         </plugin>

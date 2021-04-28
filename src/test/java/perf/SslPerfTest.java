@@ -67,8 +67,19 @@ public class SslPerfTest implements Serializable
     @Test
     public void testSslPerf() throws Exception
     {
+        String[] jvmOpts = {
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+DebugNonSafepoints",
+            "-Xlog:gc*:file=gc.log:time,level,tags",
+            "-Djava.rmi.server.hostname=localhost"
+            // "-XX:+UseZGC",
+        };
+
+        String jdkName = System.getProperty("test.jdk.name", "jdk11");
+
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk16"), "-XX:+UseZGC", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints", "-Xlog:gc*:file=gc.log:time,level,tags", "-Djava.rmi.server.hostname=localhost"))
+            .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts))
+
             .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
                 new Node("1", "load-master")
             )))
