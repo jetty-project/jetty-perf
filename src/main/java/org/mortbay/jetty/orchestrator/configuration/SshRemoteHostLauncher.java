@@ -38,7 +38,6 @@ import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.connection.channel.forwarded.ConnectListener;
 import net.schmizz.sshj.connection.channel.forwarded.RemotePortForwarder;
-import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.FileSystemFile;
@@ -198,12 +197,6 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         String parentFilename = destFilename.substring(0, destFilename.lastIndexOf('/'));
 
         sftpClient.mkdirs(parentFilename);
-        // do not transfer file if already there and same size
-        FileAttributes fileAttributes = sftpClient.statExistence(destFilename);
-        if (fileAttributes != null && fileAttributes.getSize() == localSourceFile.getLength())
-        {
-            return;
-        }
         sftpClient.put(localSourceFile, destFilename);
     }
 
@@ -374,7 +367,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 {
                     Thread.sleep(10);
                     elapsedMs += 10;
-                    if (elapsedMs >= 15000)
+                    if (elapsedMs >= 10000)
                         throw new Exception("Node failed to output expected string on host '" + hostname + "' (accumulated <" + new String(accumulator, StandardCharsets.UTF_8) + ">)");
                 }
                 catch (InterruptedException e)
