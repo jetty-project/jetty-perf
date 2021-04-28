@@ -96,9 +96,9 @@ public class SslPerfTest implements Serializable
             )))
             ;
 
+        LOG.info("Initializing...");
         try (Cluster cluster = new Cluster(cfg))
         {
-            LOG.info("Initializing...");
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
