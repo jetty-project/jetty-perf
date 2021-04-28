@@ -50,8 +50,8 @@ public class RpcClient implements AutoCloseable
                 byte[] respBytes = responseQueue.take();
                 Response resp = (Response)deserialize(respBytes);
                 CompletableFuture<Object> future = calls.remove(resp.getId());
-                if (resp.getException() != null)
-                    future.completeExceptionally(new ExecutionException(resp.getException()));
+                if (resp.getThrowable() != null)
+                    future.completeExceptionally(new ExecutionException(resp.getThrowable()));
                 else
                     future.complete(resp.getResult());
             }

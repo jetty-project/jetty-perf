@@ -19,13 +19,13 @@ public class Response implements Serializable
 {
     private final long id;
     private final Object result;
-    private final Exception exception;
+    private final Throwable throwable;
 
-    public Response(long id, Object result, Exception exception)
+    public Response(long id, Object result, Throwable throwable)
     {
         this.id = id;
         this.result = result;
-        this.exception = exception;
+        this.throwable = throwable;
     }
 
     public long getId()
@@ -38,9 +38,9 @@ public class Response implements Serializable
         return result;
     }
 
-    public Exception getException()
+    public Throwable getThrowable()
     {
-        return exception;
+        return throwable;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class Response implements Serializable
         return "Response{" +
             "id=" + id +
             ", result=" + result +
-            ", exception=" + exception +
+            ", throwable=" + throwable +
             '}';
     }
 }

@@ -103,22 +103,22 @@ public class RpcServer implements AutoCloseable
                 executorService.submit(()->
                 {
                     Object result = null;
-                    Exception exception = null;
+                    Throwable throwable = null;
                     long requestId = -1;
                     try
                     {
                         requestId = request.getId();
                         result = request.getCommand().execute(clusterTools);
                     }
-                    catch (Exception e)
+                    catch (Throwable x)
                     {
-                        exception = e;
+                        throwable = x;
                     }
 
                     byte[] resBytes;
                     try
                     {
-                        Response response = new Response(requestId, result, exception);
+                        Response response = new Response(requestId, result, throwable);
                         resBytes = serialize(response);
                     }
                     catch (IOException e)
