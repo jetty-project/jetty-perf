@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
@@ -360,6 +361,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
 
         public void waitForExpectedString() throws Exception
         {
+            long elapsedMs = 0L;
             while (!matched.get())
             {
                 if (failed.get() || !cmd.isOpen())
@@ -367,6 +369,9 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 try
                 {
                     Thread.sleep(10);
+                    elapsedMs++;
+                    if (elapsedMs >= 5000)
+                        throw new Exception("Node failed to output expected string on host '" + hostname + "' (accumulated <" + new String(accumulator, StandardCharsets.UTF_8) + ">)");
                 }
                 catch (InterruptedException e)
                 {
