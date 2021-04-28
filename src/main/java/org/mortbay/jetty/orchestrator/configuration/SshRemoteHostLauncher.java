@@ -157,10 +157,10 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             session.allocateDefaultPTY();
             cmd = session.exec(cmdLine);
 
-            SshLogOutputStream sshLogOutputStream = new SshLogOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, System.out);
-            new StreamCopier(cmd.getInputStream(), sshLogOutputStream).spawnDaemon(hostname + "stdout");
-            new StreamCopier(cmd.getErrorStream(), System.err).spawnDaemon(hostname + "stderr");
-            sshLogOutputStream.waitForExpectedString();
+            ExpectingOutputStream expectingOutputStream = new ExpectingOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, new LineBufferingOutputStream(System.out));
+            new StreamCopier(cmd.getInputStream(), expectingOutputStream).spawnDaemon(hostname + "stdout");
+            new StreamCopier(cmd.getErrorStream(), new LineBufferingOutputStream(System.err)).spawnDaemon(hostname + "stderr");
+            expectingOutputStream.waitForExpectedString();
 
             HashMap<String, Object> env = new HashMap<>();
             env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
@@ -278,7 +278,72 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         }
     }
 
-    private static class SshLogOutputStream extends OutputStream
+    private static class ByteBuilder
+    {
+        private byte[] buffer = new byte[64];
+        private int length = 0;
+
+        public void append(int b)
+        {
+            if (length == buffer.length)
+                grow();
+            buffer[length] = (byte)b;
+            length++;
+        }
+
+        private void grow()
+        {
+            byte[] newBuffer = new byte[buffer.length * 2];
+            System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
+            buffer = newBuffer;
+        }
+
+        public void clear()
+        {
+            length = 0;
+        }
+
+        public byte[] getBuffer()
+        {
+            return buffer;
+        }
+
+        public int length()
+        {
+            return length;
+        }
+    }
+
+    private static class LineBufferingOutputStream extends OutputStream
+    {
+        private final OutputStream delegate;
+        private final ByteBuilder byteBuilder = new ByteBuilder();
+
+        public LineBufferingOutputStream(OutputStream delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            byteBuilder.append(b);
+            if (b == '\n' || b == '\r')
+            {
+                delegate.write(byteBuilder.getBuffer(), 0, byteBuilder.length());
+                delegate.flush();
+                byteBuilder.clear();
+            }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            delegate.close();
+        }
+    }
+
+    private static class ExpectingOutputStream extends OutputStream
     {
         private final String hostname;
         private final byte[] expectedSequence;
@@ -289,7 +354,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         private final AtomicBoolean matched = new AtomicBoolean(false);
         private final AtomicBoolean failed = new AtomicBoolean(false);
 
-        private SshLogOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
+        private ExpectingOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
         {
             this.hostname = hostname;
             this.expectedSequence = expectedSequence;
