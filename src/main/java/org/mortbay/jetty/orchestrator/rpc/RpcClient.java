@@ -26,20 +26,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.mortbay.jetty.orchestrator.rpc.command.Command;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
+import org.mortbay.jetty.orchestrator.rpc.command.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RpcClient implements AutoCloseable
 {
+    private static final Logger LOG = LoggerFactory.getLogger(RpcClient.class);
+
     private final SimpleDistributedQueue commandQueue;
     private final SimpleDistributedQueue responseQueue;
     private final ExecutorService executorService;
     private final ConcurrentMap<Long, CompletableFuture<Object>> calls = new ConcurrentHashMap<>();
     private final AtomicLong requestIdGenerator = new AtomicLong();
+    private final String nodeId;
 
     public RpcClient(CuratorFramework curator, String nodeId)
     {
+        this.nodeId = nodeId;
         commandQueue = new SimpleDistributedQueue(curator, "/clients/" + nodeId + "/commandQ");
         responseQueue = new SimpleDistributedQueue(curator, "/clients/" + nodeId + "/responseQ");
         executorService = Executors.newSingleThreadExecutor();
@@ -49,6 +55,8 @@ public class RpcClient implements AutoCloseable
             {
                 byte[] respBytes = responseQueue.take();
                 Response resp = (Response)deserialize(respBytes);
+                if (LOG.isDebugEnabled())
+                    LOG.debug("{} got response {}", nodeId, resp);
                 CompletableFuture<Object> future = calls.remove(resp.getId());
                 if (resp.getThrowable() != null)
                     future.completeExceptionally(new ExecutionException(resp.getThrowable()));
@@ -60,10 +68,14 @@ public class RpcClient implements AutoCloseable
 
     public CompletableFuture<Object> callAsync(Command command) throws Exception
     {
+        if (isClosed())
+            throw new IllegalStateException("RPC client is closed");
         long requestId = requestIdGenerator.getAndIncrement();
         CompletableFuture<Object> completableFuture = new CompletableFuture<>();
         calls.put(requestId, completableFuture);
         Request request = new Request(requestId, command);
+        if (LOG.isDebugEnabled())
+            LOG.debug("{} sending request {}", nodeId, request);
         byte[] cmdBytes = serialize(request);
         commandQueue.offer(cmdBytes);
         return completableFuture;
@@ -89,9 +101,16 @@ public class RpcClient implements AutoCloseable
         return baos.toByteArray();
     }
 
+    private boolean isClosed()
+    {
+        return executorService.isShutdown();
+    }
+
     @Override
     public void close()
     {
         executorService.shutdownNow();
+        calls.values().forEach(f -> f.completeExceptionally(new IllegalStateException("Pending call terminated on close (remote process died?)")));
+        calls.clear();
     }
 }

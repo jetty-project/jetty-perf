@@ -45,6 +45,12 @@ public class NodeProcess implements Serializable, AutoCloseable
         this.pid = Processes.newPidProcess(process).getPid();
     }
 
+    public boolean isAlive() throws IOException, InterruptedException
+    {
+        PidProcess process = Processes.newPidProcess(pid);
+        return process.isAlive();
+    }
+
     @Override
     public void close()
     {
@@ -55,8 +61,17 @@ public class NodeProcess implements Serializable, AutoCloseable
         }
         catch (Exception e)
         {
-            // ignore
+            if (LOG.isDebugEnabled())
+                LOG.debug("Error terminating process with PID=" + pid, e);
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return "NodeProcess{" +
+            "pid=" + pid +
+            '}';
     }
 
     public static void main(String[] args) throws Exception

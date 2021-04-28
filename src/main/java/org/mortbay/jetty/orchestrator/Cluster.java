@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -31,18 +33,24 @@ import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.rpc.RpcClient;
+import org.mortbay.jetty.orchestrator.rpc.command.CheckNodeCommand;
 import org.mortbay.jetty.orchestrator.rpc.command.KillNodeCommand;
 import org.mortbay.jetty.orchestrator.rpc.command.SpawnNodeCommand;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Cluster implements AutoCloseable
 {
+    private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
+
     private final String id;
     private final ClusterConfiguration configuration;
     private final LocalHostLauncher localHostLauncher = new LocalHostLauncher();
     private final HostLauncher hostLauncher;
     private final Map<String, NodeArray> nodeArrays = new HashMap<>(); // keyed by NodeId
     private final Map<String, Host> hosts = new HashMap<>(); // keyed by HostId
+    private final Timer hostsCheckerTimer = new Timer();
     private TestingServer zkServer;
     private CuratorFramework curator;
     private ClusterTools clusterTools;
@@ -57,7 +65,7 @@ public class Cluster implements AutoCloseable
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         String className = stackTrace[3].getClassName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        return sanitize(simpleClassName + "::" + stackTrace[3].getMethodName());
+        return simpleClassName + "::" + stackTrace[3].getMethodName();
     }
 
     public Cluster(String id, ClusterConfiguration configuration) throws Exception
@@ -111,7 +119,8 @@ public class Cluster implements AutoCloseable
                 boolean localNode = hostname.equals(LocalHostLauncher.HOSTNAME);
                 String hostId = hostIdFor(hostname);
                 String nodeId = hostId + "/" + sanitize(nodeArrayConfiguration.id()) + "/" + sanitize(node.getId());
-                nodes.put(node.getId(), new NodeArray.Node(hostname, nodeId, new RpcClient(curator, nodeId), localNode));
+                NodeArray.Node n = new NodeArray.Node(hostname, nodeId, new RpcClient(curator, nodeId), localNode);
+                nodes.put(node.getId(), n);
 
                 Map.Entry<String, RpcClient> entry = hostClients.get(hostId);
                 RpcClient rpcClient = entry.getValue();
@@ -122,8 +131,9 @@ public class Cluster implements AutoCloseable
                     hosts.compute(hostId, (key, host) ->
                     {
                         if (host == null)
-                            host = new Host(rpcClient);
+                            host = new Host(hostId, rpcClient);
                         host.nodeProcesses.add(remoteProcess);
+                        host.nodes.add(n);
                         return host;
                     });
                 }
@@ -134,6 +144,18 @@ public class Cluster implements AutoCloseable
             }
             nodeArrays.put(nodeArrayConfiguration.id(), new NodeArray(nodes));
         }
+        hostsCheckerTimer.schedule(new TimerTask() {
+            @Override
+            public void run()
+            {
+                for (Host host : hosts.values())
+                {
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("Checking host {}", host);
+                    host.check();
+                }
+            }
+        }, 5000, 5000);
     }
 
     private static String sanitize(String id)
@@ -155,6 +177,7 @@ public class Cluster implements AutoCloseable
     @Override
     public void close()
     {
+        hostsCheckerTimer.cancel();
         hosts.values().forEach(IOUtil::close);
         hosts.clear();
         nodeArrays.clear();
@@ -171,12 +194,35 @@ public class Cluster implements AutoCloseable
 
     private static class Host implements AutoCloseable
     {
+        private final String hostId;
         private final RpcClient rpcClient;
         private final List<NodeProcess> nodeProcesses = new ArrayList<>();
+        private final List<NodeArray.Node> nodes = new ArrayList<>();
 
-        private Host(RpcClient rpcClient)
+        private Host(String hostId, RpcClient rpcClient)
         {
+            this.hostId = hostId;
             this.rpcClient = rpcClient;
+        }
+
+        public void check()
+        {
+            boolean allSane = true;
+            for (NodeProcess nodeProcess : nodeProcesses)
+            {
+                try
+                {
+                    rpcClient.call(new CheckNodeCommand(nodeProcess));
+                }
+                catch (Exception e)
+                {
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("Host {} failed check of {}", hostId, nodeProcess, e);
+                    allSane = false;
+                }
+            }
+            if (!allSane)
+                close();
         }
 
         @Override
@@ -190,10 +236,23 @@ public class Cluster implements AutoCloseable
                 }
                 catch (Exception e)
                 {
-                    // ignore
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("Error closing {}", nodeProcess, e);
                 }
             }
             IOUtil.close(rpcClient);
+            nodeProcesses.clear();
+            nodes.forEach(IOUtil::close);
+            nodes.clear();
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Host{" +
+                "hostId='" + hostId + '\'' +
+                ", nodeProcesses=" + nodeProcesses +
+                '}';
         }
     }
 }

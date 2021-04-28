@@ -26,6 +26,7 @@ import org.mortbay.jetty.orchestrator.configuration.LocalHostLauncher;
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.RpcClient;
 import org.mortbay.jetty.orchestrator.rpc.command.ExecuteNodeJobCommand;
+import org.mortbay.jetty.orchestrator.util.IOUtil;
 
 public class NodeArray
 {
@@ -65,18 +66,27 @@ public class NodeArray
         return nodes.keySet();
     }
 
-    public NodeArrayFuture executeOnAll(NodeJob nodeJob) throws Exception
+    public NodeArrayFuture executeOnAll(NodeJob nodeJob)
     {
         List<CompletableFuture<Object>> futures = new ArrayList<>();
         for (Node node : nodes.values())
         {
-            CompletableFuture<Object> future = node.rpcClient.callAsync(new ExecuteNodeJobCommand(nodeJob));
-            futures.add(future);
+            try
+            {
+                CompletableFuture<Object> future = node.rpcClient.callAsync(new ExecuteNodeJobCommand(nodeJob));
+                futures.add(future);
+            }
+            catch (Exception e)
+            {
+                CompletableFuture<Object> future = new CompletableFuture<>();
+                future.completeExceptionally(e);
+                futures.add(future);
+            }
         }
         return new NodeArrayFuture(futures);
     }
 
-    static class Node
+    static class Node implements AutoCloseable
     {
         private final String hostname;
         private final String nodeId;
@@ -89,6 +99,12 @@ public class NodeArray
             this.nodeId = nodeId;
             this.rpcClient = rpcClient;
             this.local = local;
+        }
+
+        @Override
+        public void close()
+        {
+            IOUtil.close(rpcClient);
         }
     }
 }

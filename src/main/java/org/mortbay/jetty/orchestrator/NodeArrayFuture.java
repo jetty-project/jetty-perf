@@ -15,11 +15,11 @@ package org.mortbay.jetty.orchestrator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class NodeArrayFuture
 {
@@ -35,39 +35,71 @@ public class NodeArrayFuture
         futures.forEach(f -> f.cancel(mayInterruptIfRunning));
     }
 
-    public void get(long timeout, TimeUnit unit) throws ExecutionException
+    public void get(long timeout, TimeUnit unit) throws ExecutionException, TimeoutException
     {
-        List<Exception> exceptions = new ArrayList<>();
+        boolean noTimeout = timeout == Long.MIN_VALUE && unit == null;
+        long timeoutLeft = unit != null ? unit.toNanos(timeout) : -1L;
+
+        TimeoutException timeoutException = null;
+        List<Throwable> exceptions = new ArrayList<>();
         for (CompletableFuture<Object> future : futures)
         {
+            long begin = System.nanoTime();
             try
             {
-                if (timeout == Long.MIN_VALUE && unit == null)
+                if (noTimeout)
                     future.get();
                 else
-                    future.get(timeout, unit);
+                    future.get(timeoutLeft, TimeUnit.NANOSECONDS);
+            }
+            catch (TimeoutException e)
+            {
+                if (timeoutException == null)
+                    timeoutException = e;
+                else
+                    exceptions.add(e);
+            }
+            catch (ExecutionException e)
+            {
+                exceptions.add(e.getCause());
             }
             catch (Exception e)
             {
                 exceptions.add(e);
             }
+            long delta = System.nanoTime() - begin;
+            timeoutLeft = Math.max(timeoutLeft - delta, 0L);
+        }
+
+        if (timeoutException != null)
+        {
+            exceptions.forEach(timeoutException::addSuppressed);
+            throw timeoutException;
         }
 
         if (!exceptions.isEmpty())
         {
-            Exception exception = exceptions.get(0);
+            Throwable rootException = exceptions.get(0);
+            ExecutionException executionException = (rootException instanceof ExecutionException) ? (ExecutionException)rootException : new ExecutionException(rootException);
             for (int i = 1; i < exceptions.size(); i++)
             {
                 Throwable t = exceptions.get(i);
-                exception.addSuppressed(t);
+                executionException.addSuppressed(t);
             }
-            throw new ExecutionException(exception);
+            throw executionException;
         }
     }
 
-    public void get() throws CancellationException, ExecutionException
+    public void get() throws ExecutionException
     {
-        get(Long.MIN_VALUE, null);
+        try
+        {
+            get(Long.MIN_VALUE, null);
+        }
+        catch (TimeoutException e)
+        {
+            throw new ExecutionException(e);
+        }
     }
 
     public boolean isAllDone()
