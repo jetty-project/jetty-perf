@@ -44,6 +44,7 @@ import net.schmizz.sshj.xfer.FileSystemFile;
 import net.schmizz.sshj.xfer.LocalSourceFile;
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
+import org.mortbay.jetty.orchestrator.util.ByteBuilder;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -278,46 +279,10 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         }
     }
 
-    private static class ByteBuilder
-    {
-        private byte[] buffer = new byte[64];
-        private int length = 0;
-
-        public void append(int b)
-        {
-            if (length == buffer.length)
-                grow();
-            buffer[length] = (byte)b;
-            length++;
-        }
-
-        private void grow()
-        {
-            byte[] newBuffer = new byte[buffer.length * 2];
-            System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
-            buffer = newBuffer;
-        }
-
-        public void clear()
-        {
-            length = 0;
-        }
-
-        public byte[] getBuffer()
-        {
-            return buffer;
-        }
-
-        public int length()
-        {
-            return length;
-        }
-    }
-
     private static class LineBufferingOutputStream extends OutputStream
     {
         private final OutputStream delegate;
-        private final ByteBuilder byteBuilder = new ByteBuilder();
+        private final ByteBuilder byteBuilder = new ByteBuilder(256);
 
         public LineBufferingOutputStream(OutputStream delegate)
         {
@@ -327,6 +292,12 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         @Override
         public void write(int b) throws IOException
         {
+            if (byteBuilder.isFull())
+            {
+                delegate.write(byteBuilder.getBuffer());
+                delegate.flush();
+                byteBuilder.clear();
+            }
             byteBuilder.append(b);
             if (b == '\n' || b == '\r')
             {
