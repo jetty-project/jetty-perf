@@ -62,14 +62,10 @@ pipeline {
                     sh "mvn --no-transfer-progress -DtrimStackTrace=false -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e install -Dtest=${TEST_TO_RUN} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.extraArgs=\"${EXTRA_ARGS_TO_USE}\" -Dtest.runFor=${RUN_FOR}"
                   }
                 }
+                junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+                archiveArtifacts artifacts: "**/target/report/**/**",allowEmptyArchive: true
             }
         }
-    }
-    post {
-      always {
-        junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-        archiveArtifacts artifacts: "**/target/report/**/**",allowEmptyArchive: true
-      }
     }
 }
 

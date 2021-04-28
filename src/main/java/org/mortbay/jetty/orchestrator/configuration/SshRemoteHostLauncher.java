@@ -38,6 +38,7 @@ import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.connection.channel.forwarded.ConnectListener;
 import net.schmizz.sshj.connection.channel.forwarded.RemotePortForwarder;
+import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.FileSystemFile;
@@ -198,6 +199,13 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         String parentFilename = destFilename.substring(0, destFilename.lastIndexOf('/'));
 
         sftpClient.mkdirs(parentFilename);
+        // do not transfer file if already there, same size and same mtime
+        FileAttributes fileAttributes = sftpClient.statExistence(destFilename);
+        if (fileAttributes != null && fileAttributes.getSize() == localSourceFile.getLength() &&
+            fileAttributes.getMtime() != localSourceFile.getLastModifiedTime())
+        {
+            LOG.info("could skip transfering file {}", localSourceFile.getName());
+        }
         sftpClient.put(localSourceFile, destFilename);
     }
 
