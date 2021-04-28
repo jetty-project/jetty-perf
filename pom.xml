@@ -14,11 +14,15 @@
     <!-- 2.0.0 is the version working with jetty-10 artifacts -->
     <loadgenerator.version>2.0.0</loadgenerator.version>
 
+    <!-- time to run test in minutes -->
+    <test.runFor>10</test.runFor>
+
     <!-- the values need to be defined in ~/.m2/settings.xml -->
     <connect.via.hostname></connect.via.hostname>
     <connect.via.user></connect.via.user>
     <connect.via.port></connect.via.port>
     <remote.java.home></remote.java.home>
+
 
   </properties>
 
@@ -151,6 +155,9 @@
           <version>3.0.0-M5</version>
           <configuration>
             <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
+            <systemPropertyVariables>
+              <test.runFor>${test.runFor}</test.runFor>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
       </plugins>

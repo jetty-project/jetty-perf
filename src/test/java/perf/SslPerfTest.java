@@ -62,7 +62,7 @@ public class SslPerfTest implements Serializable
     private static final Logger LOG = LoggerFactory.getLogger(SslPerfTest.class);
 
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofMinutes(10);
+    private static final Duration RUN_DURATION = Duration.ofMinutes(Long.getLong("test.runFor", 10));
 
     @Test
     public void testSslPerf() throws Exception
