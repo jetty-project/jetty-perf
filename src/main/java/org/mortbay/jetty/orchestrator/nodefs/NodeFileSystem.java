@@ -36,9 +36,14 @@ import java.util.Set;
 
 import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import net.schmizz.sshj.sftp.SFTPClient;
+import org.mortbay.jetty.orchestrator.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NodeFileSystem extends FileSystem
 {
+    private static final Logger LOG = LoggerFactory.getLogger(NodeFileSystem.class);
+
     private final NodeFileSystemProvider provider;
     private final SFTPClient sftpClient;
     private final Path rootPath;
@@ -165,10 +170,38 @@ public class NodeFileSystem extends FileSystem
     InputStream newInputStream(NodePath path, OpenOption... options) throws IOException
     {
         String sftpPath = "." + NodeFileSystemProvider.PREFIX + "/" + path.getNodeId() + path.getRealPath();
-        InMemoryFile inMemoryFile = new InMemoryFile();
-        sftpClient.get(sftpPath, inMemoryFile);
-        byte[] data = inMemoryFile.getOutputStream().toByteArray();
-        return new ByteArrayInputStream(data);
+        long fileSize = sftpClient.lstat(sftpPath).getSize();
+        if (fileSize > 1024 * 1024)
+        {
+            // use piping if file to download is > 1MB
+            PipingFile pipingFile = new PipingFile();
+            Thread t = new Thread(() ->
+            {
+                try
+                {
+                    sftpClient.get(sftpPath, pipingFile);
+                }
+                catch (IOException e)
+                {
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("Error copying " + sftpPath + " over sftp", e);
+                }
+                finally
+                {
+                    IOUtil.close(pipingFile.getOutputStream());
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+            return pipingFile.getInputStream();
+        }
+        else
+        {
+            InMemoryFile inMemoryFile = new InMemoryFile();
+            sftpClient.get(sftpPath, inMemoryFile);
+            byte[] data = inMemoryFile.getOutputStream().toByteArray();
+            return new ByteArrayInputStream(data);
+        }
     }
 
     @Override
