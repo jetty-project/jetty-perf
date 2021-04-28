@@ -18,28 +18,30 @@ pipeline {
       string(defaultValue: 'jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
     }
     stages {
-        stage('install load-1') {
-          agent { node { label 'load-1' } }
-          steps {
-            sh "echo load-1"
+        parallel {
+          stage( 'install load-1' ) {
+            agent { node { label 'load-1' } }
+            steps {
+              sh "echo load-1"
+            }
           }
-        }
-        stage('install load-2') {
-          agent { node { label 'load-2' } }
-          steps {
-            sh "echo load-2"
+          stage( 'install load-2' ) {
+            agent { node { label 'load-2' } }
+            steps {
+              sh "echo load-2"
+            }
           }
-        }
-        stage('install load-3') {
-          agent { node { label 'load-3' } }
-          steps {
-            sh "echo load-3"
+          stage( 'install load-3' ) {
+            agent { node { label 'load-3' } }
+            steps {
+              sh "echo load-3"
+            }
           }
-        }
-        stage('install load-4') {
-          agent { node { label 'load-4' } }
-          steps {
-            sh "echo load-4"
+          stage( 'install load-4' ) {
+            agent { node { label 'load-4' } }
+            steps {
+              sh "echo load-4"
+            }
           }
         }
         stage('ssl-perf') {
