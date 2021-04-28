@@ -374,7 +374,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 {
                     Thread.sleep(10);
                     elapsedMs += 10;
-                    if (elapsedMs >= 5000)
+                    if (elapsedMs >= 15000)
                         throw new Exception("Node failed to output expected string on host '" + hostname + "' (accumulated <" + new String(accumulator, StandardCharsets.UTF_8) + ">)");
                 }
                 catch (InterruptedException e)
