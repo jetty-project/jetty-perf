@@ -38,6 +38,7 @@ import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.connection.channel.forwarded.ConnectListener;
 import net.schmizz.sshj.connection.channel.forwarded.RemotePortForwarder;
+import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
@@ -273,17 +274,31 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             }
             IOUtil.close(command);
             IOUtil.close(session);
-            try (Session session = sshClient.startSession())
+            try (SFTPClient sftpClient = sshClient.newStatefulSFTPClient())
             {
-                String folderName = "." + NodeFileSystemProvider.PREFIX + "/" + hostId;
-                try (Session.Command cmd = session.exec("rm -fr \"" + folderName + "\""))
-                {
-                    cmd.join();
-                }
+                deltree(sftpClient, "." + NodeFileSystemProvider.PREFIX + "/" + clusterIdOf(hostId));
             }
             IOUtil.close(forwardingConnectListener);
             IOUtil.close(forwarding);
             IOUtil.close(sshClient);
+        }
+
+        private static String clusterIdOf(String nodeId)
+        {
+            return nodeId.split("/")[0];
+        }
+
+        private static void deltree(SFTPClient sftpClient, String path) throws IOException
+        {
+            List<RemoteResourceInfo> ls = sftpClient.ls(path);
+            for (RemoteResourceInfo l : ls)
+            {
+                if (l.isDirectory())
+                    deltree(sftpClient, l.getPath());
+                else
+                    sftpClient.rm(l.getPath());
+            }
+            sftpClient.rmdir(path);
         }
     }
 
