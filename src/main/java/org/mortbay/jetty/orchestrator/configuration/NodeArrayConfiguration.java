@@ -13,9 +13,11 @@
 
 package org.mortbay.jetty.orchestrator.configuration;
 
+import java.util.Collection;
+
 public interface NodeArrayConfiguration
 {
     String id();
     Jvm jvm();
-    NodeArrayTopology topology();
+    Collection<Node> nodes();
 }

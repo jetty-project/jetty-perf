@@ -95,7 +95,7 @@ public class NodeProcess implements Serializable, AutoCloseable
 
         if (LOG.isDebugEnabled())
             LOG.debug("Node [{}] connected to {}", nodeId, connectString);
-        RpcServer rpcServer = new RpcServer(curator, nodeId);
+        RpcServer rpcServer = new RpcServer(curator, new GlobalNodeId(nodeId));
 
         Runnable shutdown = () ->
         {

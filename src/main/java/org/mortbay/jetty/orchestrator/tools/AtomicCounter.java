@@ -21,23 +21,24 @@ import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.atomic.PromotedToLock;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.KeeperException;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
 
 public class AtomicCounter
 {
     private final DistributedAtomicLong distributedAtomicLong;
-    private final String nodeId;
+    private final GlobalNodeId globalNodeId;
     private final String name;
 
-    public AtomicCounter(CuratorFramework curator, String nodeId, String name, long initialValue)
+    public AtomicCounter(CuratorFramework curator, GlobalNodeId globalNodeId, String name, long initialValue)
     {
-        this(curator, nodeId, "AtomicCounter", name, initialValue);
+        this(curator, globalNodeId, "AtomicCounter", name, initialValue);
     }
 
-    AtomicCounter(CuratorFramework curator, String nodeId, String internalPath, String name, long initialValue)
+    AtomicCounter(CuratorFramework curator, GlobalNodeId globalNodeId, String internalPath, String name, long initialValue)
     {
-        this.nodeId = nodeId;
+        this.globalNodeId = globalNodeId;
         this.name = name;
-        String prefix = "/clients/" + clusterIdOf(nodeId) + "/" + internalPath;
+        String prefix = "/clients/" + globalNodeId.getClusterId() + "/" + internalPath;
         String counterName = prefix + "/" + name;
         String lockName = prefix + "/Lock/" + name;
         try
@@ -60,11 +61,6 @@ public class AtomicCounter
             PromotedToLock.builder().lockPath(lockName).build());
     }
 
-    private static String clusterIdOf(String nodeId)
-    {
-        return nodeId.split("/")[0];
-    }
-
     public boolean compareAndSet(long expectedValue, long newValue)
     {
         try
@@ -74,7 +70,7 @@ public class AtomicCounter
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to compare and set counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to compare and set counter " + name, e);
         }
     }
 
@@ -85,11 +81,11 @@ public class AtomicCounter
             AtomicValue<Long> result = distributedAtomicLong.add(1L);
             if (result.succeeded())
                 return result.postValue();
-            throw new IllegalStateException("node " + nodeId + " failed to increment and get counter " + name);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to increment and get counter " + name);
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to increment and get counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to increment and get counter " + name, e);
         }
     }
 
@@ -100,11 +96,11 @@ public class AtomicCounter
             AtomicValue<Long> result = distributedAtomicLong.add(-1L);
             if (result.succeeded())
                 return result.postValue();
-            throw new IllegalStateException("node " + nodeId + " failed to decrement and get counter " + name);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to decrement and get counter " + name);
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to decrement and get counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to decrement and get counter " + name, e);
         }
     }
 
@@ -115,11 +111,11 @@ public class AtomicCounter
             AtomicValue<Long> result = distributedAtomicLong.add(1L);
             if (result.succeeded())
                 return result.preValue();
-            throw new IllegalStateException("node " + nodeId + " failed to get and increment counter " + name);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to get and increment counter " + name);
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to get and increment counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to get and increment counter " + name, e);
         }
     }
 
@@ -130,11 +126,11 @@ public class AtomicCounter
             AtomicValue<Long> result = distributedAtomicLong.add(-1L);
             if (result.succeeded())
                 return result.preValue();
-            throw new IllegalStateException("node " + nodeId + " failed to get and decrement counter " + name);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to get and decrement counter " + name);
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to get and decrement counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to get and decrement counter " + name, e);
         }
     }
 
@@ -145,11 +141,11 @@ public class AtomicCounter
             AtomicValue<Long> result = distributedAtomicLong.get();
             if (result.succeeded())
                 return result.postValue();
-            throw new IllegalStateException("node " + nodeId + " failed to get counter " + name);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to get counter " + name);
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to get counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to get counter " + name, e);
         }
     }
 
@@ -161,7 +157,7 @@ public class AtomicCounter
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("node " + nodeId + " failed to set counter " + name, e);
+            throw new IllegalStateException("node " + globalNodeId.getNodeId() + " failed to set counter " + name, e);
         }
     }
 }

@@ -13,11 +13,15 @@
 
 package org.mortbay.jetty.orchestrator.configuration;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
 public class SimpleNodeArrayConfiguration implements NodeArrayConfiguration, JvmDependent
 {
     private final String id;
     private Jvm jvm;
-    private NodeArrayTopology nodeArrayTopology = new NodeArrayTopology();
+    private final Collection<Node> nodes = new ArrayList<>();
 
     public SimpleNodeArrayConfiguration(String id)
     {
@@ -31,26 +35,26 @@ public class SimpleNodeArrayConfiguration implements NodeArrayConfiguration, Jvm
     }
 
     @Override
+    public Collection<Node> nodes()
+    {
+        return Collections.unmodifiableCollection(nodes);
+    }
+
+    public SimpleNodeArrayConfiguration node(Node node)
+    {
+        nodes.add(node);
+        return this;
+    }
+
+    @Override
     public Jvm jvm()
     {
         return jvm;
     }
 
-    @Override
-    public NodeArrayTopology topology()
-    {
-        return nodeArrayTopology;
-    }
-
     public SimpleNodeArrayConfiguration jvm(Jvm jvm)
     {
         this.jvm = jvm;
-        return this;
-    }
-
-    public SimpleNodeArrayConfiguration topology(NodeArrayTopology nodeArrayTopology)
-    {
-        this.nodeArrayTopology = nodeArrayTopology;
         return this;
     }
 }

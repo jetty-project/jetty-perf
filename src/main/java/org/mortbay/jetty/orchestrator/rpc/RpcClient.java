@@ -41,13 +41,13 @@ public class RpcClient implements AutoCloseable
     private final ExecutorService executorService;
     private final ConcurrentMap<Long, CompletableFuture<Object>> calls = new ConcurrentHashMap<>();
     private final AtomicLong requestIdGenerator = new AtomicLong();
-    private final String nodeId;
+    private final GlobalNodeId globalNodeId;
 
-    public RpcClient(CuratorFramework curator, String nodeId)
+    public RpcClient(CuratorFramework curator, GlobalNodeId globalNodeId)
     {
-        this.nodeId = nodeId;
-        commandQueue = new SimpleDistributedQueue(curator, "/clients/" + nodeId + "/commandQ");
-        responseQueue = new SimpleDistributedQueue(curator, "/clients/" + nodeId + "/responseQ");
+        this.globalNodeId = globalNodeId;
+        commandQueue = new SimpleDistributedQueue(curator, "/clients/" + globalNodeId.getNodeId() + "/commandQ");
+        responseQueue = new SimpleDistributedQueue(curator, "/clients/" + globalNodeId.getNodeId() + "/responseQ");
         executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() ->
         {
@@ -56,7 +56,7 @@ public class RpcClient implements AutoCloseable
                 byte[] respBytes = responseQueue.take();
                 Response resp = (Response)deserialize(respBytes);
                 if (LOG.isDebugEnabled())
-                    LOG.debug("{} got response {}", nodeId, resp);
+                    LOG.debug("{} got response {}", globalNodeId.getNodeId(), resp);
                 CompletableFuture<Object> future = calls.remove(resp.getId());
                 if (resp.getThrowable() != null)
                     future.completeExceptionally(new ExecutionException(resp.getThrowable()));
@@ -75,7 +75,7 @@ public class RpcClient implements AutoCloseable
         calls.put(requestId, completableFuture);
         Request request = new Request(requestId, command);
         if (LOG.isDebugEnabled())
-            LOG.debug("{} sending request {}", nodeId, request);
+            LOG.debug("{} sending request {}", globalNodeId.getNodeId(), request);
         byte[] cmdBytes = serialize(request);
         commandQueue.offer(cmdBytes);
         return completableFuture;

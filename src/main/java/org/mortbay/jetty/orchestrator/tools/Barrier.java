@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.barriers.DistributedDoubleBarrier;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
 
 public class Barrier
 {
@@ -28,16 +29,11 @@ public class Barrier
     private final int parties;
     private final AtomicBoolean guard = new AtomicBoolean();
 
-    public Barrier(CuratorFramework curator, String nodeId, String name, int parties)
+    public Barrier(CuratorFramework curator, GlobalNodeId globalNodeId, String name, int parties)
     {
         this.parties = parties;
-        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, "/clients/" + clusterIdOf(nodeId) + "/Barrier/" + name, parties);
-        atomicCounter = new AtomicCounter(curator, nodeId, "BarrierCounter", name, parties);
-    }
-
-    private static String clusterIdOf(String nodeId)
-    {
-        return nodeId.split("/")[0];
+        distributedDoubleBarrier = new DistributedDoubleBarrier(curator, "/clients/" + globalNodeId.getClusterId() + "/Barrier/" + name, parties);
+        atomicCounter = new AtomicCounter(curator, globalNodeId, "BarrierCounter", name, parties);
     }
 
     public int await() throws Exception

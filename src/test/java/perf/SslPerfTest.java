@@ -1,5 +1,29 @@
 package perf;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import javax.management.remote.JMXServiceURL;
+
 import org.HdrHistogram.AbstractHistogram;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramLogReader;
@@ -26,37 +50,12 @@ import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
-import org.mortbay.jetty.orchestrator.configuration.NodeArrayTopology;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import perf.monitoring.AsyncProfiler;
 import perf.monitoring.LinuxMonitor;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import javax.management.remote.JMXServiceURL;
 
 public class SslPerfTest implements Serializable
 {
@@ -82,18 +81,17 @@ public class SslPerfTest implements Serializable
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
-
-            .nodeArray(new SimpleNodeArrayConfiguration("server").topology(new NodeArrayTopology(
-                new Node("1", "load-master")
-            )))
-            .nodeArray(new SimpleNodeArrayConfiguration("loaders").topology(new NodeArrayTopology(
-                new Node("1", "load-1"),
-                new Node("2", "load-2"),
-                new Node("3", "load-3")
-            )))
-            .nodeArray(new SimpleNodeArrayConfiguration("probe").topology(new NodeArrayTopology(
-                new Node("1", "load-4")
-            )))
+            .nodeArray(new SimpleNodeArrayConfiguration("server")
+                .node(new Node("1", "load-master"))
+            )
+            .nodeArray(new SimpleNodeArrayConfiguration("loaders")
+                .node(new Node("1", "load-1"))
+                .node(new Node("2", "load-2"))
+                .node(new Node("3", "load-3"))
+            )
+            .nodeArray(new SimpleNodeArrayConfiguration("probe")
+                .node(new Node("1", "load-4"))
+            )
             ;
 
         LOG.info("Initializing...");
@@ -102,7 +100,7 @@ public class SslPerfTest implements Serializable
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
-            int participantCount = cfg.nodeArrays().stream().mapToInt(na -> na.topology().nodes().size()).sum() + 1; // + 1 b/c of the test itself
+            int participantCount = cfg.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
 
             serverArray.executeOnAll(tools ->
             {

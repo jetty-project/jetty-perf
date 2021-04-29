@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 
 import org.mortbay.jetty.orchestrator.configuration.LocalHostLauncher;
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
+import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.rpc.RpcClient;
 import org.mortbay.jetty.orchestrator.rpc.command.ExecuteNodeJobCommand;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
@@ -42,7 +44,7 @@ public class NodeArray
         Node node = nodes.get(id);
         if (node == null)
             throw new IllegalArgumentException("No such node with ID " + id);
-        return node.hostname;
+        return node.globalNodeId.getHostname();
     }
 
     public Path rootPathOf(String id)
@@ -50,13 +52,13 @@ public class NodeArray
         Node node = nodes.get(id);
         if (node == null)
             throw new IllegalArgumentException("No such node with ID " + id);
-        if (node.local)
+        if (node.globalNodeId.isLocal())
         {
-            return LocalHostLauncher.rootPathOf(node.nodeId).toPath();
+            return LocalHostLauncher.rootPathOf(node.globalNodeId.getNodeId()).toPath();
         }
         else
         {
-            URI uri = URI.create(NodeFileSystemProvider.PREFIX + ":" + node.nodeId + "!/");
+            URI uri = URI.create(NodeFileSystemProvider.PREFIX + ":" + node.globalNodeId.getNodeId() + "!/");
             return Paths.get(uri);
         }
     }
@@ -88,17 +90,20 @@ public class NodeArray
 
     static class Node implements AutoCloseable
     {
-        private final String hostname;
-        private final String nodeId;
+        private final GlobalNodeId globalNodeId;
+        private final NodeProcess nodeProcess;
         private final RpcClient rpcClient;
-        private final boolean local;
 
-        Node(String hostname, String nodeId, RpcClient rpcClient, boolean local)
+        Node(GlobalNodeId globalNodeId, NodeProcess nodeProcess, RpcClient rpcClient)
         {
-            this.hostname = hostname;
-            this.nodeId = nodeId;
+            this.globalNodeId = globalNodeId;
+            this.nodeProcess = nodeProcess;
             this.rpcClient = rpcClient;
-            this.local = local;
+        }
+
+        public NodeProcess getNodeProcess()
+        {
+            return nodeProcess;
         }
 
         @Override
