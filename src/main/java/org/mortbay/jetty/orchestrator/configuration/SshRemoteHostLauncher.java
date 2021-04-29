@@ -33,17 +33,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.Channel;
+import net.schmizz.sshj.connection.channel.direct.DirectConnection;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.connection.channel.forwarded.ConnectListener;
 import net.schmizz.sshj.connection.channel.forwarded.RemotePortForwarder;
 import net.schmizz.sshj.sftp.RemoteResourceInfo;
+import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.FileSystemFile;
 import net.schmizz.sshj.xfer.LocalSourceFile;
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
+import org.mortbay.jetty.orchestrator.util.ByteBuilder;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,10 +105,27 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         {
             sshClient = new SSHClient();
             sshClient.addHostKeyVerifier(new PromiscuousVerifier()); // or loadKnownHosts() instead?
-            sshClient.connect(hostname);
 
-            // public key auth
-            sshClient.authPublickey(username);
+            boolean useTunnel = System.getProperty("connect.via.hostname") != null;
+
+            if (useTunnel)
+            {
+                SSHClient first = new SSHClient();
+                first.addHostKeyVerifier(new PromiscuousVerifier());
+                first.connect(System.getProperty("connect.via.hostname"), Integer.getInteger("connect.via.port"));
+                first.authPublickey(System.getProperty("connect.via.user"));
+                DirectConnection tunnel = first.newDirectConnection(System.getProperty("connect.via.hostname"),
+                                                                     Integer.getInteger("connect.via.port"));
+
+                sshClient.connectVia(tunnel, hostname, 22);
+                // public key auth
+                sshClient.authPublickey(System.getProperty("connect.via.user"));
+            }
+            else
+            {
+                sshClient.connect(hostname);
+                sshClient.authPublickey(username);
+            }
 
             // do remote port forwarding
             int zkPort = Integer.parseInt(connectString.split(":")[1]);
@@ -140,10 +160,10 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             session.allocateDefaultPTY();
             cmd = session.exec(cmdLine);
 
-            SshLogOutputStream sshLogOutputStream = new SshLogOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, System.out);
-            new StreamCopier(cmd.getInputStream(), sshLogOutputStream).spawnDaemon(hostname + "stdout");
-            new StreamCopier(cmd.getErrorStream(), System.err).spawnDaemon(hostname + "stderr");
-            sshLogOutputStream.waitForExpectedString();
+            ExpectingOutputStream expectingOutputStream = new ExpectingOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, new LineBufferingOutputStream(System.out));
+            new StreamCopier(cmd.getInputStream(), expectingOutputStream).spawnDaemon(hostname + "stdout");
+            new StreamCopier(cmd.getErrorStream(), new LineBufferingOutputStream(System.err)).spawnDaemon(hostname + "stderr");
+            expectingOutputStream.waitForExpectedString();
 
             HashMap<String, Object> env = new HashMap<>();
             env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
@@ -180,6 +200,13 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         String parentFilename = destFilename.substring(0, destFilename.lastIndexOf('/'));
 
         sftpClient.mkdirs(parentFilename);
+        // do not transfer file if already there, same size and same mtime
+        FileAttributes fileAttributes = sftpClient.statExistence(destFilename);
+        if (fileAttributes != null && fileAttributes.getSize() == localSourceFile.getLength() &&
+            fileAttributes.getMtime() != localSourceFile.getLastModifiedTime())
+        {
+            LOG.info("could skip transfering file {}", localSourceFile.getName());
+        }
         sftpClient.put(localSourceFile, destFilename);
     }
 
@@ -276,7 +303,42 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         }
     }
 
-    private static class SshLogOutputStream extends OutputStream
+    private static class LineBufferingOutputStream extends OutputStream
+    {
+        private final OutputStream delegate;
+        private final ByteBuilder byteBuilder = new ByteBuilder(256);
+
+        public LineBufferingOutputStream(OutputStream delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            if (byteBuilder.isFull())
+            {
+                delegate.write(byteBuilder.getBuffer());
+                delegate.flush();
+                byteBuilder.clear();
+            }
+            byteBuilder.append(b);
+            if (b == '\n' || b == '\r')
+            {
+                delegate.write(byteBuilder.getBuffer(), 0, byteBuilder.length());
+                delegate.flush();
+                byteBuilder.clear();
+            }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            delegate.close();
+        }
+    }
+
+    private static class ExpectingOutputStream extends OutputStream
     {
         private final String hostname;
         private final byte[] expectedSequence;
@@ -287,7 +349,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         private final AtomicBoolean matched = new AtomicBoolean(false);
         private final AtomicBoolean failed = new AtomicBoolean(false);
 
-        private SshLogOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
+        private ExpectingOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
         {
             this.hostname = hostname;
             this.expectedSequence = expectedSequence;
