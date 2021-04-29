@@ -31,6 +31,7 @@ import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -40,6 +41,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.load.generator.LoadGenerator;
@@ -128,7 +130,6 @@ public class SslPerfTest implements Serializable
 
                 ServerConnector serverConnector = new ServerConnector(server, ssl, http);
                 serverConnector.setPort(8443);
-                serverConnector.addBean(new LatencyRecordingChannelListener("server.dat"));
                 server.addConnector(serverConnector);
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
@@ -148,9 +149,14 @@ public class SslPerfTest implements Serializable
             {
                 try (AsyncProfiler p = new AsyncProfiler("server.html"); LinuxMonitor m = new LinuxMonitor())
                 {
+                    Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
+                    Connector serverConnector = server.getConnectors()[0];
+                    LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener("server.hlog");
+                    LifeCycle.start(listener);
+                    serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
-                    Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
+                    LifeCycle.stop(listener);
                     server.stop();
                 }
             });
@@ -160,7 +166,7 @@ public class SslPerfTest implements Serializable
                 try (AsyncProfiler p = new AsyncProfiler("loader.html"); LinuxMonitor m = new LinuxMonitor())
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(serverUri, RUN_DURATION, "loader.dat");
+                    runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -170,7 +176,7 @@ public class SslPerfTest implements Serializable
                 try (AsyncProfiler p = new AsyncProfiler("probe.html"); LinuxMonitor m = new LinuxMonitor())
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.dat");
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -184,16 +190,16 @@ public class SslPerfTest implements Serializable
             probeFuture.get();
 
             // download servers FGs & transform histograms
-            download(serverArray, new File("target/report/server"), "server.html", "server.dat", "gc.log");
-            xformHisto(serverArray, new File("target/report/server"), "server.dat");
+            download(serverArray, new File("target/report/server"), "server.html", "server.hlog", "gc.log");
+            xformHisto(serverArray, new File("target/report/server"), "server.hlog");
             download(serverArray, new File("target/report/server"), LinuxMonitor.DEFAULT_FILENAMES);
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.dat", "gc.log");
-            xformHisto(loadersArray, new File("target/report/loader"), "loader.dat");
+            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.hlog", "gc.log");
+            xformHisto(loadersArray, new File("target/report/loader"), "loader.hlog");
             download(loadersArray, new File("target/report/loader"), LinuxMonitor.DEFAULT_FILENAMES);
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.html", "probe.dat", "gc.log");
-            xformHisto(probeArray, new File("target/report/probe"), "probe.dat");
+            download(probeArray, new File("target/report/probe"), "probe.html", "probe.hlog", "gc.log");
+            xformHisto(probeArray, new File("target/report/probe"), "probe.hlog");
             download(probeArray, new File("target/report/probe"), LinuxMonitor.DEFAULT_FILENAMES);
 
             long after = System.nanoTime();
