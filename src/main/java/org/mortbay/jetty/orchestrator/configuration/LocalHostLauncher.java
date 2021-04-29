@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
 
@@ -28,16 +29,19 @@ public class LocalHostLauncher implements HostLauncher
     public static final String HOSTNAME = "localhost";
 
     private Thread thread;
-    private String hostId;
+    private GlobalNodeId nodeId;
 
     @Override
-    public String launch(String hostname, String hostId, String connectString) throws Exception
+    public String launch(GlobalNodeId globalNodeId, String connectString) throws Exception
     {
-        if (!HOSTNAME.equals(hostname))
+        GlobalNodeId nodeId = globalNodeId.getHostGlobalId();
+        if (!nodeId.equals(globalNodeId))
+            throw new IllegalArgumentException("node id is not the one of a host node");
+        if (!HOSTNAME.equals(nodeId.getHostname()))
             throw new IllegalArgumentException("local launcher can only work with 'localhost' hostname");
         if (thread != null)
             throw new IllegalStateException("local launcher already spawned 'localhost' thread");
-        this.hostId = hostId;
+        this.nodeId = nodeId;
 
         String[] classpathEntries = System.getProperty("java.class.path").split(File.pathSeparator);
         for (String classpathEntry : classpathEntries)
@@ -45,21 +49,21 @@ public class LocalHostLauncher implements HostLauncher
             File cpFile = new File(classpathEntry);
             if (cpFile.isDirectory())
             {
-                copyDir(hostId, cpFile, 1);
+                copyDir(nodeId.getHostId(), cpFile, 1);
             }
             else
             {
                 String filename = cpFile.getName();
                 try (InputStream is = new FileInputStream(cpFile))
                 {
-                    copyFile(hostId, filename, is);
+                    copyFile(nodeId.getHostId(), filename, is);
                 }
             }
         }
 
         try
         {
-            this.thread = NodeProcess.spawnThread(hostId, connectString);
+            this.thread = NodeProcess.spawnThread(nodeId.getHostId(), connectString);
         }
         catch (Exception e)
         {
@@ -77,7 +81,7 @@ public class LocalHostLauncher implements HostLauncher
             thread.join();
             thread = null;
 
-            File rootPath = rootPathOf(hostId);
+            File rootPath = rootPathOf(nodeId.getHostId());
             File parentPath = rootPath.getParentFile();
             if (IOUtil.deltree(rootPath) && parentPath != null)
             {
@@ -85,7 +89,7 @@ public class LocalHostLauncher implements HostLauncher
                 if (files != null && files.length == 0)
                     IOUtil.deltree(parentPath);
             }
-            hostId = null;
+            nodeId = null;
         }
     }
 

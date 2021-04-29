@@ -45,6 +45,7 @@ import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.FileSystemFile;
 import net.schmizz.sshj.xfer.LocalSourceFile;
 import org.mortbay.jetty.orchestrator.nodefs.NodeFileSystemProvider;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
 import org.mortbay.jetty.orchestrator.rpc.NodeProcess;
 import org.mortbay.jetty.orchestrator.util.ByteBuilder;
 import org.mortbay.jetty.orchestrator.util.IOUtil;
@@ -90,10 +91,13 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
     }
 
     @Override
-    public String launch(String hostname, String hostId, String connectString) throws Exception
+    public String launch(GlobalNodeId globalNodeId, String connectString) throws Exception
     {
-        if (nodes.containsKey(hostname))
-            throw new IllegalArgumentException("ssh launcher already launched node on host " + hostname);
+        GlobalNodeId nodeId = globalNodeId.getHostGlobalId();
+        if (!nodeId.equals(globalNodeId))
+            throw new IllegalArgumentException("node id is not the one of a host node");
+        if (nodes.containsKey(nodeId.getHostname()))
+            throw new IllegalArgumentException("ssh launcher already launched node on host " + nodeId.getHostname());
 
         FileSystem fileSystem = null;
         SSHClient sshClient = null;
@@ -117,19 +121,19 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 DirectConnection tunnel = first.newDirectConnection(System.getProperty("connect.via.hostname"),
                                                                      Integer.getInteger("connect.via.port"));
 
-                sshClient.connectVia(tunnel, hostname, 22);
+                sshClient.connectVia(tunnel, nodeId.getHostname(), 22);
                 // public key auth
                 sshClient.authPublickey(System.getProperty("connect.via.user"));
             }
             else
             {
-                sshClient.connect(hostname);
+                sshClient.connect(nodeId.getHostname());
                 sshClient.authPublickey(username);
             }
 
             // do remote port forwarding
             int zkPort = Integer.parseInt(connectString.split(":")[1]);
-            forwardingConnectListener = new SocketForwardingConnectListener(hostname, new InetSocketAddress("localhost", zkPort));
+            forwardingConnectListener = new SocketForwardingConnectListener(nodeId.getHostname(), new InetSocketAddress("localhost", zkPort));
             RemotePortForwarder.Forward forward = sshClient.getRemotePortForwarder().bind(
                 new RemotePortForwarder.Forward(0), // remote port, dynamically choose one
                 forwardingConnectListener
@@ -145,38 +149,38 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 for (String classpathEntry : classpathEntries)
                 {
                     File cpFile = new File(classpathEntry);
-                    remoteClasspathEntries.add("." + NodeFileSystemProvider.PREFIX + "/" + hostId + "/" + NodeProcess.CLASSPATH_FOLDER_NAME + "/" + cpFile.getName());
+                    remoteClasspathEntries.add("." + NodeFileSystemProvider.PREFIX + "/" + nodeId.getHostId() + "/" + NodeProcess.CLASSPATH_FOLDER_NAME + "/" + cpFile.getName());
                     if (cpFile.isDirectory())
-                        copyDir(sftpClient, hostId, cpFile, 1);
+                        copyDir(sftpClient, nodeId.getHostId(), cpFile, 1);
                     else
-                        copyFile(sftpClient, hostId, cpFile.getName(), new FileSystemFile(cpFile));
+                        copyFile(sftpClient, nodeId.getHostId(), cpFile.getName(), new FileSystemFile(cpFile));
                 }
             }
             String remoteClasspath = String.join(":", remoteClasspathEntries);
             String readyEchoString = "Node is ready";
-            String cmdLine = String.join(" ", buildCommandLine(jvm, remoteClasspath, hostId, remoteConnectString, readyEchoString));
+            String cmdLine = String.join(" ", buildCommandLine(jvm, remoteClasspath, nodeId.getHostId(), remoteConnectString, readyEchoString));
 
             session = sshClient.startSession();
             session.allocateDefaultPTY();
             cmd = session.exec(cmdLine);
 
-            ExpectingOutputStream expectingOutputStream = new ExpectingOutputStream(hostname, readyEchoString.getBytes(session.getRemoteCharset()), cmd, new LineBufferingOutputStream(System.out));
-            new StreamCopier(cmd.getInputStream(), expectingOutputStream).spawnDaemon(hostname + "stdout");
-            new StreamCopier(cmd.getErrorStream(), new LineBufferingOutputStream(System.err)).spawnDaemon(hostname + "stderr");
+            ExpectingOutputStream expectingOutputStream = new ExpectingOutputStream(nodeId.getHostname(), readyEchoString.getBytes(session.getRemoteCharset()), cmd, new LineBufferingOutputStream(System.out));
+            new StreamCopier(cmd.getInputStream(), expectingOutputStream).spawnDaemon(nodeId.getHostname() + "-stdout");
+            new StreamCopier(cmd.getErrorStream(), new LineBufferingOutputStream(System.err)).spawnDaemon(nodeId.getHostname() + "-stderr");
             expectingOutputStream.waitForExpectedString();
 
             HashMap<String, Object> env = new HashMap<>();
             env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
-            fileSystem = FileSystems.newFileSystem(URI.create(NodeFileSystemProvider.PREFIX + ":" + hostId), env);
+            fileSystem = FileSystems.newFileSystem(URI.create(NodeFileSystemProvider.PREFIX + ":" + nodeId.getHostId()), env);
 
-            RemoteNodeHolder remoteNodeHolder = new RemoteNodeHolder(hostId, fileSystem, sshClient, forwardingConnectListener, forwarding, session, cmd);
-            nodes.put(hostname, remoteNodeHolder);
+            RemoteNodeHolder remoteNodeHolder = new RemoteNodeHolder(nodeId, fileSystem, sshClient, forwardingConnectListener, forwarding, session, cmd);
+            nodes.put(nodeId.getHostname(), remoteNodeHolder);
             return remoteConnectString;
         }
         catch (Exception e)
         {
             IOUtil.close(fileSystem, cmd, session, forwardingConnectListener, forwarding, sshClient);
-            throw new Exception("Error launching host '" + hostname + "'", e);
+            throw new Exception("Error launching host '" + nodeId.getHostname() + "'", e);
         }
     }
 
@@ -237,7 +241,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
     }
 
     private static class RemoteNodeHolder implements AutoCloseable {
-        private final String hostId;
+        private final GlobalNodeId nodeId;
         private final FileSystem fileSystem;
         private final SSHClient sshClient;
         private final SocketForwardingConnectListener forwardingConnectListener;
@@ -245,8 +249,8 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         private final Session session;
         private final Session.Command command;
 
-        private RemoteNodeHolder(String hostId, FileSystem fileSystem, SSHClient sshClient, SocketForwardingConnectListener forwardingConnectListener, AutoCloseable forwarding, Session session, Session.Command command) {
-            this.hostId = hostId;
+        private RemoteNodeHolder(GlobalNodeId nodeId, FileSystem fileSystem, SSHClient sshClient, SocketForwardingConnectListener forwardingConnectListener, AutoCloseable forwarding, Session session, Session.Command command) {
+            this.nodeId = nodeId;
             this.fileSystem = fileSystem;
             this.sshClient = sshClient;
             this.forwardingConnectListener = forwardingConnectListener;
@@ -277,16 +281,11 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
             IOUtil.close(session);
             try (SFTPClient sftpClient = sshClient.newStatefulSFTPClient())
             {
-                deltree(sftpClient, "." + NodeFileSystemProvider.PREFIX + "/" + clusterIdOf(hostId));
+                deltree(sftpClient, "." + NodeFileSystemProvider.PREFIX + "/" + nodeId.getClusterId());
             }
             IOUtil.close(forwardingConnectListener);
             IOUtil.close(forwarding);
             IOUtil.close(sshClient);
-        }
-
-        private static String clusterIdOf(String nodeId)
-        {
-            return nodeId.split("/")[0];
         }
 
         private static void deltree(SFTPClient sftpClient, String path) throws IOException

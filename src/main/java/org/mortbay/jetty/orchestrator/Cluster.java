@@ -105,7 +105,7 @@ public class Cluster implements AutoCloseable
             HostLauncher launcher = hostname.equals(LocalHostLauncher.HOSTNAME) ? localHostLauncher : hostLauncher;
             if (launcher == null)
                 throw new IllegalStateException("No configured host launcher to start node on " + hostname);
-            String remoteConnectString = launcher.launch(hostname, globalNodeId.getHostId(), connectString);
+            String remoteConnectString = launcher.launch(globalNodeId, connectString);
             hosts.put(globalNodeId, new Host(globalNodeId, new RpcClient(curator, globalNodeId), remoteConnectString));
         }
 

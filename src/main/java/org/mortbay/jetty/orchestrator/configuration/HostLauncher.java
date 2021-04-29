@@ -13,10 +13,12 @@
 
 package org.mortbay.jetty.orchestrator.configuration;
 
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
+
 public interface HostLauncher extends AutoCloseable
 {
     /**
      * @return the modified {@code connectString} that nodes running on this host must connect to.
      */
-    String launch(String hostname, String hostId, String connectString) throws Exception;
+    String launch(GlobalNodeId hostId, String connectString) throws Exception;
 }
