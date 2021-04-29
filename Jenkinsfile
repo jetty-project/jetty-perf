@@ -12,8 +12,8 @@ pipeline {
     }
     parameters {
       string(defaultValue: '*', description: 'Junit test to run -Dtest=', name: 'TEST_TO_RUN')
-      string(defaultValue: '10.0.2', description: 'Jetty Version', name: 'JETTY_VERSION')
-      string(defaultValue: '2.0.0', description: 'LoadGenerator Version', name: 'LOADGENERATOR_VERSION')
+      //string(defaultValue: '10.0.2', description: 'Jetty Version', name: 'JETTY_VERSION')
+      //string(defaultValue: '2.0.0', description: 'LoadGenerator Version', name: 'LOADGENERATOR_VERSION')
       string(defaultValue: '10', description: 'Time in minutes to run load test', name: 'RUN_FOR')
       string(defaultValue: 'jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
       string(defaultValue: '-Xmx8g', description: 'extra JVM arguments to use', name: 'EXTRA_ARGS_TO_USE')
@@ -61,7 +61,8 @@ pipeline {
                          "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                   configFileProvider(
                           [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e install -Dtest=${TEST_TO_RUN} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.extraArgs=\"${EXTRA_ARGS_TO_USE}\" -Dtest.runFor=${RUN_FOR} -Djetty.version=${JETTY_VERSION} -Dloadgenerator.version=${LOADGENERATOR_VERSION}"
+                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -s $GLOBAL_MVN_SETTINGS -Dmaven.repo.local=.repository -V -B -e install -Dtest=${TEST_TO_RUN} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.extraArgs=\"${EXTRA_ARGS_TO_USE}\" -Dtest.runFor=${RUN_FOR}"
+                    //-Djetty.version=${JETTY_VERSION} -Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                   }
                 }
                 junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
