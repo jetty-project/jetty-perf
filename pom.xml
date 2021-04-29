@@ -20,6 +20,9 @@
     <!-- jdk name to use -->
     <test.jdk.name>jdk11</test.jdk.name>
 
+    <!-- extra JVM arguments to use -->
+    <test.jdk.extraArgs>-Xmx8g</test.jdk.extraArgs>
+
     <!-- the values need to be defined in ~/.m2/settings.xml -->
     <connect.via.hostname></connect.via.hostname>
     <connect.via.user></connect.via.user>
