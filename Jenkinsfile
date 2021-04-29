@@ -2,12 +2,6 @@
 
 pipeline {
     agent any
-    tools {
-      jdk 'jdk8'
-      jdk 'jdk11'
-      jdk 'jdk16'
-      jdk 'jdk16-zulu'
-    }
     options {
       buildDiscarder logRotator( numToKeepStr: '30' )
     }
@@ -18,6 +12,13 @@ pipeline {
       string(defaultValue: '10', description: 'Time in minutes to run load test', name: 'RUN_FOR')
       string(defaultValue: 'jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
       string(defaultValue: '-Xmx8g', description: 'extra JVM arguments to use', name: 'EXTRA_ARGS_TO_USE')
+    }
+    tools {
+      jdk 'jdk8'
+      jdk 'jdk11'
+      jdk 'jdk16'
+      jdk 'jdk16-zulu'
+      jdk "${JDK_TO_USE}"
     }
     stages {
         stage('Get Load nodes') {
