@@ -6,6 +6,7 @@ pipeline {
       jdk 'jdk8'
       jdk 'jdk11'
       jdk 'jdk16'
+      jdk 'jdk16-zulu'
     }
     options {
       buildDiscarder logRotator( numToKeepStr: '30' )
