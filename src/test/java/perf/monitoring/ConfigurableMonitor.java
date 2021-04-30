@@ -15,6 +15,7 @@ public class ConfigurableMonitor implements Monitor
         CMDLINE_MEMORY,
         CMDLINE_NETWORK,
         APROF_CPU,
+        HEAP_DUMP_ON_CLOSE,
     }
 
     private final List<Monitor> monitors = new ArrayList<>();
@@ -50,6 +51,8 @@ public class ConfigurableMonitor implements Monitor
                 return LinuxNetworkMonitor.DEFAULT_FILENAME;
             case APROF_CPU:
                 return AsyncProfilerCpuMonitor.DEFAULT_FILENAME;
+            case HEAP_DUMP_ON_CLOSE:
+                return DumpHeapOnCloseMonitor.DEFAULT_FILENAME;
             default:
                 throw new AssertionError("Unknown monitor item : " +item);
         }
@@ -67,6 +70,8 @@ public class ConfigurableMonitor implements Monitor
                 return new LinuxMemoryMonitor();
             case APROF_CPU:
                 return new AsyncProfilerCpuMonitor();
+            case HEAP_DUMP_ON_CLOSE:
+                return new DumpHeapOnCloseMonitor();
             default:
                 throw new AssertionError("Unknown monitor item : " +item);
         }
