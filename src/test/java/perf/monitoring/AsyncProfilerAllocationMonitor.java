@@ -3,25 +3,24 @@ package perf.monitoring;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
-class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
+class AsyncProfilerAllocationMonitor extends AbstractAsyncProfilerMonitor
 {
-    public static final String DEFAULT_FILENAME = "async-profiler-cpu.html";
+    public static final String DEFAULT_FILENAME = "async-profiler-alloc.html";
 
     private final String outputFilename;
 
-    public AsyncProfilerCpuMonitor() throws Exception
+    public AsyncProfilerAllocationMonitor() throws Exception
     {
         this.outputFilename = DEFAULT_FILENAME;
     }
 
-    public AsyncProfilerCpuMonitor(String outputFilename) throws Exception
+    public AsyncProfilerAllocationMonitor(String outputFilename) throws Exception
     {
         this.outputFilename = outputFilename;
     }
 
-    public AsyncProfilerCpuMonitor(String outputFilename, long pid) throws Exception
+    public AsyncProfilerAllocationMonitor(String outputFilename, long pid) throws Exception
     {
         super(pid);
         this.outputFilename = outputFilename;
@@ -30,7 +29,7 @@ class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
     @Override
     protected Collection<String> extraStartCmdLineArgs()
     {
-        return Collections.emptyList();
+        return Arrays.asList("-e", "alloc");
     }
 
     @Override
