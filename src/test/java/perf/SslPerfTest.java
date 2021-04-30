@@ -1,9 +1,12 @@
 package perf;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -236,6 +239,8 @@ public class SslPerfTest implements Serializable
             File reportFolder = new File(targetFolder, id);
             String inputFileName = new File(reportFolder, filename).getPath();
 
+            createHtmlHistogram(inputFileName);
+
             Histogram total = new Histogram(3);
             try (HistogramLogReader reader = new HistogramLogReader(inputFileName))
             {
@@ -249,6 +254,52 @@ public class SslPerfTest implements Serializable
             {
                 total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
             }
+        }
+    }
+
+    private void createHtmlHistogram(String inputFileName) throws IOException
+    {
+        String targetFilename = inputFileName + ".html";
+        File inputFile = new File(inputFileName);
+        String title = inputFile.getName().split("\\.")[0];
+
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/graph-template.html"), StandardCharsets.UTF_8)))
+        {
+            while (true)
+            {
+                String line = r.readLine();
+                if (line == null)
+                    break;
+                sb.append(line).append('\n');
+            }
+        }
+        String html = sb.toString();
+
+        StringBuilder sb2 = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile), StandardCharsets.UTF_8)))
+        {
+            while (true)
+            {
+                String line = reader.readLine();
+                if (line == null)
+                    break;
+                if (line.startsWith("#"))
+                    continue;
+                int idx = line.lastIndexOf(',');
+                String data = line.substring(idx + 1);
+
+                sb2.append("'").append(data).append("',\n");
+            }
+        }
+        String histograms = sb2.toString();
+
+        html = html.replace("##TITLE##", title);
+        html = html.replace("##HISTOGRAMS##", histograms);
+
+        try (OutputStream os = new FileOutputStream(targetFilename))
+        {
+            os.write(html.getBytes(StandardCharsets.UTF_8));
         }
     }
 
