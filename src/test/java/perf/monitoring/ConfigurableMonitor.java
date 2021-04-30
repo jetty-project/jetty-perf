@@ -71,5 +71,4 @@ public class ConfigurableMonitor implements Monitor
                 throw new AssertionError("Unknown monitor item : " +item);
         }
     }
-
 }
