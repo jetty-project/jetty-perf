@@ -3,18 +3,18 @@ package perf.monitoring;
 import java.io.File;
 import java.io.IOException;
 
-class CpuMonitor implements AutoCloseable
+class LinuxCpuMonitor implements Monitor
 {
     public static final String DEFAULT_FILENAME = "cpu.txt";
 
     private final Process process;
 
-    public CpuMonitor() throws IOException
+    public LinuxCpuMonitor() throws IOException
     {
         this(DEFAULT_FILENAME, 10);
     }
 
-    public CpuMonitor(String filename, int interval) throws IOException
+    public LinuxCpuMonitor(String filename, int interval) throws IOException
     {
         process = new ProcessBuilder("mpstat", "-P", "ALL", "" + interval)
                 .redirectErrorStream(true)

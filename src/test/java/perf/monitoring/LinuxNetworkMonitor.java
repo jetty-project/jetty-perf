@@ -3,18 +3,18 @@ package perf.monitoring;
 import java.io.File;
 import java.io.IOException;
 
-class NetworkMonitor implements AutoCloseable
+class LinuxNetworkMonitor implements Monitor
 {
     public static final String DEFAULT_FILENAME = "network.txt";
 
     private final Process process;
 
-    public NetworkMonitor() throws IOException
+    public LinuxNetworkMonitor() throws IOException
     {
         this(DEFAULT_FILENAME, 10);
     }
 
-    public NetworkMonitor(String filename, int interval) throws IOException
+    public LinuxNetworkMonitor(String filename, int interval) throws IOException
     {
         process = new ProcessBuilder("sar", "-n", "DEV", "-n", "EDEV", "" + interval)
             .redirectErrorStream(true)

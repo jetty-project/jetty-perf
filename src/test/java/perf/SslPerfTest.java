@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -59,8 +60,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import perf.monitoring.AsyncProfiler;
-import perf.monitoring.LinuxMonitor;
+import perf.monitoring.ConfigurableMonitor;
 
 public class SslPerfTest implements Serializable
 {
@@ -83,6 +83,7 @@ public class SslPerfTest implements Serializable
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", "");
         List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
         jvmOpts.addAll(Arrays.asList(jdkExtraArgs.split(" ")));
+        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.allOf(ConfigurableMonitor.Item.class);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
@@ -150,7 +151,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler p = new AsyncProfiler("server.html"); LinuxMonitor m = new LinuxMonitor())
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
                     Connector serverConnector = server.getConnectors()[0];
@@ -166,7 +167,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler p = new AsyncProfiler("loader.html"); LinuxMonitor m = new LinuxMonitor())
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog");
@@ -176,7 +177,7 @@ public class SslPerfTest implements Serializable
 
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
-                try (AsyncProfiler p = new AsyncProfiler("probe.html"); LinuxMonitor m = new LinuxMonitor())
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog");
@@ -185,25 +186,25 @@ public class SslPerfTest implements Serializable
             });
 
             cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants that profiling can be stopped
+            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants that monitoring can be stopped
 
-            // wait for all async profiler reports to be written
+            // wait for all monitoring reports to be written
             serverFuture.get();
             loadersFuture.get();
             probeFuture.get();
 
             // download servers FGs & transform histograms
-            download(serverArray, new File("target/report/server"), "server.html", "server.hlog", "gc.log");
+            download(serverArray, new File("target/report/server"), "server.hlog", "gc.log");
             xformHisto(serverArray, new File("target/report/server"), "server.hlog");
-            download(serverArray, new File("target/report/server"), LinuxMonitor.DEFAULT_FILENAMES);
+            download(serverArray, new File("target/report/server"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.html", "loader.hlog", "gc.log");
+            download(loadersArray, new File("target/report/loader"), "loader.hlog", "gc.log");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.hlog");
-            download(loadersArray, new File("target/report/loader"), LinuxMonitor.DEFAULT_FILENAMES);
+            download(loadersArray, new File("target/report/loader"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.html", "probe.hlog", "gc.log");
+            download(probeArray, new File("target/report/probe"), "probe.hlog", "gc.log");
             xformHisto(probeArray, new File("target/report/probe"), "probe.hlog");
-            download(probeArray, new File("target/report/probe"), LinuxMonitor.DEFAULT_FILENAMES);
+            download(probeArray, new File("target/report/probe"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");

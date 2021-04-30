@@ -13,22 +13,29 @@ import org.mortbay.jetty.orchestrator.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AsyncProfiler implements AutoCloseable
+class AsyncProfilerCpuMonitor implements Monitor
 {
-    private static final Logger LOG = LoggerFactory.getLogger(AsyncProfiler.class);
+    public static final String DEFAULT_FILENAME = "async-profiler-cpu.html";
+
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncProfilerCpuMonitor.class);
     private static final String VERSION = "2.0";
 
-    private final String flamegraphFilename;
+    private final String outputFilename;
     private final long pid;
 
-    public AsyncProfiler(String flamegraphFilename) throws Exception
+    public AsyncProfilerCpuMonitor() throws Exception
     {
-        this(flamegraphFilename, ProcessHandle.current().pid());
+        this(DEFAULT_FILENAME, ProcessHandle.current().pid());
     }
 
-    public AsyncProfiler(String flamegraphFilename, long pid) throws Exception
+    public AsyncProfilerCpuMonitor(String outputFilename) throws Exception
     {
-        this.flamegraphFilename = flamegraphFilename;
+        this(outputFilename, ProcessHandle.current().pid());
+    }
+
+    public AsyncProfilerCpuMonitor(String outputFilename, long pid) throws Exception
+    {
+        this.outputFilename = outputFilename;
         this.pid = pid;
         installAsyncProfilerIfNeeded();
         startAsyncProfiler(pid);
@@ -37,7 +44,7 @@ public class AsyncProfiler implements AutoCloseable
     @Override
     public void close() throws Exception
     {
-        stopAsyncProfiler(flamegraphFilename, pid);
+        stopAsyncProfiler(outputFilename, pid);
     }
 
     private static void installAsyncProfilerIfNeeded() throws IOException
@@ -81,11 +88,11 @@ public class AsyncProfiler implements AutoCloseable
         LOG.debug("started async profiler...");
     }
 
-    private static void stopAsyncProfiler(String flamegraphFilename, long pid) throws IOException, InterruptedException
+    private static void stopAsyncProfiler(String outputFilename, long pid) throws IOException, InterruptedException
     {
         LOG.debug("stopping async profiler...");
         File asyncProfilerHome = getAsyncProfilerHome();
-        File fgFile = new File(flamegraphFilename);
+        File fgFile = new File(outputFilename);
         int rc = new ProcessBuilder("./profiler.sh", "stop", "-f", fgFile.getAbsolutePath(), Long.toString(pid))
             .directory(asyncProfilerHome)
             .redirectErrorStream(true)
