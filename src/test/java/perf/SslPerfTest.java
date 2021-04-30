@@ -84,7 +84,7 @@ public class SslPerfTest implements Serializable
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
         List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
         jvmOpts.addAll(jdkExtraArgs == null ? Collections.emptyList() : Arrays.asList(jdkExtraArgs.split(" ")));
-        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.APROF_ALLOC);
+        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
