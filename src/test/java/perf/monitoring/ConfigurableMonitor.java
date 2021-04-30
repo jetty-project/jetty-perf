@@ -67,7 +67,7 @@ public class ConfigurableMonitor implements Monitor
             case CMDLINE_MEMORY:
                 return new LinuxMemoryMonitor();
             case CMDLINE_NETWORK:
-                return new LinuxMemoryMonitor();
+                return new LinuxNetworkMonitor();
             case APROF_CPU:
                 return new AsyncProfilerCpuMonitor();
             case HEAP_DUMP_ON_CLOSE:
