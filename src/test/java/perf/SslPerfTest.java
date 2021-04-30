@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -80,10 +81,10 @@ public class SslPerfTest implements Serializable
         };
 
         String jdkName = System.getProperty("test.jdk.name", "jdk11");
-        String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", "");
+        String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
         List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
-        jvmOpts.addAll(Arrays.asList(jdkExtraArgs.split(" ")));
-        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
+        jvmOpts.addAll(jdkExtraArgs == null ? Collections.emptyList() : Arrays.asList(jdkExtraArgs.split(" ")));
+        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.APROF_ALLOC);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
