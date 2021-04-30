@@ -170,7 +170,15 @@ public class NodeFileSystem extends FileSystem
     InputStream newInputStream(NodePath path, OpenOption... options) throws IOException
     {
         String sftpPath = "." + NodeFileSystemProvider.PREFIX + "/" + path.getNodeId() + path.getRealPath();
-        long fileSize = sftpClient.lstat(sftpPath).getSize();
+        long fileSize;
+        try
+        {
+            fileSize = sftpClient.lstat(sftpPath).getSize();
+        }
+        catch (IOException e)
+        {
+            throw new IOException("Error opening " + path, e);
+        }
         if (fileSize > 1024 * 1024)
         {
             // use piping if file to download is > 1MB
