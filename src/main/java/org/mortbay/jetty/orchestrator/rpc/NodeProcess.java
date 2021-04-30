@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -161,13 +162,18 @@ public class NodeProcess implements Serializable, AutoCloseable
     {
         List<String> cmdLine = new ArrayList<>();
         cmdLine.add(jvm.executable());
-        cmdLine.addAll(jvm.getOpts());
+        cmdLine.addAll(filterOutEmptyStrings(jvm.getOpts()));
         cmdLine.add("-classpath");
         cmdLine.add(buildClassPath(libPath));
         cmdLine.add(NodeProcess.class.getName());
         cmdLine.add(nodeId);
         cmdLine.add(connectString);
         return cmdLine;
+    }
+
+    private static List<String> filterOutEmptyStrings(List<String> opts)
+    {
+        return opts.stream().filter(s -> !s.trim().equals("")).collect(Collectors.toList());
     }
 
     private static String buildClassPath(File libPath)
