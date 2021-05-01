@@ -33,7 +33,6 @@ import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramLogReader;
 import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
-import org.apache.commons.math3.analysis.integration.RombergIntegrator;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -84,7 +83,7 @@ public class SslPerfTest implements Serializable
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
         List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
         jvmOpts.addAll(jdkExtraArgs == null ? Collections.emptyList() : Arrays.asList(jdkExtraArgs.split(" ")));
-        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
+        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK, ConfigurableMonitor.Item.APROF_CPU);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
@@ -241,34 +240,25 @@ public class SslPerfTest implements Serializable
             File reportFolder = new File(targetFolder, id);
             String inputFileName = new File(reportFolder, filename).getPath();
 
-            Histogram total = new Histogram(3);
-            List<Double> mins = new ArrayList<>();
-            List<Double> maxs = new ArrayList<>();
             try (HistogramLogReader reader = new HistogramLogReader(inputFileName))
             {
+                Histogram total = new Histogram(3);
                 while (reader.hasNext())
                 {
                     Histogram histogram = (Histogram) reader.nextIntervalHistogram();
-                    mins.add((double)histogram.getMinValue());
-                    maxs.add(histogram.getMaxValueAsDouble());
                     total.add(histogram);
+                }
+                try (PrintStream ps = new PrintStream(new FileOutputStream(inputFileName + ".hgrm")))
+                {
+                    total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
                 }
             }
 
-            RombergIntegrator integrator = new RombergIntegrator();
-            // divide by 1000 to report in microseconds
-            double minIntegral = integrator.integrate(Integer.MAX_VALUE, x -> mins.get((int)Math.round(x / 1000.0)), 0.0, mins.size() - 1);
-            double maxIntegral = integrator.integrate(Integer.MAX_VALUE, x -> maxs.get((int)Math.round(x / 1000.0)), 0.0, maxs.size() - 1);
-            createHtmlHistogram(inputFileName, minIntegral, maxIntegral);
-
-            try (PrintStream ps = new PrintStream(new FileOutputStream(inputFileName + ".hgrm")))
-            {
-                total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
-            }
+            createHtmlHistogram(inputFileName);
         }
     }
 
-    private void createHtmlHistogram(String inputFileName, double minIntegral, double maxIntegral) throws IOException
+    private void createHtmlHistogram(String inputFileName) throws IOException
     {
         String targetFilename = inputFileName + ".html";
         File inputFile = new File(inputFileName);
@@ -295,20 +285,14 @@ public class SslPerfTest implements Serializable
                 String line = reader.readLine();
                 if (line == null)
                     break;
-                if (line.startsWith("#"))
-                    continue;
-                int idx = line.lastIndexOf(',');
-                String data = line.substring(idx + 1);
 
-                sb2.append("'").append(data).append("',\n");
+                sb2.append(line).append("\n");
             }
         }
         String histograms = sb2.toString();
 
         html = html.replace("##TITLE##", title);
         html = html.replace("##HISTOGRAMS##", histograms);
-        html = html.replace("##LATENCY_MIN_INTEGRAL##", String.format("%,.3f", minIntegral));
-        html = html.replace("##LATENCY_MAX_INTEGRAL##", String.format("%,.3f", maxIntegral));
 
         try (OutputStream os = new FileOutputStream(targetFilename))
         {

@@ -66,13 +66,24 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
 
     <script>
     function report(data, title) {
+        const reader = new hdr.HistogramLogReader(data);
         var histograms = [];
-        for (var i = 0; i < data.length; i++) {
-            const histogram = hdr.decodeFromCompressedBase64(data[i]);
+        var histogram;
+        while ((histogram = reader.nextIntervalHistogram()) != null) {
             histograms.push(histogram);
         }
+
         graphLat(histograms, title);
         graphTps(histograms, title);
+    }
+
+    function integrate(f, start, end, step) {
+        var total = 0;
+        step = step || 0.01;
+        for (var x = start; x < end; x += step) {
+            total += f(x + step / 2) * step;
+        }
+        return total;
     }
 
     function graphTps(histograms, title) {
@@ -85,15 +96,19 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             }]
         };
 
+        var tpss = [];
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
 
-            var durationInMs = 1000;
-            var tps = 1000 * histogram.totalCount / durationInMs;
+            const durationInMs = histogram.endTimeStampMsec - histogram.startTimeStampMsec;
+            const tps = 1000 * histogram.totalCount / durationInMs;
+
+            tpss.push(tps);
 
             data.labels.push(i);                // X axis
             data.datasets[0].data.push(tps);    // Y axis
         }
+        $('#integral-tps').text(integrate(function(x){ return tpss[Math.round(x)]; }, 0, tpss.length - 1).toFixed(3));
 
         const config = {
           type: 'line',
@@ -102,11 +117,11 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             plugins: {
               zoom: {
                 pan: {
-                  enabled: true,
-                  mode: 'xy'
+                  enabled: false
                 },
                 zoom: {
                   enabled: true,
+                  drag: true,
                   mode: 'xy'
                 }
               },
@@ -147,32 +162,27 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         const data = {
             labels: [],
             datasets: [{
-                type: 'line',
-                label: 'Mean',
-                data: [],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 206, 86, 1)'
-            }, {
                 type: 'bar',
-                label: 'Deviation',
                 data: [],
                 borderColor: 'rgba(0, 255, 0, 1)',
                 backgroundColor: 'rgba(255, 206, 86, 1)'
             }]
         };
 
+        var mins = [];
+        var maxs = [];
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
+            const min = (histogram._totalCount === 0) ? 0 : histogram.minNonZeroValue;
 
-            var min = histogram.minNonZeroValue;
-            if (histogram._totalCount === 0)
-                min = 0;
-            var avg = (histogram.maxValue + min) / 2 / 1000;
+            mins.push(min);
+            maxs.push(histogram.maxValue);
 
             data.labels.push(i);                                                    // X axis
-            data.datasets[0].data.push(avg);                                        // Y axis
-            data.datasets[1].data.push([min / 1000, histogram.maxValue / 1000]);    // Deviation bar
+            data.datasets[0].data.push([min / 1000, histogram.maxValue / 1000]);    // Y axis (bottom and top of bar)
         }
+        $('#min-integral-lat').text(integrate(function(x){ return mins[Math.round(x)]; }, 0, mins.length - 1).toFixed(3));
+        $('#max-integral-lat').text(integrate(function(x){ return maxs[Math.round(x)]; }, 0, maxs.length - 1).toFixed(3));
 
         const config = {
           data: data,
@@ -180,16 +190,16 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             plugins: {
               zoom: {
                 pan: {
-                  enabled: true,
-                  mode: 'xy'
+                  enabled: false
                 },
                 zoom: {
                   enabled: true,
+                  drag: true,
                   mode: 'xy'
                 }
               },
               legend: {
-                display: true
+                display: false
               },
               title: {
                 display: true,
@@ -222,32 +232,31 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
     }
     </script>
 
-    <h3>Latency</h3>
+<h3>Latency</h3>
+<div>
+    <button id="reset-zoom-lat">
+        Reset Zoom
+    </button>
+    <span>Min integral: <span id="min-integral-lat">N/A</span>&nbsp;&nbsp;&nbsp;Max integral: <span id="max-integral-lat">N/A</span></span>
     <div>
-        <button id="reset-zoom-lat">
-            Reset Zoom
-        </button>
-        <span>Min integral: <span>##LATENCY_MIN_INTEGRAL##<span>&nbsp;&nbsp;&nbsp;Max integral: <span>##LATENCY_MAX_INTEGRAL##</span><span>
-        <div>
-            <canvas id="canvas-lat" width="800" height="200">Your browser does not support the canvas element.</canvas>
-        </div>
+        <canvas id="canvas-lat" width="800" height="200">Your browser does not support the canvas element.</canvas>
     </div>
+</div>
 
-    <h3>Throughput</h3>
+<h3>Throughput</h3>
+<div>
+    <button id="reset-zoom-tps">
+        Reset Zoom
+    </button>
+    <span>Integral: <span id="integral-tps">N/A</span></span>
     <div>
-        <button id="reset-zoom-tps">
-            Reset Zoom
-        </button>
-        <div>
-            <canvas id="canvas-tps" width="800" height="200">Your browser does not support the canvas element.</canvas>
-        </div>
+        <canvas id="canvas-tps" width="800" height="200">Your browser does not support the canvas element.</canvas>
     </div>
+</div>
 
-    <script>
+<script>
         const title = '##TITLE##';
-        const histograms = [
-            ##HISTOGRAMS##
-        ];
+        const histograms = `##HISTOGRAMS##`;
         report(histograms, title);
     </script>
 </body>
