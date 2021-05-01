@@ -92,7 +92,15 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             datasets: [{
                 data: [],
                 borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 206, 86, 1)'
+                backgroundColor: 'rgba(255, 206, 86, 1)',
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(x) {
+                      const ts = histograms[x.dataIndex].startTimeStampMsec;
+                      return new Date(ts).toISOString();
+                    }
+                  }
+                }
             }]
         };
 
@@ -165,7 +173,15 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
                 type: 'bar',
                 data: [],
                 borderColor: 'rgba(0, 255, 0, 1)',
-                backgroundColor: 'rgba(255, 206, 86, 1)'
+                backgroundColor: 'rgba(255, 206, 86, 1)',
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(x) {
+                      const ts = histograms[x.dataIndex].startTimeStampMsec;
+                      return new Date(ts).toISOString();
+                    }
+                  }
+                }
             }]
         };
 
