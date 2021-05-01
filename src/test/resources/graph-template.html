@@ -151,8 +151,17 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
 
         const element = document.getElementById('canvas-tps');
         const myChart = new Chart(element, config);
+
+        const originalMaxY = myChart.scales.y.max;
+        $('#input-scale-y-tps').val('' + originalMaxY);
         $('#reset-zoom-tps').click(function() {
-          myChart.resetZoom();
+          config.options.scales.y.max = originalMaxY;
+          $('#input-scale-y-tps').val('' + originalMaxY);
+          myChart.update();
+        });
+        $('#button-scale-y-tps').click(function() {
+          config.options.scales.y.max = parseInt($('#input-scale-y-tps').val());
+          myChart.update();
         });
     }
 
@@ -233,8 +242,17 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
 
         const element = document.getElementById('canvas-lat');
         const myChart = new Chart(element, config);
+
+        const originalMaxY = myChart.scales.y.max;
+        $('#input-scale-y-lat').val('' + originalMaxY);
         $('#reset-zoom-lat').click(function() {
-          myChart.resetZoom();
+          config.options.scales.y.max = originalMaxY;
+          $('#input-scale-y-lat').val('' + originalMaxY);
+          myChart.update();
+        });
+        $('#button-scale-y-lat').click(function() {
+          config.options.scales.y.max = parseInt($('#input-scale-y-lat').val());
+          myChart.update();
         });
     }
     </script>
@@ -245,6 +263,12 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         Reset Zoom
     </button>
     <span>Min integral: <span id="min-integral-lat">N/A</span>&nbsp;&nbsp;&nbsp;Max integral: <span id="max-integral-lat">N/A</span></span>
+    <span style="float: right;">
+        <input id="input-scale-y-lat"/>
+        <button id="button-scale-y-lat">
+            Scale Y
+        </button>
+    </span>
     <div>
         <canvas id="canvas-lat" width="800" height="200">Your browser does not support the canvas element.</canvas>
     </div>
@@ -256,6 +280,12 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         Reset Zoom
     </button>
     <span>Integral: <span id="integral-tps">N/A</span></span>
+    <span style="float: right;">
+        <input id="input-scale-y-tps"/>
+        <button id="button-scale-y-tps">
+            Scale Y
+        </button>
+    </span>
     <div>
         <canvas id="canvas-tps" width="800" height="200">Your browser does not support the canvas element.</canvas>
     </div>
