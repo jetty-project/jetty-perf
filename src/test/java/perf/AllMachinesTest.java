@@ -1,5 +1,6 @@
 package perf;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -13,6 +14,7 @@ import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
 
 public class AllMachinesTest
 {
+    @Disabled
     @Test
     public void testAllMachines() throws Exception
     {
