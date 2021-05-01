@@ -98,15 +98,14 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         var tpsIntegral = 0;
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
-            const durationInMs = histogram.endTimeStampMsec - histogram.startTimeStampMsec;
-            const tps = 1000 * histogram.totalCount / durationInMs;
+            const tps = histogram.totalCount;
 
             tpsIntegral += tps;
 
             data.labels.push(i);                // X axis
             data.datasets[0].data.push(tps);    // Y axis
         }
-        $('#integral-tps').text(tpsIntegral.toFixed(3));
+        $('#integral-tps').text('' + tpsIntegral);
 
         const config = {
           type: 'line',
