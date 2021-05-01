@@ -77,15 +77,6 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         graphTps(histograms, title);
     }
 
-    function integrate(f, start, end, step) {
-        var total = 0;
-        step = step || 0.01;
-        for (var x = start; x < end; x += step) {
-            total += f(x + step / 2) * step;
-        }
-        return total;
-    }
-
     function graphTps(histograms, title) {
         const data = {
             labels: [],
@@ -104,19 +95,18 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             }]
         };
 
-        var tpss = [];
+        var tpsIntegral = 0;
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
-
             const durationInMs = histogram.endTimeStampMsec - histogram.startTimeStampMsec;
             const tps = 1000 * histogram.totalCount / durationInMs;
 
-            tpss.push(tps);
+            tpsIntegral += tps;
 
             data.labels.push(i);                // X axis
             data.datasets[0].data.push(tps);    // Y axis
         }
-        $('#integral-tps').text(integrate(function(x){ return tpss[Math.round(x)]; }, 0, tpss.length - 1).toFixed(3));
+        $('#integral-tps').text(tpsIntegral.toFixed(3));
 
         const config = {
           type: 'line',
@@ -185,20 +175,21 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             }]
         };
 
-        var mins = [];
-        var maxs = [];
+        var minIntegral = 0;
+        var maxIntegral = 0;
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
-            const min = (histogram._totalCount === 0) ? 0 : histogram.minNonZeroValue;
+            const min = (histogram._totalCount === 0) ? 0 : histogram.minNonZeroValue / 1000;
+            const max = histogram.maxValue / 1000;
 
-            mins.push(min);
-            maxs.push(histogram.maxValue);
+            minIntegral += min;
+            maxIntegral += max;
 
-            data.labels.push(i);                                                    // X axis
-            data.datasets[0].data.push([min / 1000, histogram.maxValue / 1000]);    // Y axis (bottom and top of bar)
+            data.labels.push(i);                       // X axis
+            data.datasets[0].data.push([min, max]);    // Y axis (bottom and top of bar)
         }
-        $('#min-integral-lat').text(integrate(function(x){ return mins[Math.round(x)]; }, 0, mins.length - 1).toFixed(3));
-        $('#max-integral-lat').text(integrate(function(x){ return maxs[Math.round(x)]; }, 0, maxs.length - 1).toFixed(3));
+        $('#min-integral-lat').text(minIntegral.toFixed(3));
+        $('#max-integral-lat').text(maxIntegral.toFixed(3));
 
         const config = {
           data: data,
