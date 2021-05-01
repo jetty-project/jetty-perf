@@ -79,13 +79,6 @@ public class NodeProcess implements Serializable, AutoCloseable
     {
         String nodeId = args[0];
         String connectString = args[1];
-        String readyEchoString = args.length > 2 ? args[2] : null;
-        if (readyEchoString != null)
-        {
-            // This must be the very first printed thing, before any log.
-            System.out.print(readyEchoString);
-            System.out.flush();
-        }
 
         MDC.put("NodeId", nodeId);
         if (LOG.isDebugEnabled())

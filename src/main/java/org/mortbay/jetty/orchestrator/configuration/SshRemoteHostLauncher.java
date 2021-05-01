@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.Channel;
@@ -157,17 +155,14 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
                 }
             }
             String remoteClasspath = String.join(":", remoteClasspathEntries);
-            String readyEchoString = "Node is ready";
-            String cmdLine = String.join(" ", buildCommandLine(jvm, remoteClasspath, nodeId.getHostId(), remoteConnectString, readyEchoString));
+            String cmdLine = String.join(" ", buildCommandLine(jvm, remoteClasspath, nodeId.getHostId(), remoteConnectString));
 
             session = sshClient.startSession();
             session.allocateDefaultPTY();
             cmd = session.exec(cmdLine);
 
-            ExpectingOutputStream expectingOutputStream = new ExpectingOutputStream(nodeId.getHostname(), readyEchoString.getBytes(session.getRemoteCharset()), cmd, new LineBufferingOutputStream(System.out));
-            new StreamCopier(cmd.getInputStream(), expectingOutputStream).spawnDaemon(nodeId.getHostname() + "-stdout");
+            new StreamCopier(cmd.getInputStream(), new LineBufferingOutputStream(System.out)).spawnDaemon(nodeId.getHostname() + "-stdout");
             new StreamCopier(cmd.getErrorStream(), new LineBufferingOutputStream(System.err)).spawnDaemon(nodeId.getHostname() + "-stderr");
-            expectingOutputStream.waitForExpectedString();
 
             HashMap<String, Object> env = new HashMap<>();
             env.put(SFTPClient.class.getName(), sshClient.newStatefulSFTPClient());
@@ -184,7 +179,7 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         }
     }
 
-    private static List<String> buildCommandLine(Jvm jvm, String remoteClasspath, String nodeId, String connectString, String readyEchoString)
+    private static List<String> buildCommandLine(Jvm jvm, String remoteClasspath, String nodeId, String connectString)
     {
         List<String> cmdLine = new ArrayList<>();
         cmdLine.add(jvm.executable());
@@ -194,7 +189,6 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         cmdLine.add(NodeProcess.class.getName());
         cmdLine.add("\"" + nodeId + "\"");
         cmdLine.add("\"" + connectString + "\"");
-        cmdLine.add("\"" + readyEchoString + "\"");
         return cmdLine;
     }
 
@@ -334,106 +328,6 @@ public class SshRemoteHostLauncher implements HostLauncher, JvmDependent
         public void close() throws IOException
         {
             delegate.close();
-        }
-    }
-
-    private static class ExpectingOutputStream extends OutputStream
-    {
-        private final String hostname;
-        private final byte[] expectedSequence;
-        private final byte[] accumulator;
-        private int counter;
-        private final Session.Command cmd;
-        private final OutputStream delegate;
-        private final AtomicBoolean matched = new AtomicBoolean(false);
-        private final AtomicBoolean failed = new AtomicBoolean(false);
-
-        private ExpectingOutputStream(String hostname, byte[] expectedSequence, Session.Command cmd, OutputStream delegate)
-        {
-            this.hostname = hostname;
-            this.expectedSequence = expectedSequence;
-            this.accumulator = new byte[expectedSequence.length];
-            this.cmd = cmd;
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void write(int cc) throws IOException
-        {
-            if (!matched.get() && !failed.get())
-            {
-                if (cc != expectedSequence[counter])
-                {
-                    delegate.write(accumulator, 0, counter);
-                    delegate.write(cc);
-                    failed.set(true);
-                }
-                else
-                {
-                    accumulator[counter] = (byte)cc;
-                    counter++;
-                }
-                if (counter == expectedSequence.length)
-                    matched.set(true);
-            }
-            else
-            {
-                delegate.write(cc);
-            }
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException
-        {
-            if (!matched.get() && !failed.get())
-            {
-                for (int i = off; i < len; i++)
-                {
-                    int cc = b[i];
-                    if (cc != expectedSequence[counter])
-                    {
-                        delegate.write(accumulator, 0, counter);
-                        delegate.write(b, off + i, len);
-                        failed.set(true);
-                        break;
-                    }
-                    else
-                    {
-                        accumulator[counter] = (byte)cc;
-                        counter++;
-                    }
-                    if (counter == expectedSequence.length)
-                    {
-                        matched.set(true);
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                delegate.write(b, off, len);
-            }
-        }
-
-        public void waitForExpectedString() throws Exception
-        {
-            long elapsedMs = 0L;
-            while (!matched.get())
-            {
-                if (failed.get() || !cmd.isOpen())
-                    throw new Exception("Node failed to start on host '" + hostname + "'");
-                try
-                {
-                    Thread.sleep(10);
-                    elapsedMs += 10;
-                    if (elapsedMs >= 10000)
-                        throw new Exception("Node failed to output expected string on host '" + hostname + "' (accumulated <" + new String(accumulator, StandardCharsets.UTF_8) + ">)");
-                }
-                catch (InterruptedException e)
-                {
-                    throw new Exception("Interrupted while starting node on host '" + hostname + "'", e);
-                }
-            }
         }
     }
 

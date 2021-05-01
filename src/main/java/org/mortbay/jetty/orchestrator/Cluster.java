@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -119,7 +120,7 @@ public class Cluster implements AutoCloseable
                 Host host = hosts.get(globalNodeId.getHostGlobalId());
                 try
                 {
-                    NodeProcess remoteProcess = (NodeProcess)host.rpcClient.call(new SpawnNodeCommand(nodeArrayConfig.jvm(), globalNodeId.getHostId(), globalNodeId.getNodeId(), host.remoteConnectString));
+                    NodeProcess remoteProcess = (NodeProcess)host.rpcClient.callAsync(new SpawnNodeCommand(nodeArrayConfig.jvm(), globalNodeId.getHostId(), globalNodeId.getNodeId(), host.remoteConnectString)).get(10, TimeUnit.SECONDS);
                     NodeArray.Node node = new NodeArray.Node(globalNodeId, remoteProcess, new RpcClient(curator, globalNodeId));
                     host.nodes.add(node);
                     nodeArrayNodes.put(nodeConfig.getId(), node);
