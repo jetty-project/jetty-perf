@@ -172,6 +172,7 @@ public class SslPerfLimitTest implements Serializable
                 {
                     int index = tools.barrier("run-start-barrier", participantCount).await();
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
+                    LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
                     runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog");
                     tools.barrier("run-end-barrier", participantCount).await();
