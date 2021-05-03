@@ -134,7 +134,7 @@ public class SslPerfLimitTest implements Serializable
                 serverSslContextFactory.setKeyStorePassword("storepwd");
                 SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
 
-                ServerConnector serverConnector = new ServerConnector(server, ssl, http);
+                ServerConnector serverConnector = new ServerConnector(server, 1, 32, ssl, http);
                 serverConnector.setPort(8443);
                 server.addConnector(serverConnector);
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
