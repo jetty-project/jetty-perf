@@ -164,6 +164,11 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         });
     }
 
+    function hdrRounding(val, significantDigits) {
+        const digits = Math.ceil(Math.log10(Math.floor(val) + 1));
+        return Math.pow(10, digits - significantDigits);
+    }
+
     function graphLat(histograms, title) {
         const data = {
             labels: [],
@@ -184,20 +189,24 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         };
 
         var minIntegral = 0;
+        var minErr = 0;
         var maxIntegral = 0;
+        var maxErr = 0;
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
             const min = (histogram._totalCount === 0) ? 0 : histogram.minNonZeroValue / 1000;
             const max = histogram.maxValue / 1000;
 
             minIntegral += min;
+            minErr += hdrRounding(min, histogram.numberOfSignificantValueDigits);
             maxIntegral += max;
+            maxErr += hdrRounding(max, histogram.numberOfSignificantValueDigits);
 
             data.labels.push(i);                       // X axis
             data.datasets[0].data.push([min, max]);    // Y axis (bottom and top of bar)
         }
-        $('#min-integral-lat').text(minIntegral.toFixed(3));
-        $('#max-integral-lat').text(maxIntegral.toFixed(3));
+        $('#min-integral-lat').text(minIntegral.toFixed(3) + ' +/- ' + minErr.toFixed(0));
+        $('#max-integral-lat').text(maxIntegral.toFixed(3) + ' +/- ' + maxErr.toFixed(0));
 
         const config = {
           data: data,
