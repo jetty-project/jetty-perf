@@ -156,6 +156,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         $('#reset-zoom-tps').click(function() {
           config.options.scales.y.max = originalMaxY;
           $('#input-scale-y-tps').val('' + originalMaxY);
+          myChart.resetZoom();
           myChart.update();
         });
         $('#button-scale-y-tps').click(function() {
@@ -256,6 +257,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         $('#reset-zoom-lat').click(function() {
           config.options.scales.y.max = originalMaxY;
           $('#input-scale-y-lat').val('' + originalMaxY);
+          myChart.resetZoom();
           myChart.update();
         });
         $('#button-scale-y-lat').click(function() {
