@@ -107,6 +107,7 @@ public class SslPerfLimitTest implements Serializable
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
             int participantCount = cfg.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
+            int loadersCount = cfg.nodeArrays().stream().filter(na -> na.id().equals("loaders")).mapToInt(na -> na.nodes().size()).sum();
 
             serverArray.executeOnAll(tools ->
             {
@@ -169,8 +170,10 @@ public class SslPerfLimitTest implements Serializable
             {
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
-                    tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog", RUN_DURATION.toSeconds());
+                    int index = tools.barrier("run-start-barrier", participantCount).await();
+                    long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
+                    Thread.sleep(delayMs);
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -395,10 +398,10 @@ public class SslPerfLimitTest implements Serializable
 
     private void runLoadGenerator(URI uri, Duration duration) throws FileNotFoundException
     {
-        runLoadGenerator(uri, duration, null, 0);
+        runLoadGenerator(uri, duration, null);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, long rampUpPeriod) throws FileNotFoundException
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -408,8 +411,7 @@ public class SslPerfLimitTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .threads(3)
             .resourceRate(0)
-            .resource(new Resource("/"))
-            .rateRampUpPeriod(rampUpPeriod);
+            .resource(new Resource("/"));
 
         if (histogramFilename != null)
         {
