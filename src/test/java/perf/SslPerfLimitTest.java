@@ -181,7 +181,8 @@ public class SslPerfLimitTest implements Serializable
             {
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
-                    int index = tools.barrier("run-start-barrier", participantCount).await();
+                    int index = tools.barrier("loader-index-barrier", loadersCount).await();
+                    tools.barrier("run-start-barrier", participantCount).await();
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
