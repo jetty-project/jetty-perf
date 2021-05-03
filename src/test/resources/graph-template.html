@@ -105,7 +105,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             data.labels.push(i);                // X axis
             data.datasets[0].data.push(tps);    // Y axis
         }
-        $('#integral-tps').text('' + tpsIntegral);
+        $('#integral-tps').text(tpsIntegral.toLocaleString());
 
         const config = {
           type: 'line',
@@ -205,8 +205,8 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             data.labels.push(i);                       // X axis
             data.datasets[0].data.push([min, max]);    // Y axis (bottom and top of bar)
         }
-        $('#min-integral-lat').text(minIntegral.toFixed(3) + ' +/- ' + minErr.toFixed(0));
-        $('#max-integral-lat').text(maxIntegral.toFixed(3) + ' +/- ' + maxErr.toFixed(0));
+        $('#min-integral-lat').text(minIntegral.toLocaleString() + ' (+/- ' + minErr.toLocaleString() + ' ; ' + (minErr / minIntegral * 100).toFixed(2) + ' %)');
+        $('#max-integral-lat').text(maxIntegral.toLocaleString() + ' (+/- ' + maxErr.toLocaleString() + ' ; ' + (maxErr / maxIntegral * 100).toFixed(2) + ' %)');
 
         const config = {
           data: data,
