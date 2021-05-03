@@ -3,7 +3,6 @@ package perf.monitoring;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
 {
@@ -30,7 +29,9 @@ class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
     @Override
     protected Collection<String> extraStartCmdLineArgs()
     {
-        return Collections.emptyList();
+        // Workaround for JDK 16 bug for when ZGC is enabled.
+        // See: https://github.com/jvm-profiling-tools/async-profiler/issues/422
+        return Arrays.asList("--safe-mode", "64");
     }
 
     @Override
