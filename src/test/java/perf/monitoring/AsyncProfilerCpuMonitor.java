@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
-class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
+public class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
 {
     public static final String DEFAULT_FILENAME = "async-profiler-cpu.html";
 

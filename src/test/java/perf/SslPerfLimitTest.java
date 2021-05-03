@@ -60,6 +60,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import perf.monitoring.AsyncProfilerCpuMonitor;
 import perf.monitoring.ConfigurableMonitor;
 
 public class SslPerfLimitTest implements Serializable
@@ -160,6 +161,16 @@ public class SslPerfLimitTest implements Serializable
                     LifeCycle.start(listener);
                     serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
+
+                    for (int i=0;i<4;i++)
+                    {
+                        Thread.sleep(30_000);
+                        AsyncProfilerCpuMonitor cpuMonitor = new AsyncProfilerCpuMonitor("profile." + (i+1) + ".html");
+                        Thread.sleep(90_000);
+                        cpuMonitor.close();
+                        Thread.sleep(30_000);
+                    }
+
                     tools.barrier("run-end-barrier", participantCount).await();
                     LifeCycle.stop(listener);
                     server.stop();
@@ -198,7 +209,7 @@ public class SslPerfLimitTest implements Serializable
             probeFuture.get();
 
             // download servers FGs & transform histograms
-            download(serverArray, new File("target/report/server"), "server.hlog", "gc.log");
+            download(serverArray, new File("target/report/server"), "server.hlog", "gc.log", "profile.1.html", "profile.2.html", "profile.3.html", "profile.4.html");
             xformHisto(serverArray, new File("target/report/server"), "server.hlog");
             download(serverArray, new File("target/report/server"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download loaders FGs & transform histograms
