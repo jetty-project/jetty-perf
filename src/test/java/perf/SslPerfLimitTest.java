@@ -166,7 +166,7 @@ public class SslPerfLimitTest implements Serializable
                     tools.barrier("run-start-barrier", participantCount).await();
 
                     long runQuantum = RUN_DURATION.toMillis() / loadersCount;
-                    long gap = RUN_DURATION.toMillis() / 5;
+                    long gap = runQuantum / 5;
                     for (int i = 0; i < loadersCount; i++)
                     {
                         Thread.sleep(gap);
