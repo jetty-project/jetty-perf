@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.URI;
@@ -27,6 +28,8 @@ import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.LongAdder;
 import javax.management.remote.JMXServiceURL;
 
 import org.HdrHistogram.Histogram;
@@ -188,7 +191,7 @@ public class SslPerfLimitTest implements Serializable
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog");
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.csv");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -198,7 +201,7 @@ public class SslPerfLimitTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog");
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.csv");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -214,15 +217,15 @@ public class SslPerfLimitTest implements Serializable
             // download servers FGs & transform histograms
             for (int i = 0; i < loadersCount; i++)
                 download(serverArray, new File("target/report/server"), "profile." + (i + 1) + ".html");
-            download(serverArray, new File("target/report/server"), "server.hlog", "gc.log", "profile.1.html", "profile.2.html", "profile.3.html", "profile.4.html");
+            download(serverArray, new File("target/report/server"), "server.hlog", "gc.log");
             xformHisto(serverArray, new File("target/report/server"), "server.hlog");
             download(serverArray, new File("target/report/server"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.hlog", "gc.log");
+            download(loadersArray, new File("target/report/loader"), "loader.hlog", "status.csv", "gc.log");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.hlog");
             download(loadersArray, new File("target/report/loader"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.hlog", "gc.log");
+            download(probeArray, new File("target/report/probe"), "probe.hlog", "status.csv", "gc.log");
             xformHisto(probeArray, new File("target/report/probe"), "probe.hlog");
             download(probeArray, new File("target/report/probe"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
 
@@ -371,6 +374,66 @@ public class SslPerfLimitTest implements Serializable
         }
     }
 
+    private static class ResponseStatusListener implements Resource.NodeListener, LoadGenerator.CompleteListener
+    {
+        private final Timer timer = new Timer();
+        // Array of counters:
+        //  [0] unknown status [1] HTTP 1xx [2] HTTP 2xx [3] HTTP 3xx [4] HTTP 4xx [5] HTTP 5xx
+        private LongAdder[] savedArray = new LongAdder[6];
+        private final AtomicReference<LongAdder[]> statuses = new AtomicReference<>(new LongAdder[6]);
+        private final PrintWriter printWriter;
+
+        public ResponseStatusListener(String statusFilename) throws IOException
+        {
+            printWriter = new PrintWriter(statusFilename, StandardCharsets.UTF_8);
+            for (int i = 0; i < savedArray.length; i++)
+            {
+                savedArray[i] = new LongAdder();
+                statuses.get()[i] = new LongAdder();
+            }
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run()
+                {
+                    writeStatuses();
+                }
+            }, 1000, 1000);
+        }
+
+        private synchronized void writeStatuses()
+        {
+            LongAdder[] newStatuses = savedArray;
+            for (LongAdder newStatus : newStatuses)
+                newStatus.reset();
+            savedArray = statuses.getAndSet(newStatuses);
+
+            for (LongAdder status : savedArray)
+            {
+                printWriter.print(status.sum());
+                printWriter.print(",");
+            }
+            printWriter.print('\n');
+        }
+
+        @Override
+        public void onResourceNode(Resource.Info info)
+        {
+            int status = info.getStatus();
+            int idx = status / 100;
+            if (idx > 5 || idx < 1)
+                idx = 0;
+            statuses.get()[idx].increment();
+        }
+
+        @Override
+        public void onComplete(LoadGenerator loadGenerator)
+        {
+            timer.cancel();
+            writeStatuses();
+            printWriter.close();
+        }
+    }
+
     private static class ResponseTimeListener implements Resource.NodeListener, LoadGenerator.CompleteListener
     {
         private final Recorder recorder = new Recorder(3);
@@ -413,12 +476,12 @@ public class SslPerfLimitTest implements Serializable
         }
     }
 
-    private void runLoadGenerator(URI uri, Duration duration) throws FileNotFoundException
+    private void runLoadGenerator(URI uri, Duration duration) throws IOException
     {
-        runLoadGenerator(uri, duration, null);
+        runLoadGenerator(uri, duration, null, null);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -434,6 +497,11 @@ public class SslPerfLimitTest implements Serializable
         {
             ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
             builder.resourceListener(responseTimeListener);
+        }
+        if (statusFilename != null)
+        {
+            ResponseStatusListener responseStatusListener = new ResponseStatusListener(statusFilename);
+            builder.resourceListener(responseStatusListener);
         }
 
         LoadGenerator loadGenerator = builder.build();
@@ -452,7 +520,7 @@ public class SslPerfLimitTest implements Serializable
         }).join();
     }
 
-    private void runProbeGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
+    private void runProbeGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -463,6 +531,7 @@ public class SslPerfLimitTest implements Serializable
             .resourceRate(5)
             .resource(new Resource("/"))
             .resourceListener(new ResponseTimeListener(histogramFilename))
+            .resourceListener(new ResponseStatusListener(statusFilename))
             .rateRampUpPeriod(0);
 
         LoadGenerator loadGenerator = builder.build();
