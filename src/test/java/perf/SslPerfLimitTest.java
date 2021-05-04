@@ -166,7 +166,7 @@ public class SslPerfLimitTest implements Serializable
                     tools.barrier("run-start-barrier", participantCount).await();
 
                     long runQuantum = RUN_DURATION.toMillis() / loadersCount;
-                    long gap = 30_000;
+                    long gap = RUN_DURATION.toMillis() / 5;
                     for (int i = 0; i < loadersCount; i++)
                     {
                         Thread.sleep(gap);
@@ -407,12 +407,15 @@ public class SslPerfLimitTest implements Serializable
                 newStatus.reset();
             savedArray = statuses.getAndSet(newStatuses);
 
-            for (LongAdder status : savedArray)
+            for (int i = 0; i < savedArray.length; i++)
             {
+                LongAdder status = savedArray[i];
                 printWriter.print(status.sum());
-                printWriter.print(",");
+                if (i < savedArray.length - 1)
+                    printWriter.print(',');
             }
-            printWriter.print('\n');
+            printWriter.println();
+            printWriter.flush();
         }
 
         @Override
@@ -497,15 +500,16 @@ public class SslPerfLimitTest implements Serializable
         {
             ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
             builder.resourceListener(responseTimeListener);
+            builder.listener(responseTimeListener);
         }
         if (statusFilename != null)
         {
             ResponseStatusListener responseStatusListener = new ResponseStatusListener(statusFilename);
             builder.resourceListener(responseStatusListener);
+            builder.listener(responseStatusListener);
         }
 
         LoadGenerator loadGenerator = builder.build();
-        LOG.info("load generator config: {}", loadGenerator);
         LOG.info("load generation begin");
         CompletableFuture<Void> cf = loadGenerator.begin();
         cf.whenComplete((x, f) -> {
@@ -535,7 +539,6 @@ public class SslPerfLimitTest implements Serializable
             .rateRampUpPeriod(0);
 
         LoadGenerator loadGenerator = builder.build();
-        LOG.info("probe generator config: {}", loadGenerator);
         LOG.info("probe generation begin");
         CompletableFuture<Void> cf = loadGenerator.begin();
         cf.whenComplete((x, f) -> {
