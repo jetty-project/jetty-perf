@@ -165,6 +165,7 @@ public class SslPerfLimitTest implements Serializable
                     serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
 
+                    // collect a different FG for each time quantum of the loaders
                     long runQuantum = RUN_DURATION.toMillis() / loadersCount;
                     long gap = runQuantum / 5;
                     for (int i = 0; i < loadersCount; i++)
@@ -206,13 +207,15 @@ public class SslPerfLimitTest implements Serializable
                 }
             });
 
-            cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants to stop monitoring
+            // signal all participants to start
+            cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
+            // signal all participants to stop monitoring
+            cluster.tools().barrier("run-end-barrier", participantCount).await(RUN_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             // wait for all monitoring reports to be written
-            serverFuture.get();
-            loadersFuture.get();
-            probeFuture.get();
+            serverFuture.get(30, TimeUnit.SECONDS);
+            loadersFuture.get(30, TimeUnit.SECONDS);
+            probeFuture.get(30, TimeUnit.SECONDS);
 
             // download servers FGs & transform histograms
             for (int i = 0; i < loadersCount; i++)
