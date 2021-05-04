@@ -162,13 +162,15 @@ public class SslPerfLimitTest implements Serializable
                     serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
 
-                    for (int i=0;i<4;i++)
+                    long runQuantum = RUN_DURATION.toMillis() / loadersCount;
+                    long gap = 30_000;
+                    for (int i = 0; i < loadersCount; i++)
                     {
-                        Thread.sleep(30_000);
-                        AsyncProfilerCpuMonitor cpuMonitor = new AsyncProfilerCpuMonitor("profile." + (i+1) + ".html");
-                        Thread.sleep(90_000);
+                        Thread.sleep(gap);
+                        AsyncProfilerCpuMonitor cpuMonitor = new AsyncProfilerCpuMonitor("profile." + (i + 1) + ".html");
+                        Thread.sleep(runQuantum - gap * 2);
                         cpuMonitor.close();
-                        Thread.sleep(30_000);
+                        Thread.sleep(gap);
                     }
 
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -210,6 +212,8 @@ public class SslPerfLimitTest implements Serializable
             probeFuture.get();
 
             // download servers FGs & transform histograms
+            for (int i = 0; i < loadersCount; i++)
+                download(serverArray, new File("target/report/server"), "profile." + (i + 1) + ".html");
             download(serverArray, new File("target/report/server"), "server.hlog", "gc.log", "profile.1.html", "profile.2.html", "profile.3.html", "profile.4.html");
             xformHisto(serverArray, new File("target/report/server"), "server.hlog");
             download(serverArray, new File("target/report/server"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
