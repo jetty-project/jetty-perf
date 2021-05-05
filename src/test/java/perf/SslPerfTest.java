@@ -1,7 +1,6 @@
 package perf;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -48,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import perf.handler.AsyncHandler;
 import perf.histogram.HgrmReport;
 import perf.histogram.HtmlReport;
+import perf.histogram.loader.ResponseStatusListener;
 import perf.histogram.loader.ResponseTimeListener;
 import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
@@ -161,7 +161,7 @@ public class SslPerfTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog");
+                    runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog", "status.csv");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -171,18 +171,20 @@ public class SslPerfTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog");
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.csv");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
-            cluster.tools().barrier("run-start-barrier", participantCount).await(); // signal all participants to start
-            cluster.tools().barrier("run-end-barrier", participantCount).await(); // signal all participants to stop monitoring
+            // signal all participants to start
+            cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
+            // signal all participants to stop monitoring
+            cluster.tools().barrier("run-end-barrier", participantCount).await(RUN_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             // wait for all monitoring reports to be written
-            serverFuture.get();
-            loadersFuture.get();
-            probeFuture.get();
+            serverFuture.get(30, TimeUnit.SECONDS);
+            loadersFuture.get(30, TimeUnit.SECONDS);
+            probeFuture.get(30, TimeUnit.SECONDS);
 
             // download servers FGs & transform histograms
             download(serverArray, new File("target/report/server"), "server.hlog", "gc.log");
@@ -242,12 +244,12 @@ public class SslPerfTest implements Serializable
         }
     }
 
-    private void runLoadGenerator(URI uri, Duration duration) throws FileNotFoundException
+    private void runLoadGenerator(URI uri, Duration duration) throws IOException
     {
-        runLoadGenerator(uri, duration, null);
+        runLoadGenerator(uri, duration, null, null);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -255,19 +257,24 @@ public class SslPerfTest implements Serializable
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .threads(2)
+            .threads(3)
             .resourceRate(0)
-            .resource(new Resource("/"))
-            .rateRampUpPeriod(0);
+            .resource(new Resource("/"));
 
         if (histogramFilename != null)
         {
             ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
             builder.resourceListener(responseTimeListener);
+            builder.listener(responseTimeListener);
+        }
+        if (statusFilename != null)
+        {
+            ResponseStatusListener responseStatusListener = new ResponseStatusListener(statusFilename);
+            builder.resourceListener(responseStatusListener);
+            builder.listener(responseStatusListener);
         }
 
         LoadGenerator loadGenerator = builder.build();
-        LOG.info("load generator config: {}", loadGenerator);
         LOG.info("load generation begin");
         CompletableFuture<Void> cf = loadGenerator.begin();
         cf.whenComplete((x, f) -> {
@@ -282,7 +289,7 @@ public class SslPerfTest implements Serializable
         }).join();
     }
 
-    private void runProbeGenerator(URI uri, Duration duration, String histogramFilename) throws FileNotFoundException
+    private void runProbeGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -293,10 +300,10 @@ public class SslPerfTest implements Serializable
             .resourceRate(5)
             .resource(new Resource("/"))
             .resourceListener(new ResponseTimeListener(histogramFilename))
+            .resourceListener(new ResponseStatusListener(statusFilename))
             .rateRampUpPeriod(0);
 
         LoadGenerator loadGenerator = builder.build();
-        LOG.info("probe generator config: {}", loadGenerator);
         LOG.info("probe generation begin");
         CompletableFuture<Void> cf = loadGenerator.begin();
         cf.whenComplete((x, f) -> {
