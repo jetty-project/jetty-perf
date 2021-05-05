@@ -1,12 +1,9 @@
 package perf;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.URI;
@@ -19,32 +16,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.LongAdder;
 import javax.management.remote.JMXServiceURL;
 
-import org.HdrHistogram.Histogram;
-import org.HdrHistogram.HistogramLogReader;
-import org.HdrHistogram.HistogramLogWriter;
-import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Test;
@@ -61,7 +45,11 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import perf.handler.AsyncHandler;
+import perf.histogram.HgrmReport;
 import perf.histogram.HtmlReport;
+import perf.histogram.loader.ResponseStatusListener;
+import perf.histogram.loader.ResponseTimeListener;
+import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.AsyncProfilerCpuMonitor;
 import perf.monitoring.ConfigurableMonitor;
@@ -264,182 +252,16 @@ public class SslPerfLimitTest implements Serializable
         for (String id : nodeArray.ids())
         {
             File reportFolder = new File(targetFolder, id);
-            File inputFile = new File(reportFolder, filename);
+            File hlogFile = new File(reportFolder, filename);
 
-            try (HistogramLogReader reader = new HistogramLogReader(inputFile))
+            try (OutputStream os = new FileOutputStream(new File(reportFolder, hlogFile.getName() + ".hgrm")))
             {
-                Histogram total = new Histogram(3);
-                while (reader.hasNext())
-                {
-                    Histogram histogram = (Histogram) reader.nextIntervalHistogram();
-                    total.add(histogram);
-                }
-                try (PrintStream ps = new PrintStream(new FileOutputStream(inputFile.getPath() + ".hgrm")))
-                {
-                    total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
-                }
+                HgrmReport.createHgrmHistogram(hlogFile, os);
             }
-
-            try (OutputStream os = new FileOutputStream(inputFile.getPath() + ".html"))
+            try (OutputStream os = new FileOutputStream(new File(reportFolder, hlogFile.getName() + ".html")))
             {
-                HtmlReport.createHtmlHistogram(inputFile.getName().split("\\.")[0], inputFile, os);
+                HtmlReport.createHtmlHistogram(hlogFile.getName().split("\\.")[0], hlogFile, os);
             }
-        }
-    }
-
-    private static class LatencyRecordingChannelListener extends AbstractLifeCycle implements HttpChannel.Listener
-    {
-        private final Map<Request, Long> timestamps = new ConcurrentHashMap<>();
-        private final Recorder recorder = new Recorder(3);
-        private final Timer timer = new Timer();
-        private final HistogramLogWriter writer;
-
-        public LatencyRecordingChannelListener(String histogramFilename) throws FileNotFoundException
-        {
-            writer = new HistogramLogWriter(histogramFilename);
-            long now = System.currentTimeMillis();
-            writer.setBaseTime(now);
-            writer.outputBaseTime(now);
-            writer.outputStartTime(now);
-            timer.schedule(new TimerTask()
-            {
-                private final Histogram h = new Histogram(3);
-                @Override
-                public void run()
-                {
-                    recorder.getIntervalHistogramInto(h);
-                    writer.outputIntervalHistogram(h);
-                    h.reset();
-                }
-            }, 1000, 1000);
-        }
-
-        @Override
-        protected void doStop()
-        {
-            timer.cancel();
-            writer.outputIntervalHistogram(recorder.getIntervalHistogram());
-            writer.close();
-        }
-
-        @Override
-        public void onRequestBegin(Request request)
-        {
-            long begin = System.nanoTime();
-            timestamps.put(request, begin);
-        }
-
-        @Override
-        public void onComplete(Request request)
-        {
-            long begin = timestamps.remove(request);
-            long responseTime = System.nanoTime() - begin;
-            recorder.recordValue(responseTime);
-        }
-    }
-
-    private static class ResponseStatusListener implements Resource.NodeListener, LoadGenerator.CompleteListener
-    {
-        private final Timer timer = new Timer();
-        // Array of counters:
-        //  [0] unknown status [1] HTTP 1xx [2] HTTP 2xx [3] HTTP 3xx [4] HTTP 4xx [5] HTTP 5xx
-        private LongAdder[] savedArray = new LongAdder[6];
-        private final AtomicReference<LongAdder[]> statuses = new AtomicReference<>(new LongAdder[6]);
-        private final PrintWriter printWriter;
-
-        public ResponseStatusListener(String statusFilename) throws IOException
-        {
-            printWriter = new PrintWriter(statusFilename, StandardCharsets.UTF_8);
-            for (int i = 0; i < savedArray.length; i++)
-            {
-                savedArray[i] = new LongAdder();
-                statuses.get()[i] = new LongAdder();
-            }
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run()
-                {
-                    writeStatuses();
-                }
-            }, 1000, 1000);
-        }
-
-        private synchronized void writeStatuses()
-        {
-            LongAdder[] newStatuses = savedArray;
-            for (LongAdder newStatus : newStatuses)
-                newStatus.reset();
-            savedArray = statuses.getAndSet(newStatuses);
-
-            for (int i = 0; i < savedArray.length; i++)
-            {
-                LongAdder status = savedArray[i];
-                printWriter.print(status.sum());
-                if (i < savedArray.length - 1)
-                    printWriter.print(',');
-            }
-            printWriter.println();
-            printWriter.flush();
-        }
-
-        @Override
-        public void onResourceNode(Resource.Info info)
-        {
-            int status = info.getStatus();
-            int idx = status / 100;
-            if (idx > 5 || idx < 1)
-                idx = 0;
-            statuses.get()[idx].increment();
-        }
-
-        @Override
-        public void onComplete(LoadGenerator loadGenerator)
-        {
-            timer.cancel();
-            writeStatuses();
-            printWriter.close();
-        }
-    }
-
-    private static class ResponseTimeListener implements Resource.NodeListener, LoadGenerator.CompleteListener
-    {
-        private final Recorder recorder = new Recorder(3);
-        private final Timer timer = new Timer();
-        private final HistogramLogWriter writer;
-
-        private ResponseTimeListener(String histogramFilename) throws FileNotFoundException
-        {
-            writer = new HistogramLogWriter(histogramFilename);
-            long now = System.currentTimeMillis();
-            writer.setBaseTime(now);
-            writer.outputBaseTime(now);
-            writer.outputStartTime(now);
-            timer.schedule(new TimerTask()
-            {
-                private final Histogram h = new Histogram(3);
-                @Override
-                public void run()
-                {
-                    recorder.getIntervalHistogramInto(h);
-                    writer.outputIntervalHistogram(h);
-                    h.reset();
-                }
-            }, 1000, 1000);
-        }
-
-        @Override
-        public void onResourceNode(Resource.Info info)
-        {
-            long responseTime = info.getResponseTime() - info.getRequestTime();
-            recorder.recordValue(responseTime);
-        }
-
-        @Override
-        public void onComplete(LoadGenerator generator)
-        {
-            timer.cancel();
-            writer.outputIntervalHistogram(recorder.getIntervalHistogram());
-            writer.close();
         }
     }
 
