@@ -1,12 +1,9 @@
 package perf;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -61,6 +58,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import perf.handler.AsyncHandler;
+import perf.histogram.HtmlReport;
 import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.ConfigurableMonitor;
 
@@ -240,9 +238,9 @@ public class SslPerfTest implements Serializable
         for (String id : nodeArray.ids())
         {
             File reportFolder = new File(targetFolder, id);
-            String inputFileName = new File(reportFolder, filename).getPath();
+            File inputFile = new File(reportFolder, filename);
 
-            try (HistogramLogReader reader = new HistogramLogReader(inputFileName))
+            try (HistogramLogReader reader = new HistogramLogReader(inputFile))
             {
                 Histogram total = new Histogram(3);
                 while (reader.hasNext())
@@ -250,55 +248,16 @@ public class SslPerfTest implements Serializable
                     Histogram histogram = (Histogram) reader.nextIntervalHistogram();
                     total.add(histogram);
                 }
-                try (PrintStream ps = new PrintStream(new FileOutputStream(inputFileName + ".hgrm")))
+                try (PrintStream ps = new PrintStream(new FileOutputStream(inputFile.getPath() + ".hgrm")))
                 {
                     total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds
                 }
             }
 
-            createHtmlHistogram(inputFileName);
-        }
-    }
-
-    private void createHtmlHistogram(String inputFileName) throws IOException
-    {
-        String targetFilename = inputFileName + ".html";
-        File inputFile = new File(inputFileName);
-        String title = inputFile.getName().split("\\.")[0];
-
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/graph-template.html"), StandardCharsets.UTF_8)))
-        {
-            while (true)
+            try (OutputStream os = new FileOutputStream(inputFile.getPath() + ".html"))
             {
-                String line = r.readLine();
-                if (line == null)
-                    break;
-                sb.append(line).append('\n');
+                HtmlReport.createHtmlHistogram(inputFile.getName().split("\\.")[0], inputFile, os);
             }
-        }
-        String html = sb.toString();
-
-        StringBuilder sb2 = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile), StandardCharsets.UTF_8)))
-        {
-            while (true)
-            {
-                String line = reader.readLine();
-                if (line == null)
-                    break;
-
-                sb2.append(line).append("\n");
-            }
-        }
-        String histograms = sb2.toString();
-
-        html = html.replace("##TITLE##", title);
-        html = html.replace("##HISTOGRAMS##", histograms);
-
-        try (OutputStream os = new FileOutputStream(targetFilename))
-        {
-            os.write(html.getBytes(StandardCharsets.UTF_8));
         }
     }
 
