@@ -1,23 +1,8 @@
-//
-// ========================================================================
-// Copyright (c) 1995-2021 Mort Bay Consulting Pty Ltd and others.
-//
-// This program and the accompanying materials are made available under the
-// terms of the Eclipse Public License v. 2.0 which is available at
-// https://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
-// which is available at https://www.apache.org/licenses/LICENSE-2.0.
-//
-// SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
-// ========================================================================
-//
+package perf.util;
 
-package org.mortbay.jetty.orchestrator.util;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +25,6 @@ public class IOUtil
         }
     }
 
-    public static void close(AutoCloseable... closeables)
-    {
-        Arrays.stream(closeables).forEach(IOUtil::close);
-    }
-
     public static void copy(InputStream is, OutputStream os) throws IOException
     {
         copy(is, os, 1024, false);
@@ -62,16 +42,5 @@ public class IOUtil
             if (flushOnWrite)
                 os.flush();
         }
-    }
-
-    public static boolean deltree(File folder) {
-        File[] files = folder.listFiles();
-        if (files != null)
-        {
-            for (File file : files) {
-                deltree(file);
-            }
-        }
-        return folder.delete();
     }
 }

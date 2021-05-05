@@ -1,4 +1,4 @@
-package perf;
+package perf.jenkins;
 
 import java.io.File;
 
@@ -8,7 +8,7 @@ public class JenkinsToolJdk implements SerializableSupplier<String>
 {
     private final String toolName;
 
-    JenkinsToolJdk(String toolName)
+    public JenkinsToolJdk(String toolName)
     {
         this.toolName = toolName;
     }

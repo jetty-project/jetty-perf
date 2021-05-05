@@ -1,4 +1,4 @@
-package perf;
+package perf.handler;
 
 import java.io.IOException;
 import javax.servlet.AsyncContext;

@@ -63,6 +63,8 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import perf.handler.AsyncHandler;
+import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.AsyncProfilerCpuMonitor;
 import perf.monitoring.ConfigurableMonitor;
 
