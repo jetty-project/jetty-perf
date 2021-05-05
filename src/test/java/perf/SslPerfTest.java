@@ -128,14 +128,14 @@ public class SslPerfTest implements Serializable
                 server.addConnector(serverConnector);
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
-            }).get();
+            }).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
             NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
             NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
-            warmupLoaders.get();
-            warmupProbe.get();
+            warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
+            warmupProbe.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             LOG.info("Running...");
             long before = System.nanoTime();
@@ -191,16 +191,16 @@ public class SslPerfTest implements Serializable
             xformHisto(serverArray, new File("target/report/server"), "server.hlog");
             download(serverArray, new File("target/report/server"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.hlog", "gc.log");
+            download(loadersArray, new File("target/report/loader"), "loader.hlog", "status.csv", "gc.log");
             xformHisto(loadersArray, new File("target/report/loader"), "loader.hlog");
             download(loadersArray, new File("target/report/loader"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.hlog", "gc.log");
+            download(probeArray, new File("target/report/probe"), "probe.hlog", "status.csv", "gc.log");
             xformHisto(probeArray, new File("target/report/probe"), "probe.hlog");
             download(probeArray, new File("target/report/probe"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
 
             long after = System.nanoTime();
-            LOG.info("Done; elapsed=" + TimeUnit.NANOSECONDS.toMillis(after - before) + " ms");
+            LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
         }
     }
 

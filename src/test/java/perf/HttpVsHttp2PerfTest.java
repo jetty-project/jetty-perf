@@ -20,18 +20,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.management.remote.JMXServiceURL;
 
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
+import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
@@ -51,18 +53,18 @@ import perf.histogram.loader.ResponseStatusListener;
 import perf.histogram.loader.ResponseTimeListener;
 import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
-import perf.monitoring.AsyncProfilerCpuMonitor;
 import perf.monitoring.ConfigurableMonitor;
 
-public class SslPerfLimitTest implements Serializable
+public class HttpVsHttp2PerfTest implements Serializable
 {
-    private static final Logger LOG = LoggerFactory.getLogger(SslPerfLimitTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HttpVsHttp2PerfTest.class);
 
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofMinutes(Long.getLong("test.runFor", 10));
 
-    @Test
-    public void testSslPerfLimit() throws Exception
+    @ValueSource(booleans = {true, false})
+    @ParameterizedTest
+    public void testPerf(boolean useHttp2) throws Exception
     {
         String[] defaultJvmOpts = {
             "-XX:+UnlockDiagnosticVMOptions",
@@ -75,7 +77,7 @@ public class SslPerfLimitTest implements Serializable
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
         List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
         jvmOpts.addAll(jdkExtraArgs == null ? Collections.emptyList() : Arrays.asList(jdkExtraArgs.split(" ")));
-        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
+        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK, ConfigurableMonitor.Item.APROF_CPU);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
@@ -86,9 +88,9 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("1", "load-1"))
                 .node(new Node("2", "load-2"))
                 .node(new Node("3", "load-3"))
-                .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
+                .node(new Node("1", "load-4"))
             )
             ;
 
@@ -99,7 +101,6 @@ public class SslPerfLimitTest implements Serializable
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
             int participantCount = cfg.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
-            int loadersCount = cfg.nodeArrays().stream().filter(na -> na.id().equals("loaders")).mapToInt(na -> na.nodes().size()).sum();
 
             serverArray.executeOnAll(tools ->
             {
@@ -117,25 +118,23 @@ public class SslPerfLimitTest implements Serializable
                 SecureRequestCustomizer customizer = new SecureRequestCustomizer();
                 customizer.setSniHostCheck(false);
                 httpConfiguration.addCustomizer(customizer);
-                HttpConnectionFactory http = new HttpConnectionFactory(httpConfiguration);
+                ConnectionFactory http;
+                if (useHttp2)
+                    http = new HTTP2CServerConnectionFactory(httpConfiguration);
+                else
+                    http = new HttpConnectionFactory(httpConfiguration);
 
-                SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
-                String path = getClass().getResource("/keystore.p12").getPath();
-                serverSslContextFactory.setKeyStorePath(path);
-                serverSslContextFactory.setKeyStorePassword("storepwd");
-                SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
-
-                ServerConnector serverConnector = new ServerConnector(server, 1, 32, ssl, http);
-                serverConnector.setPort(8443);
+                ServerConnector serverConnector = new ServerConnector(server, http);
+                serverConnector.setPort(8080);
                 server.addConnector(serverConnector);
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
             }).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
-            URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
-            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
-            NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
+            URI serverUri = new URI("http://" + serverArray.hostnameOf("1") + ":8080");
+            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(useHttp2, serverUri, WARMUP_DURATION));
+            NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(useHttp2, serverUri, WARMUP_DURATION));
             warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
             warmupProbe.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
@@ -152,19 +151,6 @@ public class SslPerfLimitTest implements Serializable
                     LifeCycle.start(listener);
                     serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
-
-                    // collect a different FG for each time quantum of the loaders
-                    long runQuantum = RUN_DURATION.toMillis() / loadersCount;
-                    long gap = runQuantum / 5;
-                    for (int i = 0; i < loadersCount; i++)
-                    {
-                        Thread.sleep(gap);
-                        AsyncProfilerCpuMonitor cpuMonitor = new AsyncProfilerCpuMonitor("profile." + (i + 1) + ".html");
-                        Thread.sleep(runQuantum - gap * 2);
-                        cpuMonitor.close();
-                        Thread.sleep(gap);
-                    }
-
                     tools.barrier("run-end-barrier", participantCount).await();
                     LifeCycle.stop(listener);
                     server.stop();
@@ -175,12 +161,8 @@ public class SslPerfLimitTest implements Serializable
             {
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
-                    int index = tools.barrier("loader-index-barrier", loadersCount).await();
                     tools.barrier("run-start-barrier", participantCount).await();
-                    long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
-                    LOG.info("Loader #{} waiting {} ms", index, delayMs);
-                    Thread.sleep(delayMs);
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.csv");
+                    runLoadGenerator(useHttp2, serverUri, RUN_DURATION, "loader.hlog", "status.csv");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -190,7 +172,7 @@ public class SslPerfLimitTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.csv");
+                    runProbeGenerator(useHttp2, serverUri, RUN_DURATION, "probe.hlog", "status.csv");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -205,20 +187,22 @@ public class SslPerfLimitTest implements Serializable
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
+            File reportRoot = new File("target/report", useHttp2 ? "http2" : "http11");
             // download servers FGs & transform histograms
-            for (int i = 0; i < loadersCount; i++)
-                download(serverArray, new File("target/report/server"), "profile." + (i + 1) + ".html");
-            download(serverArray, new File("target/report/server"), "server.hlog", "gc.log");
-            xformHisto(serverArray, new File("target/report/server"), "server.hlog");
-            download(serverArray, new File("target/report/server"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
+            File serverFolder = new File(reportRoot, "server");
+            download(serverArray, serverFolder, "server.hlog", "gc.log");
+            xformHisto(serverArray, serverFolder, "server.hlog");
+            download(serverArray, serverFolder, ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download loaders FGs & transform histograms
-            download(loadersArray, new File("target/report/loader"), "loader.hlog", "status.csv", "gc.log");
-            xformHisto(loadersArray, new File("target/report/loader"), "loader.hlog");
-            download(loadersArray, new File("target/report/loader"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
+            File loaderFolder = new File(reportRoot, "loader");
+            download(loadersArray, loaderFolder, "loader.hlog", "status.csv", "gc.log");
+            xformHisto(loadersArray, loaderFolder, "loader.hlog");
+            download(loadersArray, loaderFolder, ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
             // download probes FGs & transform histograms
-            download(probeArray, new File("target/report/probe"), "probe.hlog", "status.csv", "gc.log");
-            xformHisto(probeArray, new File("target/report/probe"), "probe.hlog");
-            download(probeArray, new File("target/report/probe"), ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
+            File probeFolder = new File(reportRoot, "probe");
+            download(probeArray, probeFolder, "probe.hlog", "status.csv", "gc.log");
+            xformHisto(probeArray, probeFolder, "probe.hlog");
+            download(probeArray, probeFolder, ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
@@ -265,23 +249,26 @@ public class SslPerfLimitTest implements Serializable
         }
     }
 
-    private void runLoadGenerator(URI uri, Duration duration) throws IOException
+    private void runLoadGenerator(boolean useHttp2, URI uri, Duration duration) throws IOException
     {
-        runLoadGenerator(uri, duration, null, null);
+        runLoadGenerator(useHttp2, uri, duration, null, null);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
+    private void runLoadGenerator(boolean useHttp2, URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
             .host(uri.getHost())
             .port(uri.getPort())
-            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .threads(3)
             .resourceRate(0)
             .resource(new Resource("/"));
 
+        if (useHttp2)
+        {
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+        }
         if (histogramFilename != null)
         {
             ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
@@ -310,19 +297,23 @@ public class SslPerfLimitTest implements Serializable
         }).join();
     }
 
-    private void runProbeGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
+    private void runProbeGenerator(boolean useHttp2, URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
             .host(uri.getHost())
             .port(uri.getPort())
-            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(5)
             .resource(new Resource("/"))
             .resourceListener(new ResponseTimeListener(histogramFilename))
             .resourceListener(new ResponseStatusListener(statusFilename))
             .rateRampUpPeriod(0);
+
+        if (useHttp2)
+        {
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+        }
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("probe generation begin");
