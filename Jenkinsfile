@@ -14,10 +14,8 @@ pipeline {
       string(defaultValue: '-Xmx8g', description: 'extra JVM arguments to use', name: 'EXTRA_ARGS_TO_USE')
     }
     tools {
-      jdk 'jdk8'
       jdk 'jdk11'
       jdk 'jdk16'
-      jdk 'jdk16-zulu'
       jdk "${JDK_TO_USE}"
     }
     stages {
@@ -45,6 +43,12 @@ pipeline {
               agent { node { label 'load-4' } }
               steps {
                 sh "echo load-4"
+              }
+            }
+            stage('install probe') {
+              agent { node { label 'zwerg-osx' } }
+              steps {
+                sh "echo zwerg"
               }
             }
           }
