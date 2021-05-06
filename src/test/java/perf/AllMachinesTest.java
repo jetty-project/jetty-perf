@@ -1,6 +1,5 @@
 package perf;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -32,7 +31,7 @@ public class AllMachinesTest
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .node(new Node("1", "zwerg"))
-            )
+            ).jvm(new Jvm(new JenkinsToolJdk("jdk16-osx")))
             ;
 
         {
