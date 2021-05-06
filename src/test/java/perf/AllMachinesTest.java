@@ -18,19 +18,19 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .hostLauncher(new SshRemoteHostLauncher())
+            .jvm(new Jvm(new JenkinsToolJdk("jdk16")))
             .nodeArray(new SimpleNodeArrayConfiguration("server")
                 .node(new Node("1", "load-master"))
-            ).jvm(new Jvm(new JenkinsToolJdk("jdk16")))
+            )
             .nodeArray(new SimpleNodeArrayConfiguration("loaders")
                 .node(new Node("1", "load-1"))
                 .node(new Node("2", "load-2"))
                 .node(new Node("3", "load-3"))
                 .node(new Node("4", "load-4"))
-            ).jvm(new Jvm(new JenkinsToolJdk("jdk16")))
+            )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .node(new Node("1", "zwerg"))
-            ).jvm(new Jvm(new JenkinsToolJdk("jdk16-osx")))
+            )
             ;
 
         {

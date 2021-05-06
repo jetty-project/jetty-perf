@@ -16,8 +16,6 @@ pipeline {
     tools {
       jdk 'jdk11'
       jdk 'jdk16'
-      jdk 'jdk11-osx'
-      jdk 'jdk16-osx'
       jdk "${JDK_TO_USE}"
     }
     stages {
