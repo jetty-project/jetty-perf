@@ -20,10 +20,18 @@ public class JenkinsToolJdk implements SerializableSupplier<String>
         File jdkFolderFile = new File(home + "/jenkins_home/tools/hudson.model.JDK/" + toolName);
         if (!jdkFolderFile.isDirectory())
             throw new RuntimeException("Jenkins tool '" + toolName + "' not installed");
+        File executableFile = new File(jdkFolderFile, "bin/java");
+        if (executableFile.isFile())
+            return executableFile.getAbsolutePath();
         File[] files = jdkFolderFile.listFiles((dir, name) -> !name.startsWith(".timestamp"));
         if (files == null || files.length == 0)
             throw new RuntimeException("Jenkins tool '" + toolName + "' not found");
-        File executableFile = new File(files[0], "bin/java");
-        return executableFile.getAbsolutePath();
+        for (File file : files)
+        {
+            executableFile = new File(file, "bin/java");
+            if (executableFile.isFile())
+                return executableFile.getAbsolutePath();
+        }
+        throw new RuntimeException("Jenkins tool '" + toolName + "' not found");
     }
 }
