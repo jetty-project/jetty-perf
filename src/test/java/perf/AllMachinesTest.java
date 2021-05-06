@@ -15,7 +15,6 @@ import perf.jenkins.JenkinsToolJdk;
 
 public class AllMachinesTest
 {
-    @Disabled
     @Test
     public void testAllMachines() throws Exception
     {
