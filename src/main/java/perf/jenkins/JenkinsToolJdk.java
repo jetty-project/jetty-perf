@@ -6,9 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JenkinsToolJdk implements FilenameSupplier
 {
+    private static final Logger LOG = LoggerFactory.getLogger(JenkinsToolJdk.class);
+
     private final String toolName;
 
     public JenkinsToolJdk(String toolName)
@@ -22,11 +26,13 @@ public class JenkinsToolJdk implements FilenameSupplier
         Path jdkFolderFile = fileSystem.getPath("jenkins_home/tools/hudson.model.JDK/" + toolName);
         try
         {
-            return Files.walk(jdkFolderFile, 2)
+            String executable = Files.walk(jdkFolderFile, 2)
                 .filter(path -> Files.isExecutable(path.resolve("bin/java")))
                 .map(path -> path.resolve("bin/java").toAbsolutePath().toString())
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
+            LOG.info("Found java executable in Jenkins Tools '{}' of machine '{}' at {}", toolName, hostname, executable);
+            return executable;
         }
         catch (IOException e)
         {
