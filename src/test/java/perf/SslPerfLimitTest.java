@@ -84,12 +84,12 @@ public class SslPerfLimitTest implements Serializable
             )
             .nodeArray(new SimpleNodeArrayConfiguration("loaders")
                 .node(new Node("1", "load-1"))
-                //.node(new Node("2", "load-2"))
+                .node(new Node("2", "load-2"))
                 .node(new Node("3", "load-3"))
                 .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
-                .node(new Node("1", "load-2"))
+//                .node(new Node("1", "load-2"))
             )
             ;
 
@@ -136,9 +136,7 @@ public class SslPerfLimitTest implements Serializable
             LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
             NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
-            //NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
             warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
-            //warmupProbe.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             LOG.info("Running...");
             long before = System.nanoTime();
