@@ -10,12 +10,12 @@ pipeline {
       //string(defaultValue: '10.0.2', description: 'Jetty Version', name: 'JETTY_VERSION')
       //string(defaultValue: '2.0.0', description: 'LoadGenerator Version', name: 'LOADGENERATOR_VERSION')
       string(defaultValue: '10', description: 'Time in minutes to run load test', name: 'RUN_FOR')
-      string(defaultValue: 'jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
+      string(defaultValue: 'load-jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
       string(defaultValue: '-Xmx8g', description: 'extra JVM arguments to use', name: 'EXTRA_ARGS_TO_USE')
     }
     tools {
-      jdk 'jdk11'
-      jdk 'jdk16'
+      jdk 'load-jdk11'
+      jdk 'load-jdk16'
       jdk "${JDK_TO_USE}"
     }
     stages {
