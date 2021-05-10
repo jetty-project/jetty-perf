@@ -1,31 +1,16 @@
 package perf.monitoring;
 
-import java.io.File;
-import java.io.IOException;
-
-class LinuxCpuMonitor implements Monitor
+class LinuxCpuMonitor extends AbstractCommandMonitor
 {
     public static final String DEFAULT_FILENAME = "cpu.txt";
 
-    private final Process process;
-
-    public LinuxCpuMonitor() throws IOException
+    public LinuxCpuMonitor()
     {
         this(DEFAULT_FILENAME, 10);
     }
 
-    public LinuxCpuMonitor(String filename, int interval) throws IOException
+    public LinuxCpuMonitor(String filename, int interval)
     {
-        process = new ProcessBuilder("mpstat", "-P", "ALL", "" + interval)
-                .redirectErrorStream(true)
-                .redirectOutput(new File(filename))
-                .start();
-    }
-
-    @Override
-    public void close() throws Exception
-    {
-        process.destroy();
-        process.waitFor();
+        super(filename, "mpstat", "-P", "ALL", Integer.toString(interval));
     }
 }

@@ -1,31 +1,16 @@
 package perf.monitoring;
 
-import java.io.File;
-import java.io.IOException;
-
-class LinuxMemoryMonitor implements Monitor
+class LinuxMemoryMonitor extends AbstractCommandMonitor
 {
     public static final String DEFAULT_FILENAME = "memory.txt";
 
-    private final Process process;
-
-    public LinuxMemoryMonitor() throws IOException
+    public LinuxMemoryMonitor()
     {
         this(DEFAULT_FILENAME, 10);
     }
 
-    public LinuxMemoryMonitor(String filename, int interval) throws IOException
+    public LinuxMemoryMonitor(String filename, int interval)
     {
-        process = new ProcessBuilder("free", "-h", "-s", "" + interval)
-            .redirectErrorStream(true)
-            .redirectOutput(new File(filename))
-            .start();
-    }
-
-    @Override
-    public void close() throws Exception
-    {
-        process.destroy();
-        process.waitFor();
+        super(filename, "free", "-h", "-s", Integer.toString(interval));
     }
 }
