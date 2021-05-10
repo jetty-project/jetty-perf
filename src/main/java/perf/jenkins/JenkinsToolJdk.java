@@ -38,6 +38,7 @@ public class JenkinsToolJdk implements FilenameSupplier
             if (StringUtils.isNotEmpty(jdkHome) &&
                 Files.isExecutable(javaExec))
             {
+                LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
                 return javaExec.toAbsolutePath().toString();
             }
         }
@@ -55,6 +56,7 @@ public class JenkinsToolJdk implements FilenameSupplier
                 .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
             if (LOG.isDebugEnabled())
                 LOG.debug("Found java executable in Jenkins Tools '{}' of machine '{}' at {}", toolName, hostname, executable);
+            LOG.info("host {} will use java executable {}", hostname, executable);
             return executable;
         }
         catch (IOException e)
