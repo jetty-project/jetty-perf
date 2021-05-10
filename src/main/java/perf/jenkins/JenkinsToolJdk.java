@@ -1,13 +1,21 @@
 package perf.jenkins;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
+import org.apache.commons.lang.StringUtils;
+import org.apache.maven.toolchain.model.PersistedToolchains;
+import org.apache.maven.toolchain.model.ToolchainModel;
+import org.apache.maven.toolchain.model.io.xpp3.MavenToolchainsXpp3Reader;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class JenkinsToolJdk implements FilenameSupplier
 {
@@ -23,6 +31,20 @@ public class JenkinsToolJdk implements FilenameSupplier
     @Override
     public String get(FileSystem fileSystem, String hostname)
     {
+        try
+        {
+            String jdkHome = findJavaHomeFromToolchain(hostname);
+            Path javaExec = Paths.get(jdkHome).resolve("bin/java");
+            if (StringUtils.isNotEmpty(jdkHome) &&
+                Files.isExecutable(javaExec))
+            {
+                return javaExec.toAbsolutePath().toString();
+            }
+        }
+        catch (IOException x)
+        {
+            LOG.debug("ignore error searching from toolchains file", x);
+        }
         Path jdkFolderFile = fileSystem.getPath("jenkins_home/tools/hudson.model.JDK/" + toolName);
         try
         {
@@ -40,4 +62,51 @@ public class JenkinsToolJdk implements FilenameSupplier
             throw new RuntimeException("Jenkins tool '" + toolName + "' not found", e);
         }
     }
+
+    protected String findJavaHomeFromToolchain(String hostname) throws IOException
+    {
+        String fileName = hostname + "-toolchains.xml";
+        Path toolchainsPath = Paths.get(fileName);
+        if (Files.exists(toolchainsPath))
+        {
+            MavenToolchainsXpp3Reader toolChainsReader = new MavenToolchainsXpp3Reader();
+            try (InputStream inputStream = Files.newInputStream(toolchainsPath))
+            {
+
+                 PersistedToolchains toolchains = toolChainsReader.read(inputStream);
+                 return (String) toolchains.getToolchains().stream().filter(o ->
+                                                            {
+                     ToolchainModel toolchainModel = ((ToolchainModel)o);
+                     if ("jdk".equals(toolchainModel.getType()))
+                     {
+                        Xpp3Dom provides = (Xpp3Dom)toolchainModel.getProvides();
+                        if (provides != null)
+                        {
+                            Xpp3Dom version = provides.getChild("version");
+                            if (version != null && StringUtils.equals(version.getValue(), this.toolName))
+                            {
+                               return true;
+                            }
+                        }
+                     }
+                     return false;
+                 }).map( o -> {
+                     ToolchainModel toolchainModel = ((ToolchainModel)o);
+                     Xpp3Dom configuration = (Xpp3Dom)toolchainModel.getConfiguration();
+                     Xpp3Dom jdkHome = configuration.getChild("jdkHome");
+                     return (jdkHome != null?jdkHome.getValue():null);
+                 }).findFirst().orElse(null);
+            }
+            catch (XmlPullParserException x)
+            {
+                throw new IOException(x);
+            }
+        }
+        else
+        {
+            LOG.info("cannot find toolchain file {}", fileName);
+        }
+        return null;
+    }
+
 }
