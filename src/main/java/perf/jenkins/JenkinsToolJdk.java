@@ -33,7 +33,6 @@ public class JenkinsToolJdk implements FilenameSupplier
     {
         try
         {
-
             String jdkHome = findJavaHomeFromToolchain(hostname);
             if (StringUtils.isNotEmpty(jdkHome))
             {
@@ -53,7 +52,7 @@ public class JenkinsToolJdk implements FilenameSupplier
         {
             LOG.debug("ignore error searching from toolchains file", x);
         }
-        Path jdkFolderFile = fileSystem.getPath("jenkins_home/tools/hudson.model.JDK/" + toolName);
+        Path jdkFolderFile = fileSystem.getPath(System.getProperty("user.home"), "jenkins_home/tools/hudson.model.JDK", toolName);
         try
         {
             String executable = Files.walk(jdkFolderFile, 2)
