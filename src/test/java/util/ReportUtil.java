@@ -45,7 +45,7 @@ public class ReportUtil
                 {
                     try
                     {
-                        Path targetPath = destinationDir.resolve(resolvedSourcePath.relativize(path));
+                        Path targetPath = destinationDir.resolve(resolvedSourcePath.relativize(path).toString());
                         Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING);
                     }
                     catch (IOException e)
