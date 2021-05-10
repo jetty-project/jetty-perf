@@ -181,7 +181,7 @@ public class HttpVsHttp2PerfTest implements Serializable
             // signal all participants to start
             cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
             // signal all participants to stop monitoring
-            cluster.tools().barrier("run-end-barrier", participantCount).await();
+            cluster.tools().barrier("run-end-barrier", participantCount).await(RUN_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             // wait for all monitoring reports to be written
             serverFuture.get(30, TimeUnit.SECONDS);
