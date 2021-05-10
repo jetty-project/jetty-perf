@@ -33,7 +33,7 @@ public class JenkinsToolJdk implements FilenameSupplier
     {
         try
         {
-            String jdkHome = findJavaHomeFromToolchain(hostname);
+            String jdkHome = findJavaHomeFromToolchain(fileSystem, hostname);
             if (StringUtils.isNotEmpty(jdkHome))
             {
                 Path javaExec = Paths.get(jdkHome).resolve("bin/java");
@@ -71,39 +71,41 @@ public class JenkinsToolJdk implements FilenameSupplier
         }
     }
 
-    protected String findJavaHomeFromToolchain(String hostname) throws IOException
+    protected String findJavaHomeFromToolchain(FileSystem fileSystem, String hostname) throws IOException
     {
         String fileName = hostname + "-toolchains.xml";
-        Path toolchainsPath = Paths.get(fileName);
+        Path toolchainsPath = fileSystem.getPath(fileName);
         if (Files.exists(toolchainsPath))
         {
             MavenToolchainsXpp3Reader toolChainsReader = new MavenToolchainsXpp3Reader();
             try (InputStream inputStream = Files.newInputStream(toolchainsPath))
             {
-
-                 PersistedToolchains toolchains = toolChainsReader.read(inputStream);
-                 return (String) toolchains.getToolchains().stream().filter(o ->
-                                                            {
-                     ToolchainModel toolchainModel = ((ToolchainModel)o);
-                     if ("jdk".equals(toolchainModel.getType()))
-                     {
+                PersistedToolchains toolchains = toolChainsReader.read(inputStream);
+                @SuppressWarnings("unchecked")
+                String s = (String)toolchains.getToolchains().stream().filter(o ->
+                {
+                    ToolchainModel toolchainModel = ((ToolchainModel)o);
+                    if ("jdk".equals(toolchainModel.getType()))
+                    {
                         Xpp3Dom provides = (Xpp3Dom)toolchainModel.getProvides();
                         if (provides != null)
                         {
                             Xpp3Dom version = provides.getChild("version");
                             if (version != null && StringUtils.equals(version.getValue(), this.toolName))
                             {
-                               return true;
+                                return true;
                             }
                         }
-                     }
-                     return false;
-                 }).map( o -> {
-                     ToolchainModel toolchainModel = ((ToolchainModel)o);
-                     Xpp3Dom configuration = (Xpp3Dom)toolchainModel.getConfiguration();
-                     Xpp3Dom jdkHome = configuration.getChild("jdkHome");
-                     return (jdkHome != null?jdkHome.getValue():null);
-                 }).findFirst().orElse(null);
+                    }
+                    return false;
+                }).map(o ->
+                {
+                    ToolchainModel toolchainModel = ((ToolchainModel)o);
+                    Xpp3Dom configuration = (Xpp3Dom)toolchainModel.getConfiguration();
+                    Xpp3Dom jdkHome = configuration.getChild("jdkHome");
+                    return (jdkHome != null ? jdkHome.getValue() : null);
+                }).findFirst().orElse(null);
+                return s;
             }
             catch (XmlPullParserException x)
             {
