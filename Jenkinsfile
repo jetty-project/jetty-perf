@@ -19,12 +19,21 @@ pipeline {
       jdk "${JDK_TO_USE}"
     }
     stages {
+        stage('generate-toolchains-file') {
+          agent { node { label 'load-master' } }
+          steps {
+            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'zwerg-osx'],
+                        jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8"]
+            stash name: 'toolchains.xml', includes: '*toolchains.xml'
+          }
+        }
         stage('Get Load nodes') {
           parallel {
             stage('install load-1') {
               agent { node { label 'load-1' } }
               steps {
                 tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
                 sh "echo load-1"
               }
             }
@@ -32,6 +41,7 @@ pipeline {
               agent { node { label 'load-2' } }
               steps {
                 tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
                 sh "echo load-2"
               }
             }
@@ -39,6 +49,7 @@ pipeline {
               agent { node { label 'load-3' } }
               steps {
                 tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
                 sh "echo load-3"
               }
             }
@@ -46,6 +57,7 @@ pipeline {
               agent { node { label 'load-4' } }
               steps {
                 tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
                 sh "echo load-4"
               }
             }
@@ -53,6 +65,7 @@ pipeline {
               agent { node { label 'zwerg-osx' } }
               steps {
                 tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
                 sh "echo zwerg"
               }
             }
