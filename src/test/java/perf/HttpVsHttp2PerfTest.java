@@ -1,14 +1,11 @@
 package perf;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -47,13 +44,16 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import perf.handler.AsyncHandler;
-import perf.histogram.HgrmReport;
-import perf.histogram.HtmlReport;
 import perf.histogram.loader.ResponseStatusListener;
 import perf.histogram.loader.ResponseTimeListener;
 import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.ConfigurableMonitor;
+import perf.monitoring.DumpHeapRepeatedlyMonitor;
+import perf.monitoring.Monitor;
+
+import static util.ReportUtil.download;
+import static util.ReportUtil.xformHisto;
 
 public class HttpVsHttp2PerfTest implements Serializable
 {
@@ -144,7 +144,7 @@ public class HttpVsHttp2PerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 30_000))
                 {
                     Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
                     Connector serverConnector = server.getConnectors()[0];
@@ -160,7 +160,7 @@ public class HttpVsHttp2PerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 30_000))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(useHttp2, serverUri, RUN_DURATION, "loader.hlog", "status.csv");
@@ -181,72 +181,26 @@ public class HttpVsHttp2PerfTest implements Serializable
             // signal all participants to start
             cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
             // signal all participants to stop monitoring
-            cluster.tools().barrier("run-end-barrier", participantCount).await(RUN_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
+            cluster.tools().barrier("run-end-barrier", participantCount).await();
 
             // wait for all monitoring reports to be written
             serverFuture.get(30, TimeUnit.SECONDS);
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
-            File reportRoot = new File("target/report", useHttp2 ? "http2" : "http11");
+            Path reportRoot = FileSystems.getDefault().getPath("target/report", useHttp2 ? "http2" : "http11");
             // download servers FGs & transform histograms
-            File serverFolder = new File(reportRoot, "server");
-            download(serverArray, serverFolder, "server.hlog", "gc.log");
-            xformHisto(serverArray, serverFolder, "server.hlog");
-            download(serverArray, serverFolder, ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
+            download(serverArray, reportRoot.resolve("server"));
+            xformHisto(serverArray, reportRoot.resolve("server"), "server.hlog");
             // download loaders FGs & transform histograms
-            File loaderFolder = new File(reportRoot, "loader");
-            download(loadersArray, loaderFolder, "loader.hlog", "status.csv", "gc.log");
-            xformHisto(loadersArray, loaderFolder, "loader.hlog");
-            download(loadersArray, loaderFolder, ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
+            download(loadersArray, reportRoot.resolve("loader"));
+            xformHisto(loadersArray, reportRoot.resolve("loader"), "loader.hlog");
             // download probes FGs & transform histograms
-            File probeFolder = new File(reportRoot, "probe");
-            download(probeArray, probeFolder, "probe.hlog", "status.csv", "gc.log");
-            xformHisto(probeArray, probeFolder, "probe.hlog");
-            download(probeArray, probeFolder, ConfigurableMonitor.defaultFilenamesOf(monitoredItems));
+            download(probeArray, reportRoot.resolve("probe"));
+            xformHisto(probeArray, reportRoot.resolve("probe"), "probe.hlog");
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
-        }
-    }
-
-    private void download(NodeArray nodeArray, File targetFolder, String... filenames) throws IOException
-    {
-        download(nodeArray, targetFolder, Arrays.asList(filenames));
-    }
-
-    private void download(NodeArray nodeArray, File targetFolder, List<String> filenames) throws IOException
-    {
-        for (String id : nodeArray.ids())
-        {
-            Path loaderRootPath = nodeArray.rootPathOf(id);
-            File reportFolder = new File(targetFolder, id);
-            reportFolder.mkdirs();
-            for (String filename : filenames)
-            {
-                try (OutputStream os = new FileOutputStream(new File(reportFolder, filename)))
-                {
-                    Files.copy(loaderRootPath.resolve(filename), os);
-                }
-            }
-        }
-    }
-
-    private void xformHisto(NodeArray nodeArray, File targetFolder, String filename) throws IOException
-    {
-        for (String id : nodeArray.ids())
-        {
-            File reportFolder = new File(targetFolder, id);
-            File hlogFile = new File(reportFolder, filename);
-
-            try (OutputStream os = new FileOutputStream(new File(reportFolder, hlogFile.getName() + ".hgrm")))
-            {
-                HgrmReport.createHgrmHistogram(hlogFile, os);
-            }
-            try (OutputStream os = new FileOutputStream(new File(reportFolder, hlogFile.getName() + ".html")))
-            {
-                HtmlReport.createHtmlHistogram(hlogFile.getName().split("\\.")[0], hlogFile, os);
-            }
         }
     }
 
