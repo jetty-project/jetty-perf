@@ -62,6 +62,12 @@ pipeline {
             agent { node { label 'load-master' } }
             steps {
                 jdkpathfinder nodes:['load-master','load-1','load-2','load-3','load-4','zwerg-osx'], jdkNames: ["${JDK_TO_USE}","jdk11","jdk8"]
+//                echo 'load-master toolchain'
+//                sh 'cat load-master-toolchains.xml'
+//                echo 'load-1 toolchain'
+//                sh 'cat load-1-toolchains.xml'
+//                echo 'zwerg-osx toolchain'
+//                sh 'cat zwerg-osx-toolchains.xml'
                 /*withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins_with_key', \
                                                              keyFileVariable: 'SSH_KEY_FOR_JENKINS', \
                                                              passphraseVariable: '', \
@@ -77,12 +83,6 @@ pipeline {
                     //-Djetty.version=${JETTY_VERSION} -Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                   }
                 }
-                echo 'load-master toolchain'
-                sh 'cat load-master-toolchains.xml'
-                echo 'load-1 toolchain'
-                sh 'cat load-1-toolchains.xml'
-                echo 'zwerg-osx toolchain'
-                sh 'cat zwerg-osx-toolchains.xml'
                 junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
                 archiveArtifacts artifacts: "**/target/report/**/**",allowEmptyArchive: true
             }

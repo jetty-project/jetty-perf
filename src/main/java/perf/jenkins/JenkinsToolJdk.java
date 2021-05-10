@@ -33,13 +33,20 @@ public class JenkinsToolJdk implements FilenameSupplier
     {
         try
         {
+
             String jdkHome = findJavaHomeFromToolchain(hostname);
-            Path javaExec = Paths.get(jdkHome).resolve("bin/java");
-            if (StringUtils.isNotEmpty(jdkHome) &&
-                Files.isExecutable(javaExec))
+            if (StringUtils.isNotEmpty(jdkHome))
             {
-                LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
-                return javaExec.toAbsolutePath().toString();
+                Path javaExec = Paths.get(jdkHome).resolve("bin/java");
+                if (Files.isExecutable(javaExec))
+                {
+                    LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
+                    return javaExec.toAbsolutePath().toString();
+                }
+            }
+            else
+            {
+                LOG.warn("cannot jdkHome from toolchain for host {}", hostname);
             }
         }
         catch (IOException x)
