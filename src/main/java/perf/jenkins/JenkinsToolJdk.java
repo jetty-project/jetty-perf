@@ -46,7 +46,7 @@ public class JenkinsToolJdk implements FilenameSupplier
             }
             else
             {
-                LOG.warn("cannot jdkHome from toolchain for host {}", hostname);
+                LOG.warn("cannot find jdkHome from toolchain for host {}", hostname);
             }
         }
         catch (IOException x)
