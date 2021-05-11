@@ -18,7 +18,7 @@ public class AllMachinesTest
     public void testAllMachines() throws Exception
     {
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("jdk16")))
+            .jvm(new Jvm(new JenkinsToolJdk("load-jdk16")))
             .nodeArray(new SimpleNodeArrayConfiguration("server")
                 .node(new Node("1", "load-master"))
             )

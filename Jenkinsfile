@@ -23,7 +23,7 @@ pipeline {
           agent { node { label 'load-master' } }
           steps {
             jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'zwerg-osx'],
-                        jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8"]
+                        jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8", "load-jdk16"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
         }
