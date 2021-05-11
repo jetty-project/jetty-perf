@@ -71,6 +71,7 @@ pipeline {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
                 sh "cp zwerg-toolchains.xml  ~/zwerg-toolchains.xml "
+                sh "cat zwerg-toolchains.xml"
                 sh "echo zwerg"
               }
             }

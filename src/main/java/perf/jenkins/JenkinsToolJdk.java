@@ -42,6 +42,10 @@ public class JenkinsToolJdk implements FilenameSupplier
                     LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
                     return javaExec.toAbsolutePath().toString();
                 }
+                else
+                {
+                    LOG.info("javaExec '{}' is not executable file");
+                }
             }
             else
             {
