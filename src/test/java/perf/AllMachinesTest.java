@@ -17,8 +17,9 @@ public class AllMachinesTest
     @Test
     public void testAllMachines() throws Exception
     {
+        String jdkName = System.getProperty("test.jdk.name", "load-jdk11");
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk("load-jdk16")))
+            .jvm(new Jvm(new JenkinsToolJdk(jdkName)))
             .nodeArray(new SimpleNodeArrayConfiguration("server")
                 .node(new Node("1", "load-master"))
             )
