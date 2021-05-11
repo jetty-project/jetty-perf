@@ -22,7 +22,7 @@ pipeline {
         stage('generate-toolchains-file') {
           agent { node { label 'load-master' } }
           steps {
-            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'zwerg-osx'],
+            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'zwerg'],
                         jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8", "load-jdk16"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
@@ -70,7 +70,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                sh "cp zwerg-osx-toolchains.xml  ~/zwerg-osx-toolchains.xml "
+                sh "cp zwerg-toolchains.xml  ~/zwerg-toolchains.xml "
                 sh "echo zwerg"
               }
             }
