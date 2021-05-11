@@ -30,8 +30,7 @@ public class AllMachinesTest
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .node(new Node("1", "zwerg"))
-            )
-            ;
+            );
 
         {
             String javaVersion = System.getProperty("java.version");

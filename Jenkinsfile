@@ -74,7 +74,7 @@ pipeline {
         stage('ssl-perf') {
             agent { node { label 'load-master' } }
             steps {
-                jdkpathfinder nodes:['load-master','load-1','load-2','load-3','load-4','zwerg-osx'], jdkNames: ["${JDK_TO_USE}","jdk11","jdk8"]
+                unstash name: 'toolchains.xml'
 //                echo 'load-master toolchain'
 //                sh 'cat load-master-toolchains.xml'
 //                echo 'load-1 toolchain'
