@@ -38,17 +38,19 @@ public class JenkinsToolJdk implements FilenameSupplier
             if (StringUtils.isNotEmpty(jdkHome))
             {
                 Path javaExec = Paths.get(jdkHome).resolve("bin/java");
-                if (Files.isExecutable(javaExec))
-                {
-                    LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
-                    return javaExec.toAbsolutePath().toString();
-                }
-                else
-                {
-                    LOG.info("javaExec '{}' is not executable file for user {} but exists? {}, os/version {}/{}",
-                              javaExec, System.getProperty("user.name"), Files.exists(javaExec),
-                              System.getProperty("os.name"), System.getProperty("os.version"));
-                }
+                // it's coming from toolchains so we trust the result
+                return javaExec.toAbsolutePath().toString();
+//                if (Files.isExecutable(javaExec))
+//                {
+//                    LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
+//                    return javaExec.toAbsolutePath().toString();
+//                }
+//                else
+//                {
+//                    LOG.info("javaExec '{}' is not executable file for user {} but exists? {}, os/version {}/{}",
+//                              javaExec, System.getProperty("user.name"), Files.exists(javaExec),
+//                              System.getProperty("os.name"), System.getProperty("os.version"));
+//                }
             }
             else
             {
