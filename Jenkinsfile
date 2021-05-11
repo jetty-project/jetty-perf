@@ -34,6 +34,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
+                sh "cp load-1-toolchains.xml ~/load-1-toolchains.xml"
                 sh "echo load-1"
               }
             }
@@ -42,6 +43,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
+                sh "cp load-2-toolchains.xml ~/load-2-toolchains.xml"
                 sh "echo load-2"
               }
             }
@@ -50,6 +52,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
+                sh "cp load-3-toolchains.xml ~/load-3-toolchains.xml"
                 sh "echo load-3"
               }
             }
@@ -58,6 +61,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
+                sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
                 sh "echo load-4"
               }
             }
@@ -66,6 +70,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
+                sh "cp zwerg-osx-toolchains.xml  ~/zwerg-osx-toolchains.xml "
                 sh "echo zwerg"
               }
             }
@@ -75,6 +80,7 @@ pipeline {
             agent { node { label 'load-master' } }
             steps {
                 unstash name: 'toolchains.xml'
+                sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
 //                echo 'load-master toolchain'
 //                sh 'cat load-master-toolchains.xml'
 //                echo 'load-1 toolchain'
