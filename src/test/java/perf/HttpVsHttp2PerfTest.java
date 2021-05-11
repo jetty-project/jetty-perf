@@ -150,7 +150,7 @@ public class HttpVsHttp2PerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 30_000))
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 290_000))
                 {
                     Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
                     Connector serverConnector = server.getConnectors()[0];
@@ -166,7 +166,7 @@ public class HttpVsHttp2PerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 30_000))
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 290_000))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(useHttp2, serverUri, RUN_DURATION, "loader.hlog", "status.csv");
@@ -194,6 +194,7 @@ public class HttpVsHttp2PerfTest implements Serializable
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
+            LOG.info("Downloading reports...");
             Path reportRoot = FileSystems.getDefault().getPath("target/report", useHttp2 ? "http2" : "http11");
             // download servers FGs & transform histograms
             download(serverArray, reportRoot.resolve("server"));
