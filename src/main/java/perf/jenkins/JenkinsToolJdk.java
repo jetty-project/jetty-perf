@@ -114,7 +114,7 @@ public class JenkinsToolJdk implements FilenameSupplier
         }
         else
         {
-            LOG.info("cannot find toolchain file {}", fileName);
+            LOG.info("cannot find toolchain file {}", toolchainsPath);
         }
         return null;
     }
