@@ -1,6 +1,7 @@
 package perf.jenkins;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.toolchain.model.PersistedToolchains;
 import org.apache.maven.toolchain.model.ToolchainModel;
 import org.apache.maven.toolchain.model.io.xpp3.MavenToolchainsXpp3Reader;
@@ -44,8 +45,9 @@ public class JenkinsToolJdk implements FilenameSupplier
                 }
                 else
                 {
-                    LOG.info("javaExec '{}' is not executable file for user {} but exists? {}",
-                             javaExec, System.getProperty("user.name"), Files.exists(javaExec));
+                    LOG.info("javaExec '{}' is not executable file for user {} but exists? {}, os/version {}/{}",
+                              javaExec, System.getProperty("user.name"), Files.exists(javaExec),
+                              System.getProperty("os.name"), System.getProperty("os.version"));
                 }
             }
             else
