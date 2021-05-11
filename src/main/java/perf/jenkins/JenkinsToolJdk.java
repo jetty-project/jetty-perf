@@ -44,7 +44,7 @@ public class JenkinsToolJdk implements FilenameSupplier
                 }
                 else
                 {
-                    LOG.info("javaExec '{}' is not executable file");
+                    LOG.info("javaExec '{}' is not executable file", javaExec);
                 }
             }
             else
