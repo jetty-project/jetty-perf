@@ -33,6 +33,7 @@ import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
+import org.mortbay.jetty.orchestrator.NodeJob;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
@@ -98,6 +99,11 @@ public class SslPerfLimitTest implements Serializable
             NodeArray probeArray = cluster.nodeArray("probe");
             int participantCount = cfg.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
             int loadersCount = cfg.nodeArrays().stream().filter(na -> na.id().equals("loaders")).mapToInt(na -> na.nodes().size()).sum();
+
+            NodeJob logSystemProps = tools -> LOG.info("JVM version: '{}', OS name: '{}', OS arch: '{}'", System.getProperty("java.vm.version"), System.getProperty("os.name"), System.getProperty("os.arch"));
+            serverArray.executeOnAll(logSystemProps).get();
+            loadersArray.executeOnAll(logSystemProps).get();
+            probeArray.executeOnAll(logSystemProps).get();
 
             serverArray.executeOnAll(tools ->
             {
