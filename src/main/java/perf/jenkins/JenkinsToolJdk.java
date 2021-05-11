@@ -74,7 +74,7 @@ public class JenkinsToolJdk implements FilenameSupplier
     protected String findJavaHomeFromToolchain(FileSystem fileSystem, String hostname) throws IOException
     {
         String fileName = hostname + "-toolchains.xml";
-        Path toolchainsPath = fileSystem.getPath(fileName);
+        Path toolchainsPath = Paths.get(fileName);
         if (Files.exists(toolchainsPath))
         {
             MavenToolchainsXpp3Reader toolChainsReader = new MavenToolchainsXpp3Reader();
