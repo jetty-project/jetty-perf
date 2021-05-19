@@ -22,7 +22,7 @@ pipeline {
         stage('generate-toolchains-file') {
           agent { node { label 'load-master' } }
           steps {
-            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'zwerg'],
+            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample'],
                         jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8", "load-jdk16"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
@@ -83,14 +83,32 @@ pipeline {
                 sh "echo load-6"
               }
             }
-            stage('install probe') {
-              agent { node { label 'zwerg-osx' } }
+            stage('install load-7') {
+              agent { node { label 'load-7' } }
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                sh "cp zwerg-toolchains.xml  ~/zwerg-toolchains.xml "
-                sh "cat zwerg-toolchains.xml"
-                sh "echo zwerg"
+                sh "cp load-7-toolchains.xml ~/load-7-toolchains.xml"
+                sh "echo load-7"
+              }
+            }
+            stage('install load-8') {
+              agent { node { label 'load-8' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp load-8-toolchains.xml ~/load-8-toolchains.xml"
+                sh "echo load-8"
+              }
+            }
+            stage('install probe') {
+              agent { node { label 'load-sample' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp load-sample-toolchains.xml  ~/load-sample-toolchains.xml "
+                sh "cat load-sample-toolchains.xml"
+                sh "echo load-sample"
               }
             }
           }

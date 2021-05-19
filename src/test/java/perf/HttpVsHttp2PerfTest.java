@@ -92,7 +92,7 @@ public class HttpVsHttp2PerfTest implements Serializable
                 .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
-//                .node(new Node("1", "zwerg"))
+                .node(new Node("1", "load-sample"))
             )
             ;
 

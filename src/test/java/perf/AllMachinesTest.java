@@ -30,9 +30,11 @@ public class AllMachinesTest
                 .node(new Node("4", "load-4"))
                 .node(new Node("5", "load-5"))
                 .node(new Node("6", "load-6"))
+                .node(new Node("7", "load-7"))
+                .node(new Node("8", "load-8"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
-                .node(new Node("1", "zwerg"))
+                .node(new Node("1", "load-sample"))
             );
 
         {
