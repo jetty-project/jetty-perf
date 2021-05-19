@@ -22,7 +22,7 @@ pipeline {
         stage('generate-toolchains-file') {
           agent { node { label 'load-master' } }
           steps {
-            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'zwerg'],
+            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'zwerg'],
                         jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8", "load-jdk16"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
@@ -63,6 +63,24 @@ pipeline {
                 unstash name: 'toolchains.xml'
                 sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
                 sh "echo load-4"
+              }
+            }
+            stage('install load-5') {
+              agent { node { label 'load-5' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp load-5-toolchains.xml ~/load-5-toolchains.xml"
+                sh "echo load-5"
+              }
+            }
+            stage('install load-6') {
+              agent { node { label 'load-6' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
+                sh "echo load-6"
               }
             }
             stage('install probe') {
