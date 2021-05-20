@@ -50,8 +50,6 @@ import perf.histogram.loader.ResponseTimeListener;
 import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.ConfigurableMonitor;
-import perf.monitoring.DumpHeapRepeatedlyMonitor;
-import perf.monitoring.Monitor;
 
 import static util.ReportUtil.download;
 import static util.ReportUtil.xformHisto;
@@ -154,7 +152,7 @@ public class HttpVsHttp2PerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 290_000))
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
                     Connector serverConnector = server.getConnectors()[0];
@@ -170,7 +168,7 @@ public class HttpVsHttp2PerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems); Monitor m2 = new DumpHeapRepeatedlyMonitor("heaps", true, 290_000))
+                try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runLoadGenerator(useHttp2, serverUri, RUN_DURATION, "loader.hlog", "status.csv");
