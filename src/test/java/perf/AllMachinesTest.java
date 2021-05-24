@@ -49,7 +49,9 @@ public class AllMachinesTest
             {
                 String javaVersion = System.getProperty("java.version");
                 String username = System.getProperty("user.name");
-                System.out.println("Running java " + javaVersion + " with user " + username);
+                String osName = System.getProperty("os.name");
+                String osArch = System.getProperty("os.arch");
+                System.out.println("Running java '" + javaVersion + "' with user '" + username + "' on OS '" + osName + "' on arch '" + osArch + "'");
             }).get();
         }
     }
