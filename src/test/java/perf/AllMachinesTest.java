@@ -1,5 +1,7 @@
 package perf;
 
+import java.nio.file.FileSystem;
+
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -8,6 +10,7 @@ import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
+import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import perf.jenkins.JenkinsToolJdk;
 
 public class AllMachinesTest
@@ -17,7 +20,7 @@ public class AllMachinesTest
     {
         String jdkName = System.getProperty("test.jdk.name", "load-jdk11");
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk(jdkName)))
+            .jvm(new Jvm(new JenkinsToolOnLinuxDefaultOnWindows(jdkName)))
             .nodeArray(new SimpleNodeArrayConfiguration("all-machines")
                 .node(new Node("01", "load-master"))
                 .node(new Node("02", "load-1"))
@@ -48,6 +51,24 @@ public class AllMachinesTest
                 String username = System.getProperty("user.name");
                 System.out.println("Running java " + javaVersion + " with user " + username);
             }).get();
+        }
+    }
+
+    private static class JenkinsToolOnLinuxDefaultOnWindows implements FilenameSupplier
+    {
+        private final JenkinsToolJdk jenkinsToolJdk;
+
+        public JenkinsToolOnLinuxDefaultOnWindows(String jdkName)
+        {
+            this.jenkinsToolJdk = new JenkinsToolJdk(jdkName);
+        }
+
+        @Override
+        public String get(FileSystem fileSystem, String hostname)
+        {
+            if (hostname.contains("windows"))
+                return "java";
+            return jenkinsToolJdk.get(fileSystem, hostname);
         }
     }
 }
