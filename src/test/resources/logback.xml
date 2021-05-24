@@ -14,6 +14,8 @@
   <logger name="org.apache.curator" level="error" />
   <logger name="org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher" level="debug"/>
 
+  <logger name="org.eclipse.jetty.server" level="debug"/>
+
   <root level="info">
     <appender-ref ref="STDOUT" />
   </root>
