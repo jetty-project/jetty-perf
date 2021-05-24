@@ -160,19 +160,6 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
                     LifeCycle.start(listener);
                     serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
-
-                    // collect a different FG for each time quantum of the loaders
-                    long runQuantum = RUN_DURATION.toMillis() / loadersCount;
-                    long gap = runQuantum / 5;
-                    for (int i = 0; i < loadersCount; i++)
-                    {
-                        Thread.sleep(gap);
-                        AsyncProfilerCpuMonitor cpuMonitor = new AsyncProfilerCpuMonitor("profile." + (i + 1) + ".html");
-                        Thread.sleep(runQuantum - gap * 2);
-                        cpuMonitor.close();
-                        Thread.sleep(gap);
-                    }
-
                     tools.barrier("run-end-barrier", participantCount).await();
                     LifeCycle.stop(listener);
                     server.stop();
