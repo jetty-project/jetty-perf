@@ -3,13 +3,11 @@ package perf;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
-import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
-import org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher;
 import perf.jenkins.JenkinsToolJdk;
 
 public class AllMachinesTest
@@ -20,21 +18,18 @@ public class AllMachinesTest
         String jdkName = System.getProperty("test.jdk.name", "load-jdk11");
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName)))
-            .nodeArray(new SimpleNodeArrayConfiguration("server")
-                .node(new Node("1", "load-master"))
-            )
-            .nodeArray(new SimpleNodeArrayConfiguration("loaders")
-                .node(new Node("1", "load-1"))
-                .node(new Node("2", "load-2"))
-                .node(new Node("3", "load-3"))
-                .node(new Node("4", "load-4"))
-                .node(new Node("5", "load-5"))
-                .node(new Node("6", "load-6"))
-                .node(new Node("7", "load-7"))
-                .node(new Node("8", "load-8"))
-            )
-            .nodeArray(new SimpleNodeArrayConfiguration("probe")
-                .node(new Node("1", "load-sample"))
+            .nodeArray(new SimpleNodeArrayConfiguration("all-machines")
+                .node(new Node("01", "load-master"))
+                .node(new Node("02", "load-1"))
+                .node(new Node("03", "load-2"))
+                .node(new Node("04", "load-3"))
+                .node(new Node("05", "load-4"))
+                .node(new Node("06", "load-5"))
+                .node(new Node("07", "load-6"))
+                .node(new Node("08", "load-7"))
+                .node(new Node("09", "load-8"))
+                .node(new Node("10", "load-sample"))
+                .node(new Node("12", "ci-windows"))
             );
 
         {
@@ -45,32 +40,14 @@ public class AllMachinesTest
 
         try (Cluster cluster = new Cluster(cfg))
         {
-            NodeArray serverArray = cluster.nodeArray("server");
-            NodeArray loadersArray = cluster.nodeArray("loaders");
-            NodeArray probeArray = cluster.nodeArray("probe");
+            NodeArray allMachinesArray = cluster.nodeArray("all-machines");
 
-            NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
+            allMachinesArray.executeOnAll(tools ->
             {
                 String javaVersion = System.getProperty("java.version");
                 String username = System.getProperty("user.name");
-                System.out.println("server running java " + javaVersion + " with user " + username);
-            });
-            NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
-            {
-                String javaVersion = System.getProperty("java.version");
-                String username = System.getProperty("user.name");
-                System.out.println("loaders running java " + javaVersion + " with user " + username);
-            });
-            NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
-            {
-                String javaVersion = System.getProperty("java.version");
-                String username = System.getProperty("user.name");
-                System.out.println("probe running java " + javaVersion + " with user " + username);
-            });
-
-            serverFuture.get();
-            loadersFuture.get();
-            probeFuture.get();
+                System.out.println("Running java " + javaVersion + " with user " + username);
+            }).get();
         }
     }
 }
