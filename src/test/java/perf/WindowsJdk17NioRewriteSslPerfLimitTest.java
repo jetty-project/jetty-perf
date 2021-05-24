@@ -64,7 +64,7 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofMinutes(Long.getLong("test.runFor", 10));
 
-    @ValueSource(strings = {"C:\\Program Files\\OpenJDK\\openjdk-11.0.5_10\\bin\\java.exe", "C:\\Program Files\\OpenJDK\\jdk-17-ea+22\\bin\\java.exe"})
+    @ValueSource(strings = {"C:\\Program Files\\OpenJDK\\jdk-17-ea+22\\bin\\java.exe"})
     @ParameterizedTest
     public void testSslPerfLimit(String windowsJavaExecutable) throws Exception
     {
