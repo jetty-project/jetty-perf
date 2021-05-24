@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -129,7 +130,7 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
                 HttpConnectionFactory http = new HttpConnectionFactory(httpConfiguration);
 
                 SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
-                String path = getClass().getResource("/keystore.p12").getPath();
+                String path = Paths.get(getClass().getResource("/keystore.p12").toURI()).toString();
                 serverSslContextFactory.setKeyStorePath(path);
                 serverSslContextFactory.setKeyStorePassword("storepwd");
                 SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
