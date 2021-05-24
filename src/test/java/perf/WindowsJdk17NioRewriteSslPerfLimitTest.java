@@ -7,6 +7,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -211,15 +212,18 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
+            LOG.info("Downloading reports...");
+            boolean useJdk11 = windowsJavaExecutable.contains("11");
+            Path reportRoot = FileSystems.getDefault().getPath("target/report", useJdk11 ? "11" : "17");
             // download servers FGs & transform histograms
-            download(serverArray, FileSystems.getDefault().getPath("target/report/server"));
-            xformHisto(serverArray, FileSystems.getDefault().getPath("target/report/server"), "server.hlog");
+            download(serverArray, reportRoot.resolve("server"));
+            xformHisto(serverArray, reportRoot.resolve("server"), "server.hlog");
             // download loaders FGs & transform histograms
-            download(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
-            xformHisto(loadersArray, FileSystems.getDefault().getPath("target/report/loader"), "loader.hlog");
+            download(loadersArray, reportRoot.resolve("loader"));
+            xformHisto(loadersArray, reportRoot.resolve("loader"), "loader.hlog");
             // download probes FGs & transform histograms
-            download(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
-            xformHisto(probeArray, FileSystems.getDefault().getPath("target/report/probe"), "probe.hlog");
+            download(probeArray, reportRoot.resolve("probe"));
+            xformHisto(probeArray, reportRoot.resolve("probe"), "probe.hlog");
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
