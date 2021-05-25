@@ -83,7 +83,7 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolOnLinuxSpecificOnWindows(jdkName, windowsJavaExecutable), jvmOpts.toArray(new String[0])))
             .nodeArray(new SimpleNodeArrayConfiguration("server")
-                .node(new Node("1", "ci-windows"))
+                .node(new Node("1", "load-sample"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("loaders")
                 .node(new Node("1", "load-1"))
@@ -92,7 +92,7 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
                 .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
-                .node(new Node("1", "load-sample"))
+                .node(new Node("1", "load-8"))
             )
             ;
 
