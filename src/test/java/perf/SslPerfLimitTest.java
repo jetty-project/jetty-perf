@@ -88,7 +88,7 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
-//                .node(new Node("1", "zwerg"))
+                .node(new Node("1", "load-sample"))
             )
             ;
 
@@ -183,7 +183,7 @@ public class SslPerfLimitTest implements Serializable
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.csv");
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -193,7 +193,7 @@ public class SslPerfLimitTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.csv");
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });

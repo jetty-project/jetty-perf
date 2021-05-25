@@ -174,7 +174,7 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.csv");
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -184,7 +184,7 @@ public class WindowsJdk17NioRewriteSslPerfLimitTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.csv");
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });

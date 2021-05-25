@@ -171,7 +171,7 @@ public class HttpVsHttp2PerfTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(useHttp2, serverUri, RUN_DURATION, "loader.hlog", "status.csv");
+                    runLoadGenerator(useHttp2, serverUri, RUN_DURATION, "loader.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -181,7 +181,7 @@ public class HttpVsHttp2PerfTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(useHttp2, serverUri, RUN_DURATION, "probe.hlog", "status.csv");
+                    runProbeGenerator(useHttp2, serverUri, RUN_DURATION, "probe.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });

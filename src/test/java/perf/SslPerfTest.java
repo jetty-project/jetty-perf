@@ -87,7 +87,7 @@ public class SslPerfTest implements Serializable
                 .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
-                .node(new Node("1", "zwerg"))
+                .node(new Node("1", "load-sample"))
             )
             ;
 
@@ -166,7 +166,7 @@ public class SslPerfTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog", "status.csv");
+                    runLoadGenerator(serverUri, RUN_DURATION, "loader.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -176,7 +176,7 @@ public class SslPerfTest implements Serializable
                 try (ConfigurableMonitor m = new ConfigurableMonitor(monitoredItems))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.csv");
+                    runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.txt");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
