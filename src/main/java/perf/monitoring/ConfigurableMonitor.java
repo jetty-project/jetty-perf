@@ -38,18 +38,31 @@ public class ConfigurableMonitor implements Monitor
 
     private static Monitor monitorOf(Item item) throws Exception
     {
-        if (!System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("linux"))
-            return null;
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         switch (item)
         {
             case CMDLINE_CPU:
-                return new LinuxCpuMonitor();
+                if (osName.contains("linux"))
+                    return new LinuxCpuMonitor();
+                if (osName.contains("windows"))
+                    return new WindowsCpuMonitor();
+                return null;
             case CMDLINE_MEMORY:
-                return new LinuxMemoryMonitor();
+                if (osName.contains("linux"))
+                    return new LinuxMemoryMonitor();
+                if (osName.contains("windows"))
+                    return new WindowsMemoryMonitor();
+                return null;
             case CMDLINE_NETWORK:
-                return new LinuxNetworkMonitor();
+                if (osName.contains("linux"))
+                    return new LinuxNetworkMonitor();
+                if (osName.contains("windows"))
+                    return new WindowsNetworkMonitor();
+                return null;
             case APROF_CPU:
-                return new AsyncProfilerCpuMonitor();
+                if (osName.contains("linux"))
+                    return new AsyncProfilerCpuMonitor();
+                return null;
             case HEAP_DUMP_ON_CLOSE:
                 return new DumpHeapOnCloseMonitor();
             default:
