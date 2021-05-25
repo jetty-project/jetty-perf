@@ -74,15 +74,15 @@ pipeline {
                 sh "echo load-5"
               }
             }
-//            stage('install load-6') {
-//              agent { node { label 'load-6' } }
-//              steps {
-//                tool "${JDK_TO_USE}"
-//                unstash name: 'toolchains.xml'
-//                sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
-//                sh "echo load-6"
-//              }
-//            }
+            stage('install load-6') {
+              agent { node { label 'load-6' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
+                sh "echo load-6"
+              }
+            }
             stage('install load-7') {
               agent { node { label 'load-7' } }
               steps {
