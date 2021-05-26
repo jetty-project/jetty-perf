@@ -22,7 +22,7 @@ pipeline {
         stage('generate-toolchains-file') {
           agent { node { label 'load-master' } }
           steps {
-            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-7', 'load-8', 'load-sample'],
+            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample'],
                         jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8", "load-jdk16"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
