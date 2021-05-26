@@ -26,6 +26,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Test;
@@ -131,16 +132,19 @@ public class SslPerfTest implements Serializable
                 ServerConnector serverConnector = new ServerConnector(server, ssl, http);
                 serverConnector.setPort(8443);
                 server.addConnector(serverConnector);
-                server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+
+                ContextHandler context = new ContextHandler();
+                context.setContextPath("/");
+                context.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+
+                server.setHandler(context);
                 server.start();
             }).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
             NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
-            NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
             warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
-            warmupProbe.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             LOG.info("Running...");
             long before = System.nanoTime();
@@ -191,6 +195,7 @@ public class SslPerfTest implements Serializable
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
+            LOG.info("Downloading reports...");
             // download servers FGs & transform histograms
             download(serverArray, FileSystems.getDefault().getPath("target/report/server"));
             xformHisto(serverArray, FileSystems.getDefault().getPath("target/report/server"), "server.hlog");

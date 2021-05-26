@@ -208,6 +208,7 @@ public class SslPerfLimitTest implements Serializable
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
+            LOG.info("Downloading reports...");
             // download servers FGs & transform histograms
             download(serverArray, FileSystems.getDefault().getPath("target/report/server"));
             xformHisto(serverArray, FileSystems.getDefault().getPath("target/report/server"), "server.hlog");
