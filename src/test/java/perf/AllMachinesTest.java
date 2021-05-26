@@ -32,6 +32,7 @@ public class AllMachinesTest
                 .node(new Node("08", "load-7"))
                 .node(new Node("09", "load-8"))
                 .node(new Node("10", "load-sample"))
+                .node(new Node("11", "zwerg"))
                 .node(new Node("12", "ci-windows"))
             );
 
