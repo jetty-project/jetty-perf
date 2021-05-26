@@ -14,16 +14,14 @@ pipeline {
       string(defaultValue: '-Xmx8g', description: 'extra JVM arguments to use', name: 'EXTRA_ARGS_TO_USE')
     }
     tools {
-      jdk 'load-jdk11'
-      jdk 'load-jdk16'
       jdk "${JDK_TO_USE}"
     }
     stages {
         stage('generate-toolchains-file') {
           agent { node { label 'load-master' } }
           steps {
-            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample'],
-                        jdkNames: ["${JDK_TO_USE}", "jdk11", "jdk8", "load-jdk16"]
+            jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample', 'zwerg-osx', 'windows-nuc'],
+                        jdkNames: ["${JDK_TO_USE}", "load-jdk8", "load-jdk11", "load-jdk16", "load-jdk17"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
         }
@@ -109,6 +107,26 @@ pipeline {
                 sh "cp load-sample-toolchains.xml  ~/load-sample-toolchains.xml "
                 sh "cat load-sample-toolchains.xml"
                 sh "echo load-sample"
+              }
+            }
+            stage('install zwerg-osx') {
+              agent { node { label 'zwerg-osx' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp zwerg-osx-toolchains.xml  ~/zwerg-osx-toolchains.xml "
+                sh "cat zwerg-osx-toolchains.xml"
+                sh "echo zwerg-osx"
+              }
+            }
+            stage('install windows-nuc') {
+              agent { node { label 'windows-nuc' } }
+              steps {
+                tool "${JDK_TO_USE}"
+                unstash name: 'toolchains.xml'
+                sh "cp windows-nuc-toolchains.xml  ~/windows-nuc-toolchains.xml "
+                sh "cat windows-nuc-toolchains.xml"
+                sh "echo windows-nuc"
               }
             }
           }
