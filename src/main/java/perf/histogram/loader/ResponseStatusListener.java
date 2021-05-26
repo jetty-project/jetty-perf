@@ -21,11 +21,18 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
 
     private final AtomicReference<ConcurrentMap<String, LongAdder>> statuses = new AtomicReference<>(new ConcurrentHashMap<>());
     private final PrintWriter printWriter;
+    private final boolean fullStackTrace;
 
     public ResponseStatusListener(String statusFilename) throws IOException
     {
-        printWriter = new PrintWriter(statusFilename, StandardCharsets.UTF_8);
-        timer.schedule(new TimerTask()
+        this(statusFilename, true);
+    }
+
+    public ResponseStatusListener(String statusFilename, boolean fullStackTrace) throws IOException
+    {
+        this.printWriter = new PrintWriter(statusFilename, StandardCharsets.UTF_8);
+        this.fullStackTrace = fullStackTrace;
+        this.timer.schedule(new TimerTask()
         {
             @Override
             public void run()
@@ -59,12 +66,19 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
         Throwable failure = info.getFailure();
         if (failure != null)
         {
-            StringWriter sw = new StringWriter();
-            try (PrintWriter pw = new PrintWriter(sw))
+            if (fullStackTrace)
             {
-                failure.printStackTrace(pw);
+                StringWriter sw = new StringWriter();
+                try (PrintWriter pw = new PrintWriter(sw))
+                {
+                    failure.printStackTrace(pw);
+                }
+                key = sw.toString();
             }
-            key = sw.toString();
+            else
+            {
+                key = failure.getClass().getName();
+            }
         }
         else
         {
