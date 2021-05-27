@@ -37,7 +37,7 @@ pipeline {
                 }
               }
               steps {
-                echo "build release"
+                echo "build jetty branch ${JETTY_BRANCH}"
               }
             }
             stage('install load-1') {
@@ -137,7 +137,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                bat "cp windows-nuc-toolchains.xml  ~/windows-nuc-toolchains.xml "
+                bat "copy windows-nuc-toolchains.xml  ~/windows-nuc-toolchains.xml "
                 bat "cat windows-nuc-toolchains.xml"
                 bat "echo windows-nuc"
               }
