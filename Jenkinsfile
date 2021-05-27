@@ -128,6 +128,7 @@ pipeline {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
                 sh "cp zwerg-osx-toolchains.xml  ~/zwerg-toolchains.xml"
+                sh "cp zwerg-osx-toolchains.xml  ./zwerg-toolchains.xml"
                 sh "cat ~/zwerg-toolchains.xml"
                 sh "echo zwerg-osx"
               }
@@ -138,6 +139,7 @@ pipeline {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
                 bat "copy windows-nuc-toolchains.xml  %HOMEPATH%\\windows-nuc-toolchains.xml" // %systemdrive%
+                bat "copy windows-nuc-toolchains.xml  ci-windows-toolchains.xml"
                 //bat "cat windows-nuc-toolchains.xml"
                 bat "echo windows-nuc"
               }
