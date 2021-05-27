@@ -127,8 +127,8 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                sh "cp zwerg-osx-toolchains.xml  ~/zwerg-osx-toolchains.xml "
-                sh "cat zwerg-osx-toolchains.xml"
+                sh "cp zwerg-osx-toolchains.xml  ~/zwerg-toolchains.xml"
+                sh "cat ~/zwerg-toolchains.xml"
                 sh "echo zwerg-osx"
               }
             }
