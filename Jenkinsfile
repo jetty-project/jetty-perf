@@ -7,7 +7,8 @@ pipeline {
     }
     parameters {
       string(defaultValue: '*', description: 'Junit test to run -Dtest=', name: 'TEST_TO_RUN')
-      //string(defaultValue: '10.0.2', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: '10.0.3', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: 'release' description: 'Jetty Branch to build (use release if you are using a release or any branch, Jetty Version must match', name: 'JETTY_BRANCH')
       //string(defaultValue: '2.0.0', description: 'LoadGenerator Version', name: 'LOADGENERATOR_VERSION')
       string(defaultValue: '10', description: 'Time in minutes to run load test', name: 'RUN_FOR')
       string(defaultValue: 'load-jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
@@ -27,6 +28,18 @@ pipeline {
         }
         stage('Get Load nodes') {
           parallel {
+            stage('Build Jetty') {
+              agent { node { label 'load-master' } }
+              when {
+                beforeAgent true
+                expression {
+                  return JETTY_BRANCH != 'release';
+                }
+              }
+              steps {
+                echo "build release"
+              }
+            }
             stage('install load-1') {
               agent { node { label 'load-1' } }
               steps {
@@ -153,8 +166,8 @@ pipeline {
                          "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                   configFileProvider(
                           [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.extraArgs=\"${EXTRA_ARGS_TO_USE}\" -Dtest.runFor=${RUN_FOR}"
-                    //-Djetty.version=${JETTY_VERSION} -Dloadgenerator.version=${LOADGENERATOR_VERSION}"
+                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.extraArgs=\"${EXTRA_ARGS_TO_USE}\" -Dtest.runFor=${RUN_FOR}"
+                    //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                   }
                 }
                 junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
