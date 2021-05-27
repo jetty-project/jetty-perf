@@ -137,9 +137,9 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                sh "cp windows-nuc-toolchains.xml  ~/windows-nuc-toolchains.xml "
-                sh "cat windows-nuc-toolchains.xml"
-                sh "echo windows-nuc"
+                bat "cp windows-nuc-toolchains.xml  ~/windows-nuc-toolchains.xml "
+                bat "cat windows-nuc-toolchains.xml"
+                bat "echo windows-nuc"
               }
             }
           }
