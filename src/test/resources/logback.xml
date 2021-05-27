@@ -13,6 +13,7 @@
   <logger name="org.apache.zookeeper" level="error" />
   <logger name="org.apache.curator" level="error" />
   <logger name="org.mortbay.jetty.orchestrator.configuration.SshRemoteHostLauncher" level="debug"/>
+  <logger name="perf.jenkins.JenkinsToolJdk" level="debug"/>
 
   <root level="info">
     <appender-ref ref="STDOUT" />

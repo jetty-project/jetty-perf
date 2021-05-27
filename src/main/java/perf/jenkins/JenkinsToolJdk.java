@@ -17,6 +17,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class JenkinsToolJdk implements FilenameSupplier
 {
@@ -124,6 +125,7 @@ public class JenkinsToolJdk implements FilenameSupplier
         else
         {
             LOG.info("cannot find toolchain file {}", toolchainsPath);
+            LOG.debug( "files in directory: {}", Arrays.asList(Paths.get( ".").toFile().listFiles()));
         }
         return null;
     }
