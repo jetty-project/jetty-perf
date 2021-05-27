@@ -151,6 +151,8 @@ pipeline {
             steps {
                 unstash name: 'toolchains.xml'
                 sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+                sh "cp zwerg-osx-toolchains.xml  ./zwerg-toolchains.xml"
+                sh "cp windows-nuc-toolchains.xml  ci-windows-toolchains.xml"
 //                echo 'load-master toolchain'
 //                sh 'cat load-master-toolchains.xml'
 //                echo 'load-1 toolchain'
