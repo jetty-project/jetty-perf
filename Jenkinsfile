@@ -137,7 +137,7 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                bat "copy windows-nuc-toolchains.xml  %HOMEPATH%\windows-nuc-toolchains.xml" // %systemdrive%
+                bat "copy windows-nuc-toolchains.xml  %HOMEPATH%\\windows-nuc-toolchains.xml" // %systemdrive%
                 //bat "cat windows-nuc-toolchains.xml"
                 bat "echo windows-nuc"
               }
