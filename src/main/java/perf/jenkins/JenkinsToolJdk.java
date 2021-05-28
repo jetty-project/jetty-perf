@@ -40,10 +40,14 @@ public class JenkinsToolJdk implements FilenameSupplier
                 Path javaExec = Paths.get(jdkHome).resolve("bin").resolve("java");
                 if (!Files.isExecutable(javaExec))
                     javaExec = Paths.get(jdkHome).resolve("bin").resolve("java.exe");
-                // it's coming from toolchains so we trust the result
-                String absolutePath = javaExec.toAbsolutePath().toString();
-                LOG.info("host {} will use java executable {}", hostname, absolutePath);
-                return absolutePath;
+                if (Files.isExecutable(javaExec))
+                {
+                    // it's coming from toolchains so we trust the result
+                    String absolutePath = javaExec.toAbsolutePath().toString();
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("host '{}' will use java executable {}", hostname, absolutePath);
+                    return absolutePath;
+                }
 //                if (Files.isExecutable(javaExec))
 //                {
 //                    LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
@@ -65,7 +69,9 @@ public class JenkinsToolJdk implements FilenameSupplier
         {
             LOG.debug("ignore error searching from toolchains file", x);
         }
-        Path jdkFolderFile = fileSystem.getPath(System.getProperty("user.home"), "jenkins_home", "tools", "hudson.model.JDK", toolName);
+        Path jdkFolderFile = fileSystem.getPath("jenkins_home", "tools", "hudson.model.JDK", toolName);
+        if (!Files.isDirectory(jdkFolderFile))
+            throw new RuntimeException("Jenkins tool '" + toolName + "' not found in " + jdkFolderFile.toAbsolutePath());
         try
         {
             String executable = Files.walk(jdkFolderFile, 2)
