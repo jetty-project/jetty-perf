@@ -1,7 +1,14 @@
 package perf.jenkins;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.toolchain.model.PersistedToolchains;
 import org.apache.maven.toolchain.model.ToolchainModel;
 import org.apache.maven.toolchain.model.io.xpp3.MavenToolchainsXpp3Reader;
@@ -10,14 +17,6 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 
 public class JenkinsToolJdk implements FilenameSupplier
 {
@@ -38,9 +37,13 @@ public class JenkinsToolJdk implements FilenameSupplier
             String jdkHome = findJavaHomeFromToolchain(fileSystem, hostname);
             if (StringUtils.isNotEmpty(jdkHome))
             {
-                Path javaExec = Paths.get(jdkHome).resolve("bin/java");
+                Path javaExec = Paths.get(jdkHome).resolve("bin").resolve("java");
+                if (!Files.isExecutable(javaExec))
+                    javaExec = Paths.get(jdkHome).resolve("bin").resolve("java.exe");
                 // it's coming from toolchains so we trust the result
-                return javaExec.toAbsolutePath().toString();
+                String absolutePath = javaExec.toAbsolutePath().toString();
+                LOG.info("host {} will use java executable {}", hostname, absolutePath);
+                return absolutePath;
 //                if (Files.isExecutable(javaExec))
 //                {
 //                    LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
@@ -62,12 +65,19 @@ public class JenkinsToolJdk implements FilenameSupplier
         {
             LOG.debug("ignore error searching from toolchains file", x);
         }
-        Path jdkFolderFile = fileSystem.getPath(System.getProperty("user.home"), "jenkins_home/tools/hudson.model.JDK", toolName);
+        Path jdkFolderFile = fileSystem.getPath(System.getProperty("user.home"), "jenkins_home", "tools", "hudson.model.JDK", toolName);
         try
         {
             String executable = Files.walk(jdkFolderFile, 2)
-                .filter(path -> Files.isExecutable(path.resolve("bin/java")))
-                .map(path -> path.resolve("bin/java").toAbsolutePath().toString())
+                .filter(path ->
+                    Files.isExecutable(path.resolve("bin").resolve("java")) || Files.isExecutable(path.resolve("bin").resolve("java.exe")))
+                .map(path ->
+                {
+                    Path resolved = path.resolve("bin").resolve("java");
+                    if (!Files.isExecutable(resolved))
+                        resolved = path.resolve("bin").resolve("java.exe");
+                    return resolved.toAbsolutePath().toString();
+                })
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
             if (LOG.isDebugEnabled())

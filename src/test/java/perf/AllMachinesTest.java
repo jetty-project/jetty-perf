@@ -1,7 +1,5 @@
 package perf;
 
-import java.nio.file.FileSystem;
-
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
