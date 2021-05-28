@@ -37,9 +37,11 @@ public class JenkinsToolJdk implements FilenameSupplier
             String jdkHome = findJavaHomeFromToolchain(fileSystem, hostname);
             if (StringUtils.isNotEmpty(jdkHome))
             {
-                Path javaExec = Paths.get(jdkHome).resolve("bin").resolve("java");
+                Path javaExec = Paths.get(jdkHome).resolve("bin").resolve("java"); // *nix
                 if (!Files.isExecutable(javaExec))
-                    javaExec = Paths.get(jdkHome).resolve("bin").resolve("java.exe");
+                    javaExec = Paths.get(jdkHome).resolve("Contents").resolve("Home").resolve("bin").resolve("java"); // OSX
+                if (!Files.isExecutable(javaExec))
+                    javaExec = Paths.get(jdkHome).resolve("bin").resolve("java.exe"); // Windows
                 if (Files.isExecutable(javaExec))
                 {
                     // it's coming from toolchains so we trust the result
