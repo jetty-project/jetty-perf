@@ -71,6 +71,8 @@ public class JenkinsToolJdk implements FilenameSupplier
         }
         Path jdkFolderFile = fileSystem.getPath("jenkins_home", "tools", "hudson.model.JDK", toolName);
         if (!Files.isDirectory(jdkFolderFile))
+            jdkFolderFile = fileSystem.getPath("tools", "hudson.model.JDK", toolName);
+        if (!Files.isDirectory(jdkFolderFile))
             throw new RuntimeException("Jenkins tool '" + toolName + "' not found in " + jdkFolderFile.toAbsolutePath());
         try
         {
