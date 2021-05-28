@@ -152,9 +152,9 @@ pipeline {
               steps {
                 tool "${JDK_TO_USE}"
                 unstash name: 'toolchains.xml'
-                bat "copy windows-nuc-toolchains.xml  %JENKINS_HOME%\\ci-windows-toolchains.xml" // %systemdrive%
+                bat "copy windows-nuc-toolchains.xml  ..\\..\\..\\ci-windows-toolchains.xml" // %systemdrive%
                 bat "copy windows-nuc-toolchains.xml  ci-windows-toolchains.xml"
-                bat "type %HOMEPATH%\\ci-windows-toolchains.xml"
+                bat "type ci-windows-toolchains.xml"
                 bat "echo windows-nuc"
               }
             }
