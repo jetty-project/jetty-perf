@@ -168,6 +168,7 @@ public class SslPerfLimitTest implements Serializable
                         Thread.sleep(gap);
                     }
 
+                    LOG.info("Server sync'ing on end barrier...");
                     tools.barrier("run-end-barrier", participantCount).await();
                     LifeCycle.stop(listener);
                     server.stop();
@@ -184,6 +185,7 @@ public class SslPerfLimitTest implements Serializable
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
                     runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt");
+                    LOG.info("Loader #{} sync'ing on end barrier...", index);
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -194,6 +196,7 @@ public class SslPerfLimitTest implements Serializable
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
                     runProbeGenerator(serverUri, RUN_DURATION, "probe.hlog", "status.txt");
+                    LOG.info("Probe sync'ing on end barrier...");
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -201,6 +204,7 @@ public class SslPerfLimitTest implements Serializable
             // signal all participants to start
             cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
             // signal all participants to stop monitoring
+            LOG.info("JUnit sync'ing on end barrier...");
             cluster.tools().barrier("run-end-barrier", participantCount).await(RUN_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             // wait for all monitoring reports to be written
