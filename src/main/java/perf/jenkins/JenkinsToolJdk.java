@@ -37,6 +37,7 @@ public class JenkinsToolJdk implements FilenameSupplier
             String jdkHome = findJavaHomeFromToolchain(fileSystem, hostname);
             if (StringUtils.isNotEmpty(jdkHome))
             {
+                LOG.debug("host '{}' found jdkHome '{}' from toolchain", hostname, jdkHome);
                 Path javaExec = Paths.get(jdkHome).resolve("bin").resolve("java"); // *nix
                 if (!Files.isExecutable(javaExec))
                     javaExec = Paths.get(jdkHome).resolve("Contents").resolve("Home").resolve("bin").resolve("java"); // OSX
@@ -50,17 +51,6 @@ public class JenkinsToolJdk implements FilenameSupplier
                         LOG.debug("host '{}' will use java executable {}", hostname, absolutePath);
                     return absolutePath;
                 }
-//                if (Files.isExecutable(javaExec))
-//                {
-//                    LOG.info("host {} will use java executable {}", hostname, javaExec.toAbsolutePath());
-//                    return javaExec.toAbsolutePath().toString();
-//                }
-//                else
-//                {
-//                    LOG.info("javaExec '{}' is not executable file for user {} but exists? {}, os/version {}/{}",
-//                              javaExec, System.getProperty("user.name"), Files.exists(javaExec),
-//                              System.getProperty("os.name"), System.getProperty("os.version"));
-//                }
             }
             else
             {
@@ -145,7 +135,7 @@ public class JenkinsToolJdk implements FilenameSupplier
         else
         {
             LOG.info("cannot find toolchain file {}", toolchainsPath);
-            LOG.debug( "files in directory: {}", Arrays.asList(Paths.get( ".").toFile().listFiles()));
+            LOG.debug("files in directory: {}", Arrays.asList(Paths.get( ".").toFile().listFiles()));
         }
         return null;
     }
