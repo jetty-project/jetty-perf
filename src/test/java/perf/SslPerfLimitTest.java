@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.management.remote.JMXServiceURL;
 
+import org.eclipse.jetty.io.RetainableByteBuffer;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -26,6 +27,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Test;
@@ -132,6 +134,14 @@ public class SslPerfLimitTest implements Serializable
 
                 ServerConnector serverConnector = new ServerConnector(server, 1, 32, ssl, http);
                 serverConnector.setPort(8443);
+
+                Pool<RetainableByteBuffer> pool = new Pool<>(Pool.StrategyType.THREAD_ID, 1_000);
+                for (int i = 0; i < pool.getMaxEntries(); i++)
+                {
+                    pool.reserve().enable(new RetainableByteBuffer(null, 17408, true), false);
+                }
+                serverConnector.addBean(pool);
+
                 server.addConnector(serverConnector);
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
