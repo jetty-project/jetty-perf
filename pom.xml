@@ -11,8 +11,8 @@
     <maven.compiler.target>11</maven.compiler.target>
     <jetty.version>10.0.3</jetty.version>
 
-    <!-- 2.0.0 is the version working with jetty-10 artifacts -->
-    <loadgenerator.version>2.0.1-SNAPSHOT</loadgenerator.version>
+    <!-- 2.0.x is the version working with jetty-11 artifacts -->
+    <loadgenerator.version>2.0.1</loadgenerator.version>
 
     <!-- time to run test in minutes -->
     <test.runFor>10</test.runFor>
@@ -28,8 +28,6 @@
     <connect.via.user></connect.via.user>
     <connect.via.port></connect.via.port>
     <remote.java.home></remote.java.home>
-
-
   </properties>
 
   <dependencies>
@@ -53,11 +51,52 @@
       <artifactId>jetty-cluster-orchestrator</artifactId>
       <version>1.0.0-SNAPSHOT</version>
     </dependency>
+
+    <!-- exclude and include deps to make sure we don't use jetty 11 artifacts -->
     <dependency>
       <groupId>org.mortbay.jetty.loadgenerator</groupId>
       <artifactId>jetty-load-generator-client</artifactId>
       <version>${loadgenerator.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-http-client-transport</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-alpn-java-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-util-ajax</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty.http2</groupId>
+      <artifactId>http2-http-client-transport</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-alpn-java-client</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-util-ajax</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>

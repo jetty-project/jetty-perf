@@ -1,0 +1,6 @@
+= Jetty Perf Project
+
+Jetty Perf is a collection of tests used to benchmark performance of the Jetty server.
+
+It's currently in the experimental stage.
+
