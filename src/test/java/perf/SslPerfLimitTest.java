@@ -135,13 +135,6 @@ public class SslPerfLimitTest implements Serializable
                 ServerConnector serverConnector = new ServerConnector(server, 1, 32, ssl, http);
                 serverConnector.setPort(8443);
 
-                Pool<RetainableByteBuffer> pool = new Pool<>(Pool.StrategyType.THREAD_ID, 1_000);
-                for (int i = 0; i < pool.getMaxEntries(); i++)
-                {
-                    pool.reserve().enable(new RetainableByteBuffer(null, 17408, true), false);
-                }
-                serverConnector.addBean(pool);
-
                 server.addConnector(serverConnector);
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
