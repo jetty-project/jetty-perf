@@ -17,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.management.remote.JMXServiceURL;
 
-import org.eclipse.jetty.io.RetainableByteBuffer;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -27,7 +26,6 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Test;
@@ -88,6 +86,10 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("2", "load-2"))
                 .node(new Node("3", "load-3"))
                 .node(new Node("4", "load-4"))
+                .node(new Node("5", "load-5"))
+                .node(new Node("6", "load-6"))
+                .node(new Node("7", "load-7"))
+                .node(new Node("8", "load-8"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .node(new Node("1", "load-sample"))
@@ -244,6 +246,7 @@ public class SslPerfLimitTest implements Serializable
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
+            .resourceRate(100_000)
             .threads(3)
             .resourceRate(0)
             .resource(new Resource("/"));
