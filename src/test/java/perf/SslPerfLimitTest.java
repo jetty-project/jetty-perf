@@ -247,6 +247,7 @@ public class SslPerfLimitTest implements Serializable
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(100_000)
+            .rateRampUpPeriod(20)
             .threads(3)
             .resource(new Resource("/"));
 
