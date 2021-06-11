@@ -245,10 +245,15 @@ public class SslPerfLimitTest implements Serializable
 
     private void runLoadGenerator(URI uri, Duration duration) throws IOException
     {
-        runLoadGenerator(uri, duration, null, null);
+        runLoadGenerator(uri, duration, null, null, false);
     }
 
     private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
+    {
+        runLoadGenerator(uri, duration, histogramFilename, statusFilename, true);
+    }
+
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename, boolean rampUp) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -256,11 +261,14 @@ public class SslPerfLimitTest implements Serializable
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .resourceRate(100_000)
-            .rateRampUpPeriod(20)
-            .threads(3)
+            .resourceRate(50_000)
+            .threads(2)
             .resource(new Resource("/"));
 
+        if (rampUp)
+        {
+            builder.rateRampUpPeriod(20);
+        }
         if (histogramFilename != null)
         {
             ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
