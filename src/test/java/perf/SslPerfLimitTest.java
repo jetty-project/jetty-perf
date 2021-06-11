@@ -248,7 +248,6 @@ public class SslPerfLimitTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(100_000)
             .threads(3)
-            .resourceRate(0)
             .resource(new Resource("/"));
 
         if (histogramFilename != null)
