@@ -12,7 +12,7 @@
     <jetty.version>10.0.3</jetty.version>
 
     <!-- 2.0.x is the version working with jetty-11 artifacts -->
-    <loadgenerator.version>2.0.1</loadgenerator.version>
+    <loadgenerator.version>2.0.2-SNAPSHOT</loadgenerator.version>
 
     <!-- time to run test in minutes -->
     <test.runFor>10</test.runFor>
