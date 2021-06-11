@@ -72,16 +72,16 @@ public class SslPerfLimitTest implements Serializable
 
         String jdkName = System.getProperty("test.jdk.name", "jdk11");
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
-        List<String> jvmOpts = new ArrayList<>(Arrays.asList(defaultJvmOpts));
-        jvmOpts.addAll(jdkExtraArgs == null ? Collections.emptyList() : Arrays.asList(jdkExtraArgs.split(" ")));
         EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
-            .jvm(new Jvm(new JenkinsToolJdk(jdkName), jvmOpts.toArray(new String[0])))
+            .jvm(new Jvm(new JenkinsToolJdk(jdkName)))
             .nodeArray(new SimpleNodeArrayConfiguration("server")
+                .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx32g", "-Xms32g")))
                 .node(new Node("1", "load-master"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("loaders")
+                .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx8g", "-Xms8g")))
                 .node(new Node("1", "load-1"))
                 .node(new Node("2", "load-2"))
                 .node(new Node("3", "load-3"))
@@ -92,6 +92,7 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("8", "load-8"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
+                .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx8g", "-Xms8g")))
                 .node(new Node("1", "load-sample"))
             )
             ;
@@ -231,6 +232,15 @@ public class SslPerfLimitTest implements Serializable
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
         }
+    }
+
+    private static String[] buildJvmOpts(String[] defaultJvmOpts, String jdkExtraArgs, String... moreArgs)
+    {
+        List<String> jvmOpts = new ArrayList<>();
+        jvmOpts.addAll(Arrays.asList(defaultJvmOpts));
+        jvmOpts.addAll(Arrays.asList(moreArgs));
+        jvmOpts.addAll(jdkExtraArgs == null ? Collections.emptyList() : Arrays.asList(jdkExtraArgs.split(" ")));
+        return jvmOpts.toArray(new String[0]);
     }
 
     private void runLoadGenerator(URI uri, Duration duration) throws IOException
