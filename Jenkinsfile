@@ -190,6 +190,7 @@ pipeline {
                 }
                 junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
                 archiveArtifacts artifacts: "**/target/report/**/**",allowEmptyArchive: true
+                publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: "${env.WORKSPACE}/target/report/server/1", reportFiles: 'profile.1.html', reportName: 'Profile 1', reportTitles: ''])
             }
         }
     }
