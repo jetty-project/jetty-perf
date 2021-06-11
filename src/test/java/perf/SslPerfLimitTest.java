@@ -87,7 +87,7 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("3", "load-3"))
                 .node(new Node("4", "load-4"))
                 .node(new Node("5", "load-5"))
-                .node(new Node("6", "load-6"))
+                //.node(new Node("6", "load-6"))
                 .node(new Node("7", "load-7"))
                 .node(new Node("8", "load-8"))
             )
