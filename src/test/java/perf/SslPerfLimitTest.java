@@ -326,6 +326,7 @@ public class SslPerfLimitTest implements Serializable
         {
             String dump = loadGenerator.dump();
             failure.addSuppressed(new CompletionException(dump, e));
+            failure.printStackTrace();
             throw failure;
         }
         finally
