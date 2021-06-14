@@ -13,9 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import javax.management.remote.JMXServiceURL;
 
 import org.eclipse.jetty.jmx.ConnectorServer;
@@ -29,8 +27,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
-import org.eclipse.jetty.util.thread.Scheduler;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
@@ -52,7 +48,6 @@ import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.AsyncProfilerCpuMonitor;
 import perf.monitoring.ConfigurableMonitor;
-import perf.util.ThreadDumpNodeJob;
 
 import static util.ReportUtil.download;
 import static util.ReportUtil.xformHisto;
@@ -96,11 +91,6 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("4b", "load-4"))
                 .node(new Node("5a", "load-5"))
                 .node(new Node("5b", "load-5"))
-                //.node(new Node("6", "load-6"))
-                .node(new Node("7a", "load-7"))
-                .node(new Node("7b", "load-7"))
-                .node(new Node("8a", "load-8"))
-                .node(new Node("8b", "load-8"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx8g", "-Xms8g")))
@@ -156,20 +146,8 @@ public class SslPerfLimitTest implements Serializable
 
             LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
-            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
-            try
-            {
-                warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
-            }
-            catch (TimeoutException e)
-            {
-                // execute sequentially
-                for (String id : loadersArray.ids())
-                {
-                    loadersArray.executeOn(id, new ThreadDumpNodeJob()).get();
-                }
-                throw e;
-            }
+            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION, null, null, 10_000, WARMUP_DURATION.toSeconds() / 2));
+            warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
             LOG.info("Running...");
             long before = System.nanoTime();
@@ -213,7 +191,7 @@ public class SslPerfLimitTest implements Serializable
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt");
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt", 50_000, RUN_DURATION.minus(Duration.ofMillis(delayMs)).toSeconds() / 2);
                     LOG.info("Loader #{} sync'ing on end barrier...", index);
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
@@ -266,36 +244,19 @@ public class SslPerfLimitTest implements Serializable
         return jvmOpts.toArray(new String[0]);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration) throws Exception
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename, int rate, long rampUp) throws Exception
     {
-        runLoadGenerator(uri, duration, null, null, false);
-    }
-
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws Exception
-    {
-        runLoadGenerator(uri, duration, histogramFilename, statusFilename, true);
-    }
-
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename, boolean rampUp) throws Exception
-    {
-        Scheduler scheduler = new ScheduledExecutorScheduler();
-        scheduler.start();
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
             .host(uri.getHost())
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .resourceRate(50_000)
+            .resourceRate(rate)
+            .rateRampUpPeriod(rampUp)
             .threads(2)
-            .resource(new Resource("/"))
-            .scheduler(scheduler)
-            ;
+            .resource(new Resource("/"));
 
-        if (rampUp)
-        {
-            builder.rateRampUpPeriod(20);
-        }
         if (histogramFilename != null)
         {
             ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
@@ -310,29 +271,9 @@ public class SslPerfLimitTest implements Serializable
         }
 
         LoadGenerator loadGenerator = builder.build();
-        CompletionException failure = new CompletionException("", null);
-        Scheduler.Task job = scheduler.schedule(() ->
-        {
-            String dump = loadGenerator.dump();
-            failure.addSuppressed(new CompletionException(dump, null));
-        }, duration.toSeconds() + 5, TimeUnit.SECONDS);
+
         LOG.info("load generation begin");
-        try
-        {
-            loadGenerator.begin().get(duration.toSeconds() + 10, TimeUnit.SECONDS);
-            job.cancel();
-        }
-        catch (Throwable e)
-        {
-            String dump = loadGenerator.dump();
-            failure.addSuppressed(new CompletionException(dump, e));
-            failure.printStackTrace();
-            throw failure;
-        }
-        finally
-        {
-            scheduler.stop();
-        }
+        loadGenerator.begin().join();
         LOG.info("load generation complete");
     }
 
