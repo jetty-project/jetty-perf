@@ -29,6 +29,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.Scheduler;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
@@ -282,7 +283,7 @@ public class SslPerfLimitTest implements Serializable
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .resourceRate(1)
+            .resourceRate(50_000)
             .threads(2)
             .resource(new Resource("/"));
 
@@ -304,15 +305,23 @@ public class SslPerfLimitTest implements Serializable
         }
 
         LoadGenerator loadGenerator = builder.build();
+        CompletionException failure = new CompletionException("", null);
+        Scheduler.Task job = loadGenerator.getConfig().getScheduler().schedule(() ->
+        {
+            String dump = loadGenerator.dump();
+            failure.addSuppressed(new CompletionException(dump, null));
+        }, duration.toSeconds() + 5, TimeUnit.SECONDS);
         LOG.info("load generation begin");
         try
         {
-            loadGenerator.begin().get(duration.toSeconds() + 5, TimeUnit.SECONDS);
+            loadGenerator.begin().get(duration.toSeconds() + 10, TimeUnit.SECONDS);
+            job.cancel();
         }
         catch (Throwable e)
         {
             String dump = loadGenerator.dump();
-            throw new CompletionException(dump, e);
+            failure.addSuppressed(new CompletionException(dump, e));
+            throw failure;
         }
         LOG.info("load generation complete");
     }
