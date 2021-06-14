@@ -29,6 +29,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.util.thread.Scheduler;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.load.generator.LoadGenerator;
@@ -277,6 +278,8 @@ public class SslPerfLimitTest implements Serializable
 
     private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename, boolean rampUp) throws Exception
     {
+        Scheduler scheduler = new ScheduledExecutorScheduler();
+        scheduler.start();
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
             .host(uri.getHost())
@@ -285,7 +288,9 @@ public class SslPerfLimitTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .resourceRate(50_000)
             .threads(2)
-            .resource(new Resource("/"));
+            .resource(new Resource("/"))
+            .scheduler(scheduler)
+            ;
 
         if (rampUp)
         {
@@ -306,7 +311,7 @@ public class SslPerfLimitTest implements Serializable
 
         LoadGenerator loadGenerator = builder.build();
         CompletionException failure = new CompletionException("", null);
-        Scheduler.Task job = loadGenerator.getConfig().getScheduler().schedule(() ->
+        Scheduler.Task job = scheduler.schedule(() ->
         {
             String dump = loadGenerator.dump();
             failure.addSuppressed(new CompletionException(dump, null));
@@ -322,6 +327,10 @@ public class SslPerfLimitTest implements Serializable
             String dump = loadGenerator.dump();
             failure.addSuppressed(new CompletionException(dump, e));
             throw failure;
+        }
+        finally
+        {
+            scheduler.stop();
         }
         LOG.info("load generation complete");
     }
