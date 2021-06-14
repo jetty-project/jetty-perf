@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.management.remote.JMXServiceURL;
@@ -264,17 +264,17 @@ public class SslPerfLimitTest implements Serializable
         return jvmOpts.toArray(new String[0]);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration) throws IOException
+    private void runLoadGenerator(URI uri, Duration duration) throws Exception
     {
         runLoadGenerator(uri, duration, null, null, false);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws Exception
     {
         runLoadGenerator(uri, duration, histogramFilename, statusFilename, true);
     }
 
-    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename, boolean rampUp) throws IOException
+    private void runLoadGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename, boolean rampUp) throws Exception
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(uri.getScheme())
@@ -305,7 +305,15 @@ public class SslPerfLimitTest implements Serializable
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("load generation begin");
-        loadGenerator.begin().join();
+        try
+        {
+            loadGenerator.begin().get(duration.toSeconds() + 5, TimeUnit.SECONDS);
+        }
+        catch (Throwable e)
+        {
+            String dump = loadGenerator.dump();
+            throw new CompletionException(dump, e);
+        }
         LOG.info("load generation complete");
     }
 
