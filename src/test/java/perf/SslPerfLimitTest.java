@@ -282,7 +282,7 @@ public class SslPerfLimitTest implements Serializable
             .port(uri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .resourceRate(50_000)
+            .resourceRate(1)
             .threads(2)
             .resource(new Resource("/"));
 
