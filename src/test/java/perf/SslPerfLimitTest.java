@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.management.remote.JMXServiceURL;
 
@@ -291,17 +290,8 @@ public class SslPerfLimitTest implements Serializable
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("load generation begin");
-        CompletableFuture<Void> cf = loadGenerator.begin();
-        cf.whenComplete((x, f) -> {
-            if (f == null)
-            {
-                LOG.info("load generation complete");
-            }
-            else
-            {
-                LOG.info("load generation failure", f);
-            }
-        }).join();
+        loadGenerator.begin().join();
+        LOG.info("load generation complete");
     }
 
     private void runProbeGenerator(URI uri, Duration duration, String histogramFilename, String statusFilename) throws IOException
@@ -320,16 +310,7 @@ public class SslPerfLimitTest implements Serializable
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("probe generation begin");
-        CompletableFuture<Void> cf = loadGenerator.begin();
-        cf.whenComplete((x, f) -> {
-            if (f == null)
-            {
-                LOG.info("probe generation complete");
-            }
-            else
-            {
-                LOG.info("probe generation failure", f);
-            }
-        }).join();
+        loadGenerator.begin().join();
+        LOG.info("probe generation complete");
     }
 }
