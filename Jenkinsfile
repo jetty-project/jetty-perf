@@ -7,7 +7,7 @@ pipeline {
     }
     parameters {
       string(defaultValue: '*', description: 'Junit test to run -Dtest=', name: 'TEST_TO_RUN')
-      string(defaultValue: '10.0.3', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: '10.0.4', description: 'Jetty Version', name: 'JETTY_VERSION')
       string(defaultValue: 'release', description: 'Jetty Branch to build (use release if you are using a release or any branch, Jetty Version must match', name: 'JETTY_BRANCH')
       //string(defaultValue: '2.0.0', description: 'LoadGenerator Version', name: 'LOADGENERATOR_VERSION')
       string(defaultValue: '10', description: 'Time in minutes to run load test', name: 'RUN_FOR')
