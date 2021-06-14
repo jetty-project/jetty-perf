@@ -13,7 +13,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.management.remote.JMXServiceURL;
 
 import org.eclipse.jetty.jmx.ConnectorServer;
@@ -48,6 +50,7 @@ import perf.histogram.server.LatencyRecordingChannelListener;
 import perf.jenkins.JenkinsToolJdk;
 import perf.monitoring.AsyncProfilerCpuMonitor;
 import perf.monitoring.ConfigurableMonitor;
+import perf.util.ThreadDumpNodeJob;
 
 import static util.ReportUtil.download;
 import static util.ReportUtil.xformHisto;
@@ -152,7 +155,19 @@ public class SslPerfLimitTest implements Serializable
             LOG.info("Warming up...");
             URI serverUri = new URI("https://" + serverArray.hostnameOf("1") + ":8443");
             NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(serverUri, WARMUP_DURATION));
-            warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
+            try
+            {
+                warmupLoaders.get(WARMUP_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
+            }
+            catch (TimeoutException e)
+            {
+                // execute sequentially
+                for (String id : loadersArray.ids())
+                {
+                    loadersArray.executeOn(id, new ThreadDumpNodeJob()).get();
+                }
+                throw e;
+            }
 
             LOG.info("Running...");
             long before = System.nanoTime();
