@@ -189,7 +189,8 @@ public class SslPerfLimitTest implements Serializable
                     long delayMs = RUN_DURATION.toMillis() / loadersCount * index;
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt", 50_000, RUN_DURATION.minus(Duration.ofMillis(delayMs)).toSeconds() / 2);
+                    long rampUp = RUN_DURATION.toSeconds() / loadersCount;
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt", 50_000, rampUp);
                     LOG.info("Loader #{} sync'ing on end barrier...", index);
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
