@@ -9,7 +9,7 @@
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <jetty.version>10.0.4</jetty.version>
+    <jetty.version>10.0.5</jetty.version>
 
     <!-- 2.0.x is the version working with jetty-11 artifacts -->
     <loadgenerator.version>2.0.2-SNAPSHOT</loadgenerator.version>
@@ -18,7 +18,7 @@
     <test.runFor>10</test.runFor>
 
     <!-- jdk name to use -->
-    <test.jdk.name>load-jdk11</test.jdk.name>
+    <test.jdk.name>load-jdk16</test.jdk.name>
 
     <!-- extra JVM arguments to use -->
     <test.jdk.extraArgs></test.jdk.extraArgs>

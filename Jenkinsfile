@@ -11,7 +11,7 @@ pipeline {
       string(defaultValue: 'release', description: 'Jetty Branch to build (use release if you are using a release or any branch, Jetty Version must match', name: 'JETTY_BRANCH')
       //string(defaultValue: '2.0.0', description: 'LoadGenerator Version', name: 'LOADGENERATOR_VERSION')
       string(defaultValue: '10', description: 'Time in minutes to run load test', name: 'RUN_FOR')
-      string(defaultValue: 'load-jdk11', description: 'jdk to use', name: 'JDK_TO_USE')
+      string(defaultValue: 'load-jdk16', description: 'jdk to use', name: 'JDK_TO_USE')
       string(defaultValue: '', description: 'extra JVM arguments to use', name: 'EXTRA_ARGS_TO_USE')
     }
     tools {

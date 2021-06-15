@@ -69,7 +69,7 @@ public class SslPerfLimitTest implements Serializable
             "-Djava.rmi.server.hostname=localhost"
         };
 
-        String jdkName = System.getProperty("test.jdk.name", "jdk11");
+        String jdkName = System.getProperty("test.jdk.name", "load-jdk16");
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
         EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
 
