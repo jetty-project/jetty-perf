@@ -81,14 +81,10 @@ public class SslPerfLimitTest implements Serializable
             )
             .nodeArray(new SimpleNodeArrayConfiguration("loaders")
                 .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx8g", "-Xms8g")))
-                .node(new Node("1a", "load-1"))
-                .node(new Node("1b", "load-1"))
-                .node(new Node("2a", "load-2"))
-                .node(new Node("2b", "load-2"))
-                .node(new Node("3a", "load-3"))
-                .node(new Node("3b", "load-3"))
-                .node(new Node("4a", "load-4"))
-                .node(new Node("4b", "load-4"))
+                .node(new Node("1", "load-1"))
+                .node(new Node("2", "load-2"))
+                .node(new Node("3", "load-3"))
+                .node(new Node("4", "load-4"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx8g", "-Xms8g")))
@@ -190,7 +186,7 @@ public class SslPerfLimitTest implements Serializable
                     LOG.info("Loader #{} waiting {} ms", index, delayMs);
                     Thread.sleep(delayMs);
                     long rampUp = RUN_DURATION.toSeconds() / loadersCount / 2;
-                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt", 50_000, rampUp);
+                    runLoadGenerator(serverUri, RUN_DURATION.minus(Duration.ofMillis(delayMs)), "loader.hlog", "status.txt", 100_000, rampUp);
                     LOG.info("Loader #{} sync'ing on end barrier...", index);
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
