@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import perf.histogram.HgrmReport;
 import perf.histogram.HtmlReport;
+import perf.histogram.JHiccupReport;
 
 public class ReportUtil
 {
@@ -79,5 +80,21 @@ public class ReportUtil
         }
     }
 
+    public static void xformJHiccup(NodeArray nodeArray, Path targetFolder) throws IOException
+    {
+        for (String id : nodeArray.ids())
+        {
+            Path reportFolder = targetFolder.resolve(id);
+            Path hlogFile = reportFolder.resolve("jhiccup.hlog");
 
+            try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))
+            {
+                HgrmReport.createHgrmHistogram(hlogFile.toFile(), os);
+            }
+            try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".html")))
+            {
+                JHiccupReport.createHtmlHistogram(hlogFile.toFile(), os);
+            }
+        }
+    }
 }

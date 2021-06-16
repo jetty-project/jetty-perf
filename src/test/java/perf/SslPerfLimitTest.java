@@ -51,6 +51,7 @@ import perf.monitoring.ConfigurableMonitor;
 
 import static util.ReportUtil.download;
 import static util.ReportUtil.xformHisto;
+import static util.ReportUtil.xformJHiccup;
 
 public class SslPerfLimitTest implements Serializable
 {
@@ -71,7 +72,7 @@ public class SslPerfLimitTest implements Serializable
 
         String jdkName = System.getProperty("test.jdk.name", "load-jdk16");
         String jdkExtraArgs = System.getProperty("test.jdk.extraArgs", null);
-        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK);
+        EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.of(ConfigurableMonitor.Item.CMDLINE_CPU, ConfigurableMonitor.Item.CMDLINE_MEMORY, ConfigurableMonitor.Item.CMDLINE_NETWORK, ConfigurableMonitor.Item.JHICCUP);
 
         ClusterConfiguration cfg = new SimpleClusterConfiguration()
             .jvm(new Jvm(new JenkinsToolJdk(jdkName)))
@@ -218,12 +219,15 @@ public class SslPerfLimitTest implements Serializable
             // download servers FGs & transform histograms
             download(serverArray, FileSystems.getDefault().getPath("target/report/server"));
             xformHisto(serverArray, FileSystems.getDefault().getPath("target/report/server"), "server.hlog");
+            xformJHiccup(serverArray, FileSystems.getDefault().getPath("target/report/server"));
             // download loaders FGs & transform histograms
             download(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
             xformHisto(loadersArray, FileSystems.getDefault().getPath("target/report/loader"), "loader.hlog");
+            xformJHiccup(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
             // download probes FGs & transform histograms
             download(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
             xformHisto(probeArray, FileSystems.getDefault().getPath("target/report/probe"), "probe.hlog");
+            xformJHiccup(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));

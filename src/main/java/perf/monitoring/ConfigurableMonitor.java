@@ -16,6 +16,7 @@ public class ConfigurableMonitor implements Monitor
         CMDLINE_NETWORK,
         APROF_CPU,
         HEAP_DUMP_ON_CLOSE,
+        JHICCUP,
     }
 
     private final List<Monitor> monitors = new ArrayList<>();
@@ -65,6 +66,8 @@ public class ConfigurableMonitor implements Monitor
                 return null;
             case HEAP_DUMP_ON_CLOSE:
                 return new DumpHeapOnCloseMonitor();
+            case JHICCUP:
+                return new JHiccupMonitor();
             default:
                 throw new AssertionError("Unknown monitor item : " +item);
         }
