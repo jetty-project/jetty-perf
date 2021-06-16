@@ -86,6 +86,7 @@ public class SslPerfLimitTest implements Serializable
                 .node(new Node("2", "load-2"))
                 .node(new Node("3", "load-3"))
                 .node(new Node("4", "load-4"))
+                .node(new Node("4", "load-5"))
             )
             .nodeArray(new SimpleNodeArrayConfiguration("probe")
                 .jvm(new Jvm(new JenkinsToolJdk(jdkName), buildJvmOpts(defaultJvmOpts, jdkExtraArgs, "-Xmx8g", "-Xms8g")))
