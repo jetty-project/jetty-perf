@@ -199,27 +199,32 @@ public class SslPerfTest implements Serializable
             LOG.info("JUnit sync'ing on end barrier...");
             cluster.tools().barrier("run-end-barrier", participantCount).await(RUN_DURATION.toSeconds() + 30, TimeUnit.SECONDS);
 
-            // wait for all monitoring reports to be written
-            serverFuture.get(30, TimeUnit.SECONDS);
-            loadersFuture.get(30, TimeUnit.SECONDS);
-            probeFuture.get(30, TimeUnit.SECONDS);
+            try
+            {
+                // wait for all monitoring reports to be written
+                serverFuture.get(30, TimeUnit.SECONDS);
+                loadersFuture.get(30, TimeUnit.SECONDS);
+                probeFuture.get(30, TimeUnit.SECONDS);
+            }
+            finally
+            {
+                LOG.info("Downloading reports...");
+                // download servers FGs & transform histograms
+                download(serverArray, FileSystems.getDefault().getPath("target/report/server"));
+                xformHisto(serverArray, FileSystems.getDefault().getPath("target/report/server"), "server.hlog");
+                xformJHiccup(serverArray, FileSystems.getDefault().getPath("target/report/server"));
+                // download loaders FGs & transform histograms
+                download(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
+                xformHisto(loadersArray, FileSystems.getDefault().getPath("target/report/loader"), "loader.hlog");
+                xformJHiccup(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
+                // download probes FGs & transform histograms
+                download(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
+                xformHisto(probeArray, FileSystems.getDefault().getPath("target/report/probe"), "probe.hlog");
+                xformJHiccup(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
 
-            LOG.info("Downloading reports...");
-            // download servers FGs & transform histograms
-            download(serverArray, FileSystems.getDefault().getPath("target/report/server"));
-            xformHisto(serverArray, FileSystems.getDefault().getPath("target/report/server"), "server.hlog");
-            xformJHiccup(serverArray, FileSystems.getDefault().getPath("target/report/server"));
-            // download loaders FGs & transform histograms
-            download(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
-            xformHisto(loadersArray, FileSystems.getDefault().getPath("target/report/loader"), "loader.hlog");
-            xformJHiccup(loadersArray, FileSystems.getDefault().getPath("target/report/loader"));
-            // download probes FGs & transform histograms
-            download(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
-            xformHisto(probeArray, FileSystems.getDefault().getPath("target/report/probe"), "probe.hlog");
-            xformJHiccup(probeArray, FileSystems.getDefault().getPath("target/report/probe"));
-
-            long after = System.nanoTime();
-            LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
+                long after = System.nanoTime();
+                LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
+            }
         }
     }
 
