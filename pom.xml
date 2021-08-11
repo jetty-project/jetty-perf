@@ -2,32 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.example</groupId>
-  <artifactId>ssl-perf</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <groupId>org.mortbay.jetty.perf</groupId>
+  <artifactId>jetty-perf</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Jetty :: Performance test suite</name>
+  <url>https://github.com/jetty-project/jetty-perf</url>
+  <description>
+    The Jetty performance test suite
+  </description>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <jetty.version>10.0.6</jetty.version>
-
-    <!-- 2.0.x is the version working with jetty-11 artifacts -->
-    <loadgenerator.version>2.0.2-SNAPSHOT</loadgenerator.version>
-
-    <!-- time to run test in minutes -->
-    <test.runFor>10</test.runFor>
-
-    <!-- jdk name to use -->
-    <test.jdk.name>load-jdk16</test.jdk.name>
-
-    <!-- extra JVM arguments to use -->
-    <test.jdk.extraArgs></test.jdk.extraArgs>
-
-    <!-- the values need to be defined in ~/.m2/settings.xml -->
-    <connect.via.hostname></connect.via.hostname>
-    <connect.via.user></connect.via.user>
-    <connect.via.port></connect.via.port>
-    <remote.java.home></remote.java.home>
   </properties>
 
   <dependencies>
@@ -49,32 +37,14 @@
     <dependency>
       <groupId>org.mortbay.jetty.orchestrator</groupId>
       <artifactId>jetty-cluster-orchestrator</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.1</version>
     </dependency>
 
     <!-- exclude and include deps to make sure we don't use jetty 11 artifacts -->
     <dependency>
       <groupId>org.mortbay.jetty.loadgenerator</groupId>
       <artifactId>jetty-load-generator-client</artifactId>
-      <version>${loadgenerator.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-client</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>http2-http-client-transport</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-alpn-java-client</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-util-ajax</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>2.1.0</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -130,6 +100,7 @@
       <version>5.7.1</version>
       <scope>test</scope>
     </dependency>
+
     <!-- unpack async profiler -->
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -170,39 +141,11 @@
           <version>3.0.0-M4</version>
           <configuration>
             <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
-            <systemPropertyVariables>
-              <test.runFor>${test.runFor}</test.runFor>
-              <test.jdk.name>${test.jdk.name}</test.jdk.name>
-            </systemPropertyVariables>
           </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
   </build>
-
-  <profiles>
-    <profile>
-      <id>local</id>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <configuration>
-                <systemPropertyVariables>
-                  <connect.via.hostname>${connect.via.hostname}</connect.via.hostname>
-                  <connect.via.user>${connect.via.user}</connect.via.user>
-                  <connect.via.port>${connect.via.port}</connect.via.port>
-                  <remote.java.home>${remote.java.home}</remote.java.home>
-                </systemPropertyVariables>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-    </profile>
-  </profiles>
 
   <repositories>
     <repository>
