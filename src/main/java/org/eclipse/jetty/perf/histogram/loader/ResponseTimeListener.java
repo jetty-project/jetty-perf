@@ -16,6 +16,11 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
     private final Timer timer = new Timer();
     private final HistogramLogWriter writer;
 
+    public ResponseTimeListener() throws FileNotFoundException
+    {
+        this("perf.hlog");
+    }
+
     public ResponseTimeListener(String histogramFilename) throws FileNotFoundException
     {
         writer = new HistogramLogWriter(histogramFilename);

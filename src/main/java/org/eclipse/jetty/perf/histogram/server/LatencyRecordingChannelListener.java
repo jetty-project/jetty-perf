@@ -20,6 +20,11 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     private final Timer timer = new Timer();
     private final HistogramLogWriter writer;
 
+    public LatencyRecordingChannelListener() throws FileNotFoundException
+    {
+        this("perf.hlog");
+    }
+
     public LatencyRecordingChannelListener(String histogramFilename) throws FileNotFoundException
     {
         writer = new HistogramLogWriter(histogramFilename);

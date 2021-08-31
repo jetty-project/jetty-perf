@@ -2,20 +2,25 @@ package org.eclipse.jetty.perf;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.management.remote.JMXServiceURL;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
-import org.eclipse.jetty.jmx.ConnectorServer;
-import org.eclipse.jetty.jmx.MBeanContainer;
+import org.eclipse.jetty.perf.handler.AsyncHandler;
+import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
+import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
+import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
+import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.PerfTestParams;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
@@ -24,7 +29,9 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.component.LifeCycle;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
@@ -34,16 +41,13 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
+import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.eclipse.jetty.perf.handler.AsyncHandler;
-import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
-import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
-import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
-import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 
 import static org.eclipse.jetty.perf.util.ReportUtil.download;
-import static org.eclipse.jetty.perf.util.ReportUtil.transformHisto;
+import static org.eclipse.jetty.perf.util.ReportUtil.transformJHiccupHisto;
+import static org.eclipse.jetty.perf.util.ReportUtil.transformPerfHisto;
 
 public class HttpPerfTest implements Serializable
 {
@@ -51,11 +55,12 @@ public class HttpPerfTest implements Serializable
 
     private static Stream<PerfTestParams> params()
     {
+        long now = System.currentTimeMillis();
         return Stream.of(
-            new PerfTestParams(PerfTestParams.HttpVersion.HTTP11, false),
-//            new PerfTestParams(PerfTestParams.HttpVersion.HTTP11, true),
-            new PerfTestParams(PerfTestParams.HttpVersion.HTTP2, false)
-//            new PerfTestParams(PerfTestParams.HttpVersion.HTTP2, true)
+            new PerfTestParams(now, PerfTestParams.Protocol.http),
+            new PerfTestParams(now, PerfTestParams.Protocol.https),
+            new PerfTestParams(now, PerfTestParams.Protocol.h2c),
+            new PerfTestParams(now, PerfTestParams.Protocol.h2)
         );
     }
 
@@ -82,34 +87,45 @@ public class HttpPerfTest implements Serializable
                 Server server = new Server();
                 tools.nodeEnvironment().put(Server.class.getName(), server);
 
-                MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
-                server.addBean(mbContainer);
-                server.addBean(LoggerFactory.getILoggerFactory());
-
-                ConnectorServer connectorServer = new ConnectorServer(new JMXServiceURL("service:jmx:rmi://localhost:1099/jndi/rmi://localhost:1099/jmxrmi"), "org.eclipse.jetty:name=rmiconnectorserver");
-                server.addBean(connectorServer);
-
                 HttpConfiguration httpConfiguration = new HttpConfiguration();
-                SecureRequestCustomizer customizer = new SecureRequestCustomizer();
-                customizer.setSniHostCheck(false);
-                httpConfiguration.addCustomizer(customizer);
+                if (params.getProtocol().isSecure())
+                {
+                    SecureRequestCustomizer customizer = new SecureRequestCustomizer();
+                    customizer.setSniHostCheck(false);
+                    httpConfiguration.addCustomizer(customizer);
+                }
+
                 ConnectionFactory http;
-                if (params.getHttpVersion() == PerfTestParams.HttpVersion.HTTP2)
+                if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
                     http = new HTTP2CServerConnectionFactory(httpConfiguration);
                 else
                     http = new HttpConnectionFactory(httpConfiguration);
 
-                ServerConnector serverConnector = new ServerConnector(server, http);
-                serverConnector.setPort(8080);
+                List<ConnectionFactory> connectionFactories = new ArrayList<>();
+                if (params.getProtocol().isSecure())
+                {
+                    SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
+                    String path = Paths.get(getClass().getResource("/keystore.p12").toURI()).toString();
+                    serverSslContextFactory.setKeyStorePath(path);
+                    serverSslContextFactory.setKeyStorePassword("storepwd");
+                    SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
+                    connectionFactories.add(ssl);
+                }
+                connectionFactories.add(http);
+
+                ServerConnector serverConnector = new ServerConnector(server, connectionFactories.toArray(new ConnectionFactory[0]));
+                serverConnector.setPort(params.getProtocol().isSecure() ? 8443 : 8080);
+
                 server.addConnector(serverConnector);
+
                 server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
                 server.start();
             }).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
-            URI serverUri = new URI("http" + (params.isSecure() ? "s" : "") + "://" + serverArray.hostnameOf(serverArray.ids().stream().findFirst().orElseThrow()) + ":8080");
-            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration()));
-            NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration()));
+            URI serverUri = new URI("http" + (params.getProtocol().isSecure() ? "s" : "") + "://" + serverArray.hostnameOf(serverArray.ids().stream().findFirst().orElseThrow()) + ":" + (params.getProtocol().isSecure() ? 8443 : 8080));
+            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
+            NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
             warmupLoaders.get(params.getWarmupDuration().toSeconds() + 30, TimeUnit.SECONDS);
             warmupProbe.get(params.getWarmupDuration().toSeconds() + 30, TimeUnit.SECONDS);
 
@@ -118,11 +134,11 @@ public class HttpPerfTest implements Serializable
 
             NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(params.getMonitoredItems()))
+                try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
                     Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
                     Connector serverConnector = server.getConnectors()[0];
-                    LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener("server.hlog");
+                    LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
                     LifeCycle.start(listener);
                     serverConnector.addBean(listener);
                     tools.barrier("run-start-barrier", participantCount).await();
@@ -134,20 +150,20 @@ public class HttpPerfTest implements Serializable
 
             NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(params.getMonitoredItems()))
+                try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(params, serverUri, params.getRunDuration(), "loader.hlog", "status.txt");
+                    runLoadGenerator(params, serverUri, params.getRunDuration(), true, true);
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
 
             NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
             {
-                try (ConfigurableMonitor m = new ConfigurableMonitor(params.getMonitoredItems()))
+                try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(params, serverUri, params.getRunDuration(), "probe.hlog", "status.txt");
+                    runProbeGenerator(params, serverUri, params.getRunDuration());
                     tools.barrier("run-end-barrier", participantCount).await();
                 }
             });
@@ -163,52 +179,49 @@ public class HttpPerfTest implements Serializable
             probeFuture.get(30, TimeUnit.SECONDS);
 
             LOG.info("Downloading reports...");
-            Path reportRoot = FileSystems.getDefault().getPath("target", "report", params.getReportPath());
-            // download servers FGs & transform histograms
-            download(serverArray, reportRoot.resolve("server"));
-            transformHisto(serverArray, reportRoot.resolve("server"), "server.hlog");
-            // download loaders FGs & transform histograms
-            download(loadersArray, reportRoot.resolve("loader"));
-            transformHisto(loadersArray, reportRoot.resolve("loader"), "loader.hlog");
-            // download probes FGs & transform histograms
-            download(probeArray, reportRoot.resolve("probe"));
-            transformHisto(probeArray, reportRoot.resolve("probe"), "probe.hlog");
+            Path reportRoot = FileSystems.getDefault().getPath("target", "reports", params.getReportPath());
+
+            List<String> nodeArrayNames = params.getClusterConfiguration().nodeArrays().stream().map(NodeArrayConfiguration::id).collect(Collectors.toList());
+            for (String nodeArrayName : nodeArrayNames)
+            {
+                NodeArray nodeArray = cluster.nodeArray(nodeArrayName);
+                Path targetPath = reportRoot.resolve(nodeArrayName);
+                download(nodeArray, targetPath);
+                transformPerfHisto(nodeArray, targetPath);
+                transformJHiccupHisto(nodeArray, targetPath);
+            }
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
         }
     }
 
-    private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration) throws IOException
-    {
-        runLoadGenerator(params, serverUri, duration, null, null);
-    }
-
-    private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, String histogramFilename, String statusFilename) throws IOException
+    private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, boolean generatePerfHisto, boolean generateStatuses) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
+            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .threads(2)
             .rateRampUpPeriod(0)
             .resourceRate(50_000)
             .resource(new Resource(serverUri.getPath()));
 
-        if (params.getHttpVersion() == PerfTestParams.HttpVersion.HTTP2)
+        if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
             builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
         }
-        if (histogramFilename != null)
+        if (generatePerfHisto)
         {
-            ResponseTimeListener responseTimeListener = new ResponseTimeListener(histogramFilename);
+            ResponseTimeListener responseTimeListener = new ResponseTimeListener();
             builder.resourceListener(responseTimeListener);
             builder.listener(responseTimeListener);
         }
-        if (statusFilename != null)
+        if (generateStatuses)
         {
-            ResponseStatusListener responseStatusListener = new ResponseStatusListener(statusFilename);
+            ResponseStatusListener responseStatusListener = new ResponseStatusListener();
             builder.resourceListener(responseStatusListener);
             builder.listener(responseStatusListener);
         }
@@ -228,20 +241,21 @@ public class HttpPerfTest implements Serializable
         }).join();
     }
 
-    private void runProbeGenerator(PerfTestParams params, URI serverUri, Duration duration, String histogramFilename, String statusFilename) throws IOException
+    private void runProbeGenerator(PerfTestParams params, URI serverUri, Duration duration) throws IOException
     {
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
+            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .rateRampUpPeriod(0)
             .resourceRate(100)
             .resource(new Resource(serverUri.getPath()))
-            .resourceListener(new ResponseTimeListener(histogramFilename))
-            .resourceListener(new ResponseStatusListener(statusFilename));
+            .resourceListener(new ResponseTimeListener())
+            .resourceListener(new ResponseStatusListener());
 
-        if (params.getHttpVersion() == PerfTestParams.HttpVersion.HTTP2)
+        if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
             builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
         }

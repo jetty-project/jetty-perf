@@ -15,7 +15,7 @@ import org.mortbay.jetty.orchestrator.NodeArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.eclipse.jetty.perf.histogram.HgrmReport;
-import org.eclipse.jetty.perf.histogram.HtmlReport;
+import org.eclipse.jetty.perf.histogram.PerfReport;
 import org.eclipse.jetty.perf.histogram.JHiccupReport;
 
 public class ReportUtil
@@ -29,7 +29,7 @@ public class ReportUtil
         for (String id : nodeArray.ids())
         {
             Path loaderRootPath = nodeArray.rootPathOf(id);
-            Path reportFolder = targetFolder.resolve(id);
+            Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
             download(loaderRootPath, reportFolder, filenamesList);
         }
     }
@@ -62,11 +62,16 @@ public class ReportUtil
         }
     }
 
-    public static void transformHisto(NodeArray nodeArray, Path targetFolder, String filename) throws IOException
+    public static void transformPerfHisto(NodeArray nodeArray, Path targetFolder) throws IOException
+    {
+        transformPerfHisto(nodeArray, targetFolder, "perf.hlog");
+    }
+
+    public static void transformPerfHisto(NodeArray nodeArray, Path targetFolder, String filename) throws IOException
     {
         for (String id : nodeArray.ids())
         {
-            Path reportFolder = targetFolder.resolve(id);
+            Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
             Path hlogFile = reportFolder.resolve(filename);
 
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))
@@ -75,16 +80,16 @@ public class ReportUtil
             }
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".html")))
             {
-                HtmlReport.createHtmlHistogram(hlogFile.getFileName().toString().split("\\.")[0], hlogFile.toFile(), os);
+                PerfReport.createHtmlHistogram(hlogFile.getFileName().toString().split("\\.")[0], hlogFile.toFile(), os);
             }
         }
     }
 
-    public static void xformJHiccup(NodeArray nodeArray, Path targetFolder) throws IOException
+    public static void transformJHiccupHisto(NodeArray nodeArray, Path targetFolder) throws IOException
     {
         for (String id : nodeArray.ids())
         {
-            Path reportFolder = targetFolder.resolve(id);
+            Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
             Path hlogFile = reportFolder.resolve("jhiccup.hlog");
 
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))

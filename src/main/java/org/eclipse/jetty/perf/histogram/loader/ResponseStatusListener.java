@@ -23,6 +23,11 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     private final PrintWriter printWriter;
     private final boolean fullStackTrace;
 
+    public ResponseStatusListener() throws IOException
+    {
+        this("http-client-statuses.log");
+    }
+
     public ResponseStatusListener(String statusFilename) throws IOException
     {
         this(statusFilename, true);

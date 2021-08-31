@@ -9,11 +9,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-public class HtmlReport
+public class PerfReport
 {
     public static void createHtmlHistogram(String title, File hlogFile, OutputStream out) throws IOException
     {
-        String html = loadAsString(HtmlReport.class.getResourceAsStream(HtmlReport.class.getSimpleName() + ".html"));
+        String html = loadAsString(PerfReport.class.getResourceAsStream(PerfReport.class.getSimpleName() + ".html"));
         String histograms = loadAsString(new FileInputStream(hlogFile));
 
         html = html.replace("##TITLE##", title);
