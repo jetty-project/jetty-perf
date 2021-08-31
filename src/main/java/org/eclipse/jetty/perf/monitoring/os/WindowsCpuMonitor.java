@@ -1,8 +1,8 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.os;
 
-class WindowsCpuMonitor extends AbstractCommandMonitor
+public class WindowsCpuMonitor extends AbstractCommandMonitor
 {
-    public static final String DEFAULT_FILENAME = "cpu.txt";
+    public static final String DEFAULT_FILENAME = "os\\cpu.log";
 
     public WindowsCpuMonitor()
     {

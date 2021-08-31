@@ -5,6 +5,12 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 
+import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
+import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
+import org.eclipse.jetty.perf.monitoring.os.LinuxNetworkMonitor;
+import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
+import org.eclipse.jetty.perf.monitoring.os.WindowsMemoryMonitor;
+import org.eclipse.jetty.perf.monitoring.os.WindowsNetworkMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 
 public class ConfigurableMonitor implements Monitor

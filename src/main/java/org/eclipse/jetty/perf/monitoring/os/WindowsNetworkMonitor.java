@@ -1,8 +1,8 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.os;
 
-class WindowsNetworkMonitor extends AbstractCommandMonitor
+public class WindowsNetworkMonitor extends AbstractCommandMonitor
 {
-    public static final String DEFAULT_FILENAME = "network.txt";
+    public static final String DEFAULT_FILENAME = "os\\network.log";
 
     public WindowsNetworkMonitor()
     {

@@ -1,8 +1,8 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.os;
 
-class WindowsMemoryMonitor extends AbstractCommandMonitor
+public class WindowsMemoryMonitor extends AbstractCommandMonitor
 {
-    public static final String DEFAULT_FILENAME = "memory.txt";
+    public static final String DEFAULT_FILENAME = "os\\memory.log";
 
     public WindowsMemoryMonitor()
     {
