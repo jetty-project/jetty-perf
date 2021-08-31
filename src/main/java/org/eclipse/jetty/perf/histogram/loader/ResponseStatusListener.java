@@ -22,6 +22,7 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     private final AtomicReference<ConcurrentMap<String, LongAdder>> statuses = new AtomicReference<>(new ConcurrentHashMap<>());
     private final PrintWriter printWriter;
     private final boolean fullStackTrace;
+    private int writeCounter;
 
     public ResponseStatusListener() throws IOException
     {
@@ -50,6 +51,7 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     private void writeStatuses()
     {
         ConcurrentMap<String, LongAdder> toWrite = statuses.getAndSet(new ConcurrentHashMap<>());
+        printWriter.println("[" + (writeCounter++) + "]");
         for (Map.Entry<String, LongAdder> entry : toWrite.entrySet())
         {
             String key = entry.getKey();
@@ -58,7 +60,6 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
             printWriter.print('=');
             printWriter.println(key);
         }
-        printWriter.println("---");
         printWriter.println();
         printWriter.flush();
     }
@@ -114,5 +115,6 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
         timer.cancel();
         writeStatuses();
         printWriter.close();
+        writeCounter = 0;
     }
 }

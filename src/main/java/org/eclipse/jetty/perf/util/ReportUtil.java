@@ -10,17 +10,33 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.eclipse.jetty.perf.histogram.HgrmReport;
+import org.eclipse.jetty.perf.histogram.JHiccupReport;
+import org.eclipse.jetty.perf.histogram.PerfReport;
+import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
+import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
+import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.eclipse.jetty.perf.histogram.HgrmReport;
-import org.eclipse.jetty.perf.histogram.PerfReport;
-import org.eclipse.jetty.perf.histogram.JHiccupReport;
 
 public class ReportUtil
 {
     private static final Logger LOG = LoggerFactory.getLogger(ReportUtil.class);
+
+    public static void generateReport(Path reportPath, ClusterConfiguration clusterConfiguration, Cluster cluster) throws IOException
+    {
+        for (String nodeArrayId : clusterConfiguration.nodeArrays().stream().map(NodeArrayConfiguration::id).collect(Collectors.toList()))
+        {
+            NodeArray nodeArray = cluster.nodeArray(nodeArrayId);
+            Path targetPath = reportPath.resolve(nodeArrayId);
+            download(nodeArray, targetPath);
+            transformPerfHisto(nodeArray, targetPath);
+            transformJHiccupHisto(nodeArray, targetPath);
+        }
+    }
 
     public static void download(NodeArray nodeArray, Path targetFolder, String... filenames) throws IOException
     {
@@ -91,6 +107,8 @@ public class ReportUtil
         {
             Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
             Path hlogFile = reportFolder.resolve("jhiccup.hlog");
+            if (!Files.exists(hlogFile))
+                continue;
 
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))
             {

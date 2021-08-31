@@ -5,14 +5,13 @@ import java.io.Serializable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
@@ -41,13 +40,10 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
-import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.eclipse.jetty.perf.util.ReportUtil.download;
-import static org.eclipse.jetty.perf.util.ReportUtil.transformJHiccupHisto;
-import static org.eclipse.jetty.perf.util.ReportUtil.transformPerfHisto;
+import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 
 public class HttpPerfTest implements Serializable
 {
@@ -75,7 +71,8 @@ public class HttpPerfTest implements Serializable
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
-            int participantCount = params.getClusterConfiguration().nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
+            int participantCount = params.getParticipantCount();
+            URI serverUri = params.getServerUri();
 
             NodeJob logSystemProps = tools -> LOG.info("JVM version: '{}', OS name: '{}', OS arch: '{}'", System.getProperty("java.vm.version"), System.getProperty("os.name"), System.getProperty("os.arch"));
             serverArray.executeOnAll(logSystemProps).get();
@@ -84,46 +81,11 @@ public class HttpPerfTest implements Serializable
 
             serverArray.executeOnAll(tools ->
             {
-                Server server = new Server();
+                Server server = startServer(params);
                 tools.nodeEnvironment().put(Server.class.getName(), server);
-
-                HttpConfiguration httpConfiguration = new HttpConfiguration();
-                if (params.getProtocol().isSecure())
-                {
-                    SecureRequestCustomizer customizer = new SecureRequestCustomizer();
-                    customizer.setSniHostCheck(false);
-                    httpConfiguration.addCustomizer(customizer);
-                }
-
-                ConnectionFactory http;
-                if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
-                    http = new HTTP2CServerConnectionFactory(httpConfiguration);
-                else
-                    http = new HttpConnectionFactory(httpConfiguration);
-
-                List<ConnectionFactory> connectionFactories = new ArrayList<>();
-                if (params.getProtocol().isSecure())
-                {
-                    SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
-                    String path = Paths.get(getClass().getResource("/keystore.p12").toURI()).toString();
-                    serverSslContextFactory.setKeyStorePath(path);
-                    serverSslContextFactory.setKeyStorePassword("storepwd");
-                    SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
-                    connectionFactories.add(ssl);
-                }
-                connectionFactories.add(http);
-
-                ServerConnector serverConnector = new ServerConnector(server, connectionFactories.toArray(new ConnectionFactory[0]));
-                serverConnector.setPort(params.getProtocol().isSecure() ? 8443 : 8080);
-
-                server.addConnector(serverConnector);
-
-                server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
-                server.start();
             }).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
-            URI serverUri = new URI("http" + (params.getProtocol().isSecure() ? "s" : "") + "://" + serverArray.hostnameOf(serverArray.ids().stream().findFirst().orElseThrow()) + ":" + (params.getProtocol().isSecure() ? 8443 : 8080));
             NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
             NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
             warmupLoaders.get(params.getWarmupDuration().toSeconds() + 30, TimeUnit.SECONDS);
@@ -173,27 +135,57 @@ public class HttpPerfTest implements Serializable
             // signal all participants to stop monitoring
             cluster.tools().barrier("run-end-barrier", participantCount).await(params.getRunDuration().toSeconds() + 30, TimeUnit.SECONDS);
 
-            // wait for all monitoring reports to be written
+            // wait for all report files to be written
             serverFuture.get(30, TimeUnit.SECONDS);
             loadersFuture.get(30, TimeUnit.SECONDS);
             probeFuture.get(30, TimeUnit.SECONDS);
 
-            LOG.info("Downloading reports...");
-            Path reportRoot = FileSystems.getDefault().getPath("target", "reports", params.getReportPath());
-
-            List<String> nodeArrayNames = params.getClusterConfiguration().nodeArrays().stream().map(NodeArrayConfiguration::id).collect(Collectors.toList());
-            for (String nodeArrayName : nodeArrayNames)
-            {
-                NodeArray nodeArray = cluster.nodeArray(nodeArrayName);
-                Path targetPath = reportRoot.resolve(nodeArrayName);
-                download(nodeArray, targetPath);
-                transformPerfHisto(nodeArray, targetPath);
-                transformJHiccupHisto(nodeArray, targetPath);
-            }
+            LOG.info("Generating report...");
+            generateReport(FileSystems.getDefault().getPath("target", "reports", params.getReportPath()), params.getClusterConfiguration(), cluster);
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
         }
+    }
+
+    private Server startServer(PerfTestParams params) throws Exception
+    {
+        Server server = new Server();
+
+        HttpConfiguration httpConfiguration = new HttpConfiguration();
+        if (params.getProtocol().isSecure())
+        {
+            SecureRequestCustomizer customizer = new SecureRequestCustomizer();
+            customizer.setSniHostCheck(false);
+            httpConfiguration.addCustomizer(customizer);
+        }
+
+        ConnectionFactory http;
+        if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
+            http = new HTTP2CServerConnectionFactory(httpConfiguration);
+        else
+            http = new HttpConnectionFactory(httpConfiguration);
+
+        List<ConnectionFactory> connectionFactories = new ArrayList<>();
+        if (params.getProtocol().isSecure())
+        {
+            SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
+            String path = Paths.get(Objects.requireNonNull(getClass().getResource("/keystore.p12")).toURI()).toString();
+            serverSslContextFactory.setKeyStorePath(path);
+            serverSslContextFactory.setKeyStorePassword("storepwd");
+            SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
+            connectionFactories.add(ssl);
+        }
+        connectionFactories.add(http);
+
+        ServerConnector serverConnector = new ServerConnector(server, connectionFactories.toArray(new ConnectionFactory[0]));
+        serverConnector.setPort(params.getServerPort());
+
+        server.addConnector(serverConnector);
+
+        server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+        server.start();
+        return server;
     }
 
     private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, boolean generatePerfHisto, boolean generateStatuses) throws IOException
