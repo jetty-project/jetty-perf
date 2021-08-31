@@ -5,7 +5,7 @@
  * @author Gil Tene
  */
 
-package org.eclipse.jetty.perf.util;
+package org.eclipse.jetty.perf.monitoring;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -141,7 +141,7 @@ import org.HdrHistogram.SingleWriterRecorder;
  */
 
 
-public class HiccupMeter extends Thread {
+class HiccupMeter extends Thread {
 
     private static final String versionString = "jHiccup version 2.0.10";
 

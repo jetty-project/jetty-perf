@@ -14,8 +14,8 @@ public class ConfigurableMonitor implements Monitor
         CMDLINE_CPU,
         CMDLINE_MEMORY,
         CMDLINE_NETWORK,
-        APROF_CPU,
-        HEAP_DUMP_ON_CLOSE,
+        ASYNC_PROF_CPU,
+        ASYNC_PROF_ALLOCATION,
         JHICCUP,
     }
 
@@ -60,12 +60,14 @@ public class ConfigurableMonitor implements Monitor
                 if (osName.contains("windows"))
                     return new WindowsNetworkMonitor();
                 return null;
-            case APROF_CPU:
+            case ASYNC_PROF_CPU:
                 if (osName.contains("linux"))
                     return new AsyncProfilerCpuMonitor();
                 return null;
-            case HEAP_DUMP_ON_CLOSE:
-                return new DumpHeapOnCloseMonitor();
+            case ASYNC_PROF_ALLOCATION:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerAllocationMonitor();
+                return null;
             case JHICCUP:
                 return new JHiccupMonitor();
             default:
