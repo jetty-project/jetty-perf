@@ -1,6 +1,9 @@
 package org.eclipse.jetty.perf.monitoring;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,10 +13,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
-import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
-import org.codehaus.plexus.logging.slf4j.Slf4jLogger;
 import org.eclipse.jetty.perf.util.IOUtil;
+import org.kamranzafar.jtar.TarEntry;
+import org.kamranzafar.jtar.TarInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,10 +60,44 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
             {
                 IOUtil.copy(is, os);
             }
-            TarGZipUnArchiver ua = new TarGZipUnArchiver(tarGzFile);
-            ua.enableLogging(new Slf4jLogger(org.codehaus.plexus.logging.Logger.LEVEL_INFO, LOG));
-            ua.setDestDirectory(asyncProfilerHome.getParentFile());
-            ua.extract();
+            unTarGz(asyncProfilerHome, tarGzFile);
+        }
+    }
+
+    private static void unTarGz(File targetFolder, File tarGzFile) throws IOException
+    {
+        try (TarInputStream tis = new TarInputStream(new GZIPInputStream(new BufferedInputStream(new FileInputStream(tarGzFile)))))
+        {
+            byte[] buffer = new byte[2048];
+            while (true)
+            {
+                TarEntry entry = tis.getNextEntry();
+                if (entry == null)
+                    break;
+
+                if (entry.isDirectory())
+                {
+                    File folder = new File(targetFolder.getParentFile(), entry.getName());
+                    if (!folder.mkdirs())
+                        throw new IOException("Cannot create folder: " + folder);
+                    continue;
+                }
+
+                File file = new File(targetFolder.getParentFile(), entry.getName());
+                try (BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(file)))
+                {
+                    while (true)
+                    {
+                        int count = tis.read(buffer);
+                        if (count == -1)
+                            break;
+                        dest.write(buffer, 0, count);
+                    }
+                }
+                boolean executable = (entry.getHeader().mode & 0_111 /* Yes, octal. */) != 0;
+                if (!file.setExecutable(executable))
+                    throw new IOException("Cannot set executable: " + file);
+            }
         }
     }
 
