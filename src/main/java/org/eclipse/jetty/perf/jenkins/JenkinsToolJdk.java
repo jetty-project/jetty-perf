@@ -54,7 +54,7 @@ public class JenkinsToolJdk implements FilenameSupplier
             }
             else
             {
-                LOG.warn("cannot find jdkHome from toolchain for host {}", hostname);
+                LOG.debug("cannot find jdkHome from toolchain for host {}", hostname);
             }
         }
         catch (IOException x)
@@ -82,7 +82,7 @@ public class JenkinsToolJdk implements FilenameSupplier
                 .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
             if (LOG.isDebugEnabled())
                 LOG.debug("Found java executable in Jenkins Tools '{}' of machine '{}' at {}", toolName, hostname, executable);
-            LOG.info("host {} will use java executable {}", hostname, executable);
+            LOG.debug("host {} will use java executable {}", hostname, executable);
             return executable;
         }
         catch (IOException e)
@@ -134,7 +134,7 @@ public class JenkinsToolJdk implements FilenameSupplier
         }
         else
         {
-            LOG.info("cannot find toolchain file {}", toolchainsPath);
+            LOG.debug("cannot find toolchain file {}", toolchainsPath);
             LOG.debug("files in directory: {}", Arrays.asList(Paths.get( ".").toFile().listFiles()));
         }
         return null;
