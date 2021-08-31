@@ -22,14 +22,12 @@ import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.PerfTestParams;
 import org.eclipse.jetty.server.ConnectionFactory;
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -37,6 +35,7 @@ import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
+import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
@@ -79,11 +78,7 @@ public class HttpPerfTest implements Serializable
             loadersArray.executeOnAll(logSystemProps).get();
             probeArray.executeOnAll(logSystemProps).get();
 
-            serverArray.executeOnAll(tools ->
-            {
-                Server server = startServer(params);
-                tools.nodeEnvironment().put(Server.class.getName(), server);
-            }).get(30, TimeUnit.SECONDS);
+            serverArray.executeOnAll(tools -> startServer(params, tools)).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
             NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
@@ -98,14 +93,11 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
-                    Connector serverConnector = server.getConnectors()[0];
-                    LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
-                    LifeCycle.start(listener);
-                    serverConnector.addBean(listener);
+                    LatencyRecordingChannelListener listener = (LatencyRecordingChannelListener)tools.nodeEnvironment().get(LatencyRecordingChannelListener.class.getName());
+                    listener.record(true);
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
-                    LifeCycle.stop(listener);
+                    Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
                     server.stop();
                 }
             });
@@ -148,7 +140,7 @@ public class HttpPerfTest implements Serializable
         }
     }
 
-    private Server startServer(PerfTestParams params) throws Exception
+    private void startServer(PerfTestParams params, ClusterTools tools) throws Exception
     {
         Server server = new Server();
 
@@ -181,11 +173,16 @@ public class HttpPerfTest implements Serializable
         ServerConnector serverConnector = new ServerConnector(server, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
+        LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
+        serverConnector.addBean(listener);
+
         server.addConnector(serverConnector);
 
         server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
         server.start();
-        return server;
+
+        tools.nodeEnvironment().put(LatencyRecordingChannelListener.class.getName(), listener);
+        tools.nodeEnvironment().put(Server.class.getName(), server);
     }
 
     private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, boolean generatePerfHisto, boolean generateStatuses) throws IOException

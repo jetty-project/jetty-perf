@@ -19,6 +19,7 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     private final Recorder recorder = new Recorder(3);
     private final Timer timer = new Timer();
     private final HistogramLogWriter writer;
+    private boolean record;
 
     public LatencyRecordingChannelListener() throws FileNotFoundException
     {
@@ -46,6 +47,11 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
         }, 1000, 1000);
     }
 
+    public void record(boolean record)
+    {
+        this.record = record;
+    }
+
     @Override
     protected void doStop()
     {
@@ -57,15 +63,21 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     @Override
     public void onRequestBegin(Request request)
     {
-        long begin = System.nanoTime();
-        timestamps.put(request, begin);
+        if (record)
+        {
+            long begin = System.nanoTime();
+            timestamps.put(request, begin);
+        }
     }
 
     @Override
     public void onComplete(Request request)
     {
-        long begin = timestamps.remove(request);
-        long responseTime = System.nanoTime() - begin;
-        recorder.recordValue(responseTime);
+        if (record)
+        {
+            long begin = timestamps.remove(request);
+            long responseTime = System.nanoTime() - begin;
+            recorder.recordValue(responseTime);
+        }
     }
 }
