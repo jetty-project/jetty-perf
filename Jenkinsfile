@@ -6,6 +6,7 @@ pipeline {
       buildDiscarder logRotator( numToKeepStr: '10' )
     }
     parameters {
+      string(defaultValue: '*', description: 'Test to run', name: 'TEST_TO_RUN')
       string(defaultValue: 'load-jdk11', description: 'Perf JDK tool name', name: 'JDK_TO_USE')
       string(defaultValue: '10.0.6', description: 'Jetty Version', name: 'JETTY_VERSION')
     }
