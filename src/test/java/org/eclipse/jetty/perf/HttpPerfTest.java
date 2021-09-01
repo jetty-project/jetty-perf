@@ -94,7 +94,7 @@ public class HttpPerfTest implements Serializable
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
                     LatencyRecordingChannelListener listener = (LatencyRecordingChannelListener)tools.nodeEnvironment().get(LatencyRecordingChannelListener.class.getName());
-                    listener.record(true);
+                    listener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
                     Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());

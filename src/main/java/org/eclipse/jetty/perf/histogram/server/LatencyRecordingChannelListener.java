@@ -29,6 +29,11 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     public LatencyRecordingChannelListener(String histogramFilename) throws FileNotFoundException
     {
         writer = new HistogramLogWriter(histogramFilename);
+    }
+
+    public void startRecording()
+    {
+        this.record = true;
         long now = System.currentTimeMillis();
         writer.setBaseTime(now);
         writer.outputBaseTime(now);
@@ -45,11 +50,6 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
                 h.reset();
             }
         }, 1000, 1000);
-    }
-
-    public void record(boolean record)
-    {
-        this.record = record;
     }
 
     @Override
