@@ -24,22 +24,24 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
+    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk11");
+
     private static final SimpleClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
-        .jvm(new Jvm(new JenkinsToolJdk("load-jdk11")))
+        .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE)))
         .nodeArray(new SimpleNodeArrayConfiguration("server")
             .node(new Node("1", "load-master"))
-            .jvm(new Jvm(new JenkinsToolJdk("load-jdk11"), defaultJvmOpts("-Xms32g", "-Xmx32g")))
+            .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE), defaultJvmOpts("-Xms32g", "-Xmx32g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("loaders")
             .node(new Node("1", "load-1"))
             .node(new Node("2", "load-2"))
             .node(new Node("3", "load-3"))
             .node(new Node("4", "load-4"))
-            .jvm(new Jvm(new JenkinsToolJdk("load-jdk11"), defaultJvmOpts("-Xms8g", "-Xmx8g")))
+            .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
             .node(new Node("1", "load-sample"))
-            .jvm(new Jvm(new JenkinsToolJdk("load-jdk11"), defaultJvmOpts("-Xms8g", "-Xmx8g")))
+            .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(10);

@@ -6,6 +6,7 @@ pipeline {
       buildDiscarder logRotator( numToKeepStr: '10' )
     }
     parameters {
+      string(defaultValue: 'load-jdk11', description: 'Perf JDK tool name', name: 'JDK_TO_USE')
       string(defaultValue: '10.0.6', description: 'Jetty Version', name: 'JETTY_VERSION')
     }
     tools {
@@ -16,7 +17,7 @@ pipeline {
           agent { node { label 'load-master' } }
           steps {
             jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-sample'],
-                        jdkNames: ["${JDK_TO_USE}", "load-jdk11"]
+                        jdkNames: ["${JDK_TO_USE}"]
             stash name: 'toolchains.xml', includes: '*toolchains.xml'
           }
         }
@@ -105,7 +106,7 @@ pipeline {
                          "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                   configFileProvider(
                           [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.extraArgs=\"${EXTRA_ARGS_TO_USE}\" -Dtest.runFor=${RUN_FOR}"
+                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
                     //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                   }
                 }
