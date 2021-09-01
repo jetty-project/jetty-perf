@@ -23,31 +23,6 @@ pipeline {
         }
         stage('Get Load nodes') {
           parallel {
-            stage('Build Jetty') {
-              agent { node { label 'load-master' } }
-              when {
-                beforeAgent true
-                expression {
-                  return JETTY_BRANCH != 'release';
-                }
-              }
-              steps {
-                dir("jetty.build") {
-                  echo "build jetty branch ${JETTY_BRANCH}"
-                  git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
-                  timeout(time: 30, unit: 'MINUTES') {
-                    withEnv(["JAVA_HOME=${ tool "jdk11" }",
-                             "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
-                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
-                      configFileProvider(
-                              [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                        sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -DskipTests -T6 -e"
-                      }
-                    }
-                  }
-                }
-              }
-            }
             stage('install load-1') {
               agent { node { label 'load-1' } }
               steps {
