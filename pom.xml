@@ -40,7 +40,7 @@
     <dependency>
       <groupId>org.mortbay.jetty.orchestrator</groupId>
       <artifactId>jetty-cluster-orchestrator</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
     </dependency>
 
     <!-- exclude and include deps to make sure we don't use jetty 11 artifacts -->

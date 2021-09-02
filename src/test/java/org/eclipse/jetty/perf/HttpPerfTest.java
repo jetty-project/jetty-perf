@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
+import org.eclipse.jetty.perf.util.OutputCapturingCluster;
 import org.eclipse.jetty.perf.util.PerfTestParams;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -63,10 +65,10 @@ public class HttpPerfTest implements Serializable
     @MethodSource("params")
     public void testPerf(PerfTestParams params) throws Exception
     {
-        LOG.info("Initializing...");
-
-        try (Cluster cluster = new Cluster(params.getClusterConfiguration()))
+        Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", params.getReportPath());
+        try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), reportRootPath.resolve("outerr.log")))
         {
+            Cluster cluster = outputCapturingCluster.getCluster();
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
@@ -133,7 +135,7 @@ public class HttpPerfTest implements Serializable
             probeFuture.get(30, TimeUnit.SECONDS);
 
             LOG.info("Generating report...");
-            generateReport(FileSystems.getDefault().getPath("target", "reports", params.getReportPath()), params.getClusterConfiguration(), cluster);
+            generateReport(reportRootPath, params.getClusterConfiguration(), cluster);
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
