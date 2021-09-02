@@ -22,7 +22,15 @@ public class OutputCapturingCluster implements AutoCloseable
     {
         outErrCapture = new OutErrCapture(outErrCaptureFile);
         LOG.info("=== Output capture started ===");
-        cluster = new Cluster(clusterConfiguration);
+        cluster = new Cluster(generateId(), clusterConfiguration);
+    }
+
+    private static String generateId()
+    {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String className = stackTrace[3].getClassName();
+        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
+        return simpleClassName + "_" + stackTrace[3].getMethodName();
     }
 
     @Override
