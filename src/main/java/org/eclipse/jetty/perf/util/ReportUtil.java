@@ -45,7 +45,7 @@ public class ReportUtil
         for (String id : nodeArray.ids())
         {
             Path loaderRootPath = nodeArray.rootPathOf(id);
-            Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
+            Path reportFolder = targetFolder.resolve(id);
             download(loaderRootPath, reportFolder, filenamesList);
         }
     }
@@ -87,7 +87,7 @@ public class ReportUtil
     {
         for (String id : nodeArray.ids())
         {
-            Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
+            Path reportFolder = targetFolder.resolve(id);
             Path hlogFile = reportFolder.resolve(filename);
 
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))
@@ -105,7 +105,7 @@ public class ReportUtil
     {
         for (String id : nodeArray.ids())
         {
-            Path reportFolder = targetFolder.resolve(id + "-" + nodeArray.hostnameOf(id));
+            Path reportFolder = targetFolder.resolve(id);
             Path hlogFile = reportFolder.resolve("jhiccup.hlog");
             if (!Files.exists(hlogFile))
                 continue;
