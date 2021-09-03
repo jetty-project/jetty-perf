@@ -3,7 +3,7 @@
 pipeline {
     agent any
     options {
-      buildDiscarder logRotator( numToKeepStr: '10' )
+      buildDiscarder logRotator( numToKeepStr: '48' )
     }
     environment {
       TEST_TO_RUN = '*'
