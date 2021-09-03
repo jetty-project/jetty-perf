@@ -44,8 +44,8 @@ public class PerfTestParams implements Serializable
             .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(30);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(60);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
