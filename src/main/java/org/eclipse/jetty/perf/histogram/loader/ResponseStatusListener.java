@@ -23,6 +23,7 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     private final PrintWriter printWriter;
     private final boolean fullStackTrace;
     private int writeCounter;
+    private boolean record;
 
     public ResponseStatusListener() throws IOException
     {
@@ -38,6 +39,11 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     {
         this.printWriter = new PrintWriter(statusFilename, StandardCharsets.UTF_8);
         this.fullStackTrace = fullStackTrace;
+    }
+
+    public void startRecording()
+    {
+        this.record = true;
         this.timer.schedule(new TimerTask()
         {
             @Override
@@ -46,6 +52,15 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
                 writeStatuses();
             }
         }, 1000, 1000);
+    }
+
+    public void stopRecording()
+    {
+        record = false;
+        timer.cancel();
+        writeStatuses();
+        printWriter.close();
+        writeCounter = 0;
     }
 
     private void writeStatuses()
@@ -67,6 +82,9 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     @Override
     public void onResourceNode(Resource.Info info)
     {
+        if (!record)
+            return;
+
         String key;
 
         Throwable failure = info.getFailure();
@@ -112,9 +130,6 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     @Override
     public void onComplete(LoadGenerator loadGenerator)
     {
-        timer.cancel();
-        writeStatuses();
-        printWriter.close();
-        writeCounter = 0;
+        stopRecording();
     }
 }

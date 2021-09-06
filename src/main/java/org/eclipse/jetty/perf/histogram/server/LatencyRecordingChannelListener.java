@@ -52,12 +52,17 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
         }, 1000, 1000);
     }
 
-    @Override
-    protected void doStop()
+    public void stopRecording()
     {
         timer.cancel();
         writer.outputIntervalHistogram(recorder.getIntervalHistogram());
         writer.close();
+    }
+
+    @Override
+    protected void doStop()
+    {
+        stopRecording();
     }
 
     @Override
@@ -75,7 +80,9 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     {
         if (record)
         {
-            long begin = timestamps.remove(request);
+            Long begin = timestamps.remove(request);
+            if (begin == null)
+                return;
             long responseTime = System.nanoTime() - begin;
             recorder.recordValue(responseTime);
         }

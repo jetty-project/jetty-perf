@@ -15,6 +15,7 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
     private final Recorder recorder = new Recorder(3);
     private final Timer timer = new Timer();
     private final HistogramLogWriter writer;
+    private boolean record;
 
     public ResponseTimeListener() throws FileNotFoundException
     {
@@ -24,6 +25,11 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
     public ResponseTimeListener(String histogramFilename) throws FileNotFoundException
     {
         writer = new HistogramLogWriter(histogramFilename);
+    }
+
+    public void startRecording()
+    {
+        this.record = true;
         long now = System.currentTimeMillis();
         writer.setBaseTime(now);
         writer.outputBaseTime(now);
@@ -42,18 +48,26 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
         }, 1000, 1000);
     }
 
+    public void stopRecording()
+    {
+        timer.cancel();
+        writer.outputIntervalHistogram(recorder.getIntervalHistogram());
+        writer.close();
+    }
+
     @Override
     public void onResourceNode(Resource.Info info)
     {
-        long responseTime = info.getResponseTime() - info.getRequestTime();
-        recorder.recordValue(responseTime);
+        if (record)
+        {
+            long responseTime = info.getResponseTime() - info.getRequestTime();
+            recorder.recordValue(responseTime);
+        }
     }
 
     @Override
     public void onComplete(LoadGenerator generator)
     {
-        timer.cancel();
-        writer.outputIntervalHistogram(recorder.getIntervalHistogram());
-        writer.close();
+       stopRecording();
     }
 }

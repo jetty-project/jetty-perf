@@ -102,6 +102,11 @@ public class PerfTestParams implements Serializable
         return protocol;
     }
 
+    public Duration getTotalDuration()
+    {
+        return WARMUP_DURATION.plus(RUN_DURATION).plus(Duration.ofSeconds(10));
+    }
+
     public Duration getWarmupDuration()
     {
         return WARMUP_DURATION;

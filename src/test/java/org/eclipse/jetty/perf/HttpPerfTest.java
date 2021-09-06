@@ -2,6 +2,9 @@ package org.eclipse.jetty.perf;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
@@ -10,6 +13,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +41,6 @@ import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
-import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
@@ -80,13 +83,13 @@ public class HttpPerfTest implements Serializable
             loadersArray.executeOnAll(logSystemProps).get();
             probeArray.executeOnAll(logSystemProps).get();
 
-            serverArray.executeOnAll(tools -> startServer(params, tools)).get(30, TimeUnit.SECONDS);
+            // start the server and the generators
+            serverArray.executeOnAll(tools -> startServer(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getTotalDuration(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            probeArray.executeOnAll(tools -> runProbeGenerator(params, serverUri, params.getTotalDuration(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
-            NodeArrayFuture warmupLoaders = loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
-            NodeArrayFuture warmupProbe = probeArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getWarmupDuration(), false, false));
-            warmupLoaders.get(params.getWarmupDuration().toSeconds() + 30, TimeUnit.SECONDS);
-            warmupProbe.get(params.getWarmupDuration().toSeconds() + 30, TimeUnit.SECONDS);
+            Thread.sleep(params.getWarmupDuration().toMillis());
 
             LOG.info("Running...");
             long before = System.nanoTime();
@@ -99,8 +102,7 @@ public class HttpPerfTest implements Serializable
                     listener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
-                    Server server = (Server)tools.nodeEnvironment().get(Server.class.getName());
-                    server.stop();
+                    listener.stopRecording();
                 }
             });
 
@@ -108,9 +110,16 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
+                    ResponseTimeListener responseTimeListener = (ResponseTimeListener)tools.nodeEnvironment().get(ResponseTimeListener.class.getName());
+                    responseTimeListener.startRecording();
+                    ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
+                    responseStatusListener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runLoadGenerator(params, serverUri, params.getRunDuration(), true, true);
                     tools.barrier("run-end-barrier", participantCount).await();
+                    responseTimeListener.stopRecording();
+                    responseStatusListener.stopRecording();
+                    CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
+                    cf.get();
                 }
             });
 
@@ -118,31 +127,62 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
+                    ResponseTimeListener responseTimeListener = (ResponseTimeListener)tools.nodeEnvironment().get(ResponseTimeListener.class.getName());
+                    responseTimeListener.startRecording();
+                    ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
+                    responseStatusListener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
-                    runProbeGenerator(params, serverUri, params.getRunDuration());
                     tools.barrier("run-end-barrier", participantCount).await();
+                    responseTimeListener.stopRecording();
+                    responseStatusListener.stopRecording();
+                    CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
+                    cf.get();
                 }
             });
 
-            // signal all participants to start
-            cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
-            // signal all participants to stop monitoring
-            cluster.tools().barrier("run-end-barrier", participantCount).await(params.getRunDuration().toSeconds() + 30, TimeUnit.SECONDS);
+            try
+            {
+                // signal all participants to start
+                cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
+                // wait for the run duration
+                Thread.sleep(params.getRunDuration().toMillis());
+                // signal all participants to stop
+                cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
 
-            // wait for all report files to be written
-            serverFuture.get(30, TimeUnit.SECONDS);
-            loadersFuture.get(30, TimeUnit.SECONDS);
-            probeFuture.get(30, TimeUnit.SECONDS);
+                // wait for all report files to be written
+                serverFuture.get(30, TimeUnit.SECONDS);
+                loadersFuture.get(30, TimeUnit.SECONDS);
+                probeFuture.get(30, TimeUnit.SECONDS);
 
-            LOG.info("Generating report...");
-            generateReport(reportRootPath, params.getClusterConfiguration(), cluster);
+                // stop server
+                serverArray.executeOnAll(tools -> ((Server)tools.nodeEnvironment().get(Server.class.getName())).stop()).get(30, TimeUnit.SECONDS);
 
-            long after = System.nanoTime();
-            LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
+                LOG.info("Generating report...");
+                generateReport(reportRootPath, params.getClusterConfiguration(), cluster);
+
+                long after = System.nanoTime();
+                LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
+            }
+            catch (Exception e)
+            {
+                NodeJob dump = (tools) ->
+                {
+                    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+                    for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true))
+                    {
+                        System.err.println(threadInfo);
+                    }
+                };
+                serverArray.executeOnAll(dump).get();
+                loadersArray.executeOnAll(dump).get();
+                probeArray.executeOnAll(dump).get();
+
+                throw e;
+            }
         }
     }
 
-    private void startServer(PerfTestParams params, ClusterTools tools) throws Exception
+    private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
         Server server = new Server();
 
@@ -183,12 +223,17 @@ public class HttpPerfTest implements Serializable
         server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
         server.start();
 
-        tools.nodeEnvironment().put(LatencyRecordingChannelListener.class.getName(), listener);
-        tools.nodeEnvironment().put(Server.class.getName(), server);
+        env.put(LatencyRecordingChannelListener.class.getName(), listener);
+        env.put(Server.class.getName(), server);
     }
 
-    private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, boolean generatePerfHisto, boolean generateStatuses) throws IOException
+    private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, Map<String, Object> env) throws IOException
     {
+        ResponseTimeListener responseTimeListener = new ResponseTimeListener();
+        env.put(ResponseTimeListener.class.getName(), responseTimeListener);
+        ResponseStatusListener responseStatusListener = new ResponseStatusListener();
+        env.put(ResponseStatusListener.class.getName(), responseStatusListener);
+
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
@@ -198,29 +243,22 @@ public class HttpPerfTest implements Serializable
             .threads(2)
             .rateRampUpPeriod(0)
             .resourceRate(50_000)
-            .resource(new Resource(serverUri.getPath()));
+            .resource(new Resource(serverUri.getPath()))
+            .resourceListener(responseTimeListener)
+            .listener(responseTimeListener)
+            .resourceListener(responseStatusListener)
+            .listener(responseStatusListener)
+            ;
 
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
             builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
         }
-        if (generatePerfHisto)
-        {
-            ResponseTimeListener responseTimeListener = new ResponseTimeListener();
-            builder.resourceListener(responseTimeListener);
-            builder.listener(responseTimeListener);
-        }
-        if (generateStatuses)
-        {
-            ResponseStatusListener responseStatusListener = new ResponseStatusListener();
-            builder.resourceListener(responseStatusListener);
-            builder.listener(responseStatusListener);
-        }
 
         LoadGenerator loadGenerator = builder.build();
         LOG.info("load generation begin");
         CompletableFuture<Void> cf = loadGenerator.begin();
-        cf.whenComplete((x, f) -> {
+        cf = cf.whenComplete((x, f) -> {
             if (f == null)
             {
                 LOG.info("load generation complete");
@@ -229,11 +267,17 @@ public class HttpPerfTest implements Serializable
             {
                 LOG.info("load generation failure", f);
             }
-        }).join();
+        });
+        env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams params, URI serverUri, Duration duration) throws IOException
+    private void runProbeGenerator(PerfTestParams params, URI serverUri, Duration duration, Map<String, Object> env) throws IOException
     {
+        ResponseTimeListener responseTimeListener = new ResponseTimeListener();
+        env.put(ResponseTimeListener.class.getName(), responseTimeListener);
+        ResponseStatusListener responseStatusListener = new ResponseStatusListener();
+        env.put(ResponseStatusListener.class.getName(), responseStatusListener);
+
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
@@ -243,8 +287,11 @@ public class HttpPerfTest implements Serializable
             .rateRampUpPeriod(0)
             .resourceRate(100)
             .resource(new Resource(serverUri.getPath()))
-            .resourceListener(new ResponseTimeListener())
-            .resourceListener(new ResponseStatusListener());
+            .resourceListener(responseTimeListener)
+            .listener(responseTimeListener)
+            .resourceListener(responseStatusListener)
+            .listener(responseStatusListener)
+            ;
 
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
@@ -254,7 +301,7 @@ public class HttpPerfTest implements Serializable
         LoadGenerator loadGenerator = builder.build();
         LOG.info("probe generation begin");
         CompletableFuture<Void> cf = loadGenerator.begin();
-        cf.whenComplete((x, f) -> {
+        cf = cf.whenComplete((x, f) -> {
             if (f == null)
             {
                 LOG.info("probe generation complete");
@@ -263,6 +310,7 @@ public class HttpPerfTest implements Serializable
             {
                 LOG.info("probe generation failure", f);
             }
-        }).join();
+        });
+        env.put(CompletableFuture.class.getName(), cf);
     }
 }
