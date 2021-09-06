@@ -188,23 +188,23 @@ public class HttpPerfTest implements Serializable
 
                 throw e;
             }
+
+            NodeArrayConfiguration serverCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
+            NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
+            NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
+
+            // assert loaders did not get too many HTTP errors
+            assertHttpClientStatuses(reportRootPath, loadersCfg, 0.02);
+
+            // assert probe did not get too many HTTP errors and had a given throughput and max latency
+            assertHttpClientStatuses(reportRootPath, probeCfg, 0.02);
+            assertThroughput(reportRootPath, probeCfg, 18_000, 0.02);
+            assertMaxLatency(reportRootPath, probeCfg, 215_000, 0.02);
+
+            // assert server had a given throughput and max latency
+            assertThroughput(reportRootPath, serverCfg, 36_000_000, 0.02);
+            assertMaxLatency(reportRootPath, serverCfg, 150_000, 0.02);
         }
-
-        NodeArrayConfiguration serverCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
-        NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
-        NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
-
-        // assert loaders did not get too many HTTP errors
-        assertHttpClientStatuses(reportRootPath, loadersCfg, 0.02);
-
-        // assert probe did not get too many HTTP errors and had a given throughput and max latency
-        assertHttpClientStatuses(reportRootPath, probeCfg, 0.02);
-        assertThroughput(reportRootPath, probeCfg, 18_000, 0.02);
-        assertMaxLatency(reportRootPath, probeCfg, 215_000, 0.02);
-
-        // assert server had a given throughput and max latency
-        assertThroughput(reportRootPath, serverCfg, 36_000_000, 0.02);
-        assertMaxLatency(reportRootPath, serverCfg, 150_000, 0.02);
     }
 
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
