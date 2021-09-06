@@ -51,7 +51,6 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
     public void stopRecording()
     {
         timer.cancel();
-        writer.outputIntervalHistogram(recorder.getIntervalHistogram());
         writer.close();
     }
 

@@ -55,7 +55,6 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     public void stopRecording()
     {
         timer.cancel();
-        writer.outputIntervalHistogram(recorder.getIntervalHistogram());
         writer.close();
     }
 

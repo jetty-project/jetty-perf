@@ -58,7 +58,6 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     {
         record = false;
         timer.cancel();
-        writeStatuses();
         printWriter.close();
         writeCounter = 0;
     }
