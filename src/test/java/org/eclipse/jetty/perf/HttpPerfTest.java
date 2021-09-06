@@ -10,8 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,9 +46,13 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
+import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.eclipse.jetty.perf.assertions.Assertions.assertHttpClientStatuses;
+import static org.eclipse.jetty.perf.assertions.Assertions.assertMaxLatency;
+import static org.eclipse.jetty.perf.assertions.Assertions.assertThroughput;
 import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 
 public class HttpPerfTest implements Serializable
@@ -55,12 +61,11 @@ public class HttpPerfTest implements Serializable
 
     private static Stream<PerfTestParams> params()
     {
-        long now = System.currentTimeMillis();
         return Stream.of(
-            new PerfTestParams(now, PerfTestParams.Protocol.http),
-            new PerfTestParams(now, PerfTestParams.Protocol.https),
-            new PerfTestParams(now, PerfTestParams.Protocol.h2c),
-            new PerfTestParams(now, PerfTestParams.Protocol.h2)
+            new PerfTestParams(PerfTestParams.Protocol.http),
+            new PerfTestParams(PerfTestParams.Protocol.https),
+            new PerfTestParams(PerfTestParams.Protocol.h2c),
+            new PerfTestParams(PerfTestParams.Protocol.h2)
         );
     }
 
@@ -68,7 +73,9 @@ public class HttpPerfTest implements Serializable
     @MethodSource("params")
     public void testPerf(PerfTestParams params) throws Exception
     {
-        Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", params.getReportPath());
+        String formattedDate = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", formattedDate, testName(), params.toString());
+
         try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), reportRootPath.resolve("outerr.log")))
         {
             Cluster cluster = outputCapturingCluster.getCluster();
@@ -180,6 +187,22 @@ public class HttpPerfTest implements Serializable
                 throw e;
             }
         }
+
+        NodeArrayConfiguration serverCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
+        NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
+        NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
+
+        // assert loaders did not get too many HTTP errors
+        assertHttpClientStatuses(reportRootPath, loadersCfg, 0.02);
+
+        // assert probe did not get too many HTTP errors and had a given throughput and max latency
+        assertHttpClientStatuses(reportRootPath, probeCfg, 0.02);
+        assertThroughput(reportRootPath, probeCfg, 18_000, 0.02);
+        assertMaxLatency(reportRootPath, probeCfg, 215_000, 0.02);
+
+        // assert server had a given throughput and max latency
+        assertThroughput(reportRootPath, serverCfg, 36_000_000, 0.02);
+        assertMaxLatency(reportRootPath, serverCfg, 150_000, 0.02);
     }
 
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
@@ -312,5 +335,13 @@ public class HttpPerfTest implements Serializable
             }
         });
         env.put(CompletableFuture.class.getName(), cf);
+    }
+
+    private static String testName()
+    {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String className = stackTrace[2].getClassName();
+        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
+        return simpleClassName + "_" + stackTrace[2].getMethodName();
     }
 }

@@ -1,15 +1,12 @@
 package org.eclipse.jetty.perf.util;
 
-import java.io.File;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -90,11 +87,9 @@ public class PerfTestParams implements Serializable
     }
 
     private final Protocol protocol;
-    private final String formattedDate;
 
-    public PerfTestParams(long now, Protocol protocol)
+    public PerfTestParams(Protocol protocol)
     {
-        this.formattedDate = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date(now));
         this.protocol = protocol;
     }
 
@@ -150,11 +145,6 @@ public class PerfTestParams implements Serializable
     public int getParticipantCount()
     {
         return getClusterConfiguration().nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
-    }
-
-    public String getReportPath()
-    {
-        return formattedDate + File.separator + protocol.name();
     }
 
     public EnumSet<ConfigurableMonitor.Item> getMonitoredItems()
