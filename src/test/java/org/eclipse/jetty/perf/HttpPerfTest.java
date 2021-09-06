@@ -59,6 +59,8 @@ public class HttpPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(HttpPerfTest.class);
 
+    private static final long COMMON_TIME = System.currentTimeMillis();
+
     private static Stream<PerfTestParams> params()
     {
         return Stream.of(
@@ -73,7 +75,7 @@ public class HttpPerfTest implements Serializable
     @MethodSource("params")
     public void testPerf(PerfTestParams params) throws Exception
     {
-        String formattedDate = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        String formattedDate = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date(COMMON_TIME));
         Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", formattedDate, testName(), params.toString());
 
         try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), reportRootPath.resolve("outerr.log")))
