@@ -3,8 +3,12 @@ package org.eclipse.jetty.perf.util;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
@@ -66,7 +70,7 @@ public class OutputCapturingCluster implements AutoCloseable
         {
             if (!captureFile.getParentFile().mkdirs())
                 throw new IOException("Cannot create folder for out/err capture file");
-            ps = new PrintStream(new FileOutputStream(captureFile));
+            ps = new PrintStream(new MultiplexingOutputStream(new FileOutputStream(captureFile), new IgnoreCloseOutputStream(System.out)));
 
             oldOut = System.out;
             oldErr = System.err;
@@ -81,6 +85,85 @@ public class OutputCapturingCluster implements AutoCloseable
             System.setErr(oldErr);
 
             ps.close();
+        }
+    }
+
+    private static class MultiplexingOutputStream extends OutputStream
+    {
+        private final List<OutputStream> delegates = new ArrayList<>();
+
+        public MultiplexingOutputStream(OutputStream... outputStreams)
+        {
+            this.delegates.addAll(Arrays.asList(outputStreams));
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            for (OutputStream outputStream : delegates)
+            {
+                outputStream.write(b);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException
+        {
+            for (OutputStream outputStream : delegates)
+            {
+                outputStream.write(b, off, len);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException
+        {
+            for (OutputStream outputStream : delegates)
+            {
+                outputStream.flush();
+            }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            for (OutputStream outputStream : delegates)
+            {
+                outputStream.close();
+            }
+        }
+    }
+
+    private static class IgnoreCloseOutputStream extends OutputStream
+    {
+        private final OutputStream delegate;
+
+        public IgnoreCloseOutputStream(OutputStream outputStream)
+        {
+            this.delegate = outputStream;
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException
+        {
+            delegate.write(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException
+        {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
         }
     }
 }
