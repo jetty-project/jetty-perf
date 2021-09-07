@@ -34,13 +34,14 @@ public class Assertions
         }
 
         System.out.println(nodeArray.id() + " throughput = " + totalCount + " vs expected " + expectedValue);
+        int errorMarginInPercent = (int)(errorMargin * 100);
         double error = expectedValue * errorMargin;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
         if (totalCount >= lowBound && totalCount <= highBound)
-            System.out.println("OK; value within error margin");
+            System.out.println("OK; value within " + errorMarginInPercent + "% error margin");
         else
-            System.out.println("NOK; value out of error margin");
+            System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
     }
 
     public static void assertMaxLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws FileNotFoundException
@@ -60,15 +61,17 @@ public class Assertions
                 integral += histogram.getMaxValue();
             }
         }
+        integral /= 1000;
 
         System.out.println(nodeArray.id() + " max lat integral = " + integral + " vs expected " + expectedValue);
+        int errorMarginInPercent = (int)(errorMargin * 100);
         double error = expectedValue * errorMargin;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
 
         if (integral >= lowBound && integral <= highBound)
-            System.out.println("OK; value within error margin");
+            System.out.println("OK; value within " + errorMarginInPercent + "% error margin");
         else
-            System.out.println("NOK; value out of error margin");
+            System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
     }
 }
