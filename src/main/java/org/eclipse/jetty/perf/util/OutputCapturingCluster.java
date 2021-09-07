@@ -25,7 +25,7 @@ public class OutputCapturingCluster implements AutoCloseable
     public OutputCapturingCluster(ClusterConfiguration clusterConfiguration, Path outErrCaptureFile) throws Exception
     {
         outErrCapture = new OutErrCapture(outErrCaptureFile);
-        LOG.info("=== Output capture started ===");
+        LOG.info("=== Output capture started ({}) ===", outErrCaptureFile);
         cluster = new Cluster(generateId(), clusterConfiguration);
     }
 
