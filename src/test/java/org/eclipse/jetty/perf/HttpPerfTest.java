@@ -195,19 +195,23 @@ public class HttpPerfTest implements Serializable
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
             assertHttpClientStatuses(reportRootPath, probeCfg, 0.02);
             assertThroughput(reportRootPath, probeCfg, 18_000, 0.02);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 50);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 90);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 95);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 99);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 99.9);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 99.99);
             assertMaxLatency(reportRootPath, probeCfg, 215_000, 0.02);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.95);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.99);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.999);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.9999);
 
             // assert server had a given throughput and max latency
             assertThroughput(reportRootPath, serverCfg, 36_000_000, 0.02);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 50);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 90);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 95);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 99);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 99.9);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 99.99);
             assertMaxLatency(reportRootPath, serverCfg, 150_000, 0.02);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.95);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.99);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.999);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.9999);
         }
     }
 
