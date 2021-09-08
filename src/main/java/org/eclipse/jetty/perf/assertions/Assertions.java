@@ -44,13 +44,46 @@ public class Assertions
             System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
     }
 
+    public static void assertPLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, double percentile) throws FileNotFoundException
+    {
+        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
+        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
+
+        long integral = 0L;
+        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
+        {
+            while (true)
+            {
+                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
+                if (histogram == null)
+                    break;
+
+                integral += histogram.getValueAtPercentile(percentile);
+            }
+        }
+        integral /= 1000;
+
+        long jhiccupIntegral = loadJHiccupIntegral(reportRootPath, nodeArray);
+
+        System.out.println(nodeArray.id() + " p" + (percentile * 100) + " lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
+        int errorMarginInPercent = (int)(errorMargin * 100);
+        double error = expectedValue * errorMargin;
+        double highBound = expectedValue + error;
+        double lowBound = expectedValue - error;
+
+        integral -= jhiccupIntegral;
+
+        if (integral >= lowBound && integral <= highBound)
+            System.out.println("OK; value within " + errorMarginInPercent + "% error margin");
+        else
+            System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
+    }
+
     public static void assertMaxLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws FileNotFoundException
     {
         Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
         Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
 
-        long p9999Integral = 0L;
-        long p99Integral = 0L;
         long integral = 0L;
         try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
         {
@@ -61,17 +94,13 @@ public class Assertions
                     break;
 
                 integral += histogram.getMaxValue();
-                p99Integral += histogram.getValueAtPercentile(.99);
-                p9999Integral += histogram.getValueAtPercentile(.9999);
             }
         }
         integral /= 1000;
-        p99Integral /= 1000;
-        p9999Integral /= 1000;
 
         long jhiccupIntegral = loadJHiccupIntegral(reportRootPath, nodeArray);
 
-        System.out.println(nodeArray.id() + " max lat integral = " + integral + "; p99 = " + p99Integral + "; p9999 = " + p9999Integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
+        System.out.println(nodeArray.id() + " max lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
         int errorMarginInPercent = (int)(errorMargin * 100);
         double error = expectedValue * errorMargin;
         double highBound = expectedValue + error;

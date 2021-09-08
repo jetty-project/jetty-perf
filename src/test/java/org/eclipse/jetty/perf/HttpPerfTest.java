@@ -10,10 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,14 +50,13 @@ import org.slf4j.LoggerFactory;
 
 import static org.eclipse.jetty.perf.assertions.Assertions.assertHttpClientStatuses;
 import static org.eclipse.jetty.perf.assertions.Assertions.assertMaxLatency;
+import static org.eclipse.jetty.perf.assertions.Assertions.assertPLatency;
 import static org.eclipse.jetty.perf.assertions.Assertions.assertThroughput;
 import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 
 public class HttpPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(HttpPerfTest.class);
-
-    private static final long COMMON_TIME = System.currentTimeMillis();
 
     private static Stream<PerfTestParams> params()
     {
@@ -75,8 +72,7 @@ public class HttpPerfTest implements Serializable
     @MethodSource("params")
     public void testPerf(PerfTestParams params) throws Exception
     {
-        String formattedDate = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date(COMMON_TIME));
-        Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", formattedDate, testName(), params.toString());
+        Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", testName(), params.toString());
 
         try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), reportRootPath.resolve("outerr.log")))
         {
@@ -200,10 +196,18 @@ public class HttpPerfTest implements Serializable
             assertHttpClientStatuses(reportRootPath, probeCfg, 0.02);
             assertThroughput(reportRootPath, probeCfg, 18_000, 0.02);
             assertMaxLatency(reportRootPath, probeCfg, 215_000, 0.02);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.95);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.99);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.999);
+            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 0.9999);
 
             // assert server had a given throughput and max latency
             assertThroughput(reportRootPath, serverCfg, 36_000_000, 0.02);
             assertMaxLatency(reportRootPath, serverCfg, 150_000, 0.02);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.95);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.99);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.999);
+            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 0.9999);
         }
     }
 
