@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-    agent any
+    agent { node { label 'load-master' } }
     options {
       buildDiscarder logRotator( numToKeepStr: '48' )
     }
