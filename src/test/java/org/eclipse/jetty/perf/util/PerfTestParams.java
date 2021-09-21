@@ -139,7 +139,7 @@ public class PerfTestParams implements Serializable
 
     public int getServerPort()
     {
-        return getProtocol().isSecure() ? 8443 : 8080;
+        return getProtocol().isSecure() ? 9443 : 9080;
     }
 
     public int getParticipantCount()
