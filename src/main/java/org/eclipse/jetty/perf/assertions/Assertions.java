@@ -63,9 +63,9 @@ public class Assertions
         }
         integral /= 1000;
 
-        long jhiccupIntegral = loadJHiccupIntegral(reportRootPath, nodeArray);
+        long jhiccupIntegral = loadJHiccupPIntegral(reportRootPath, nodeArray, percentile);
 
-        System.out.println(nodeArray.id() + " p" + (percentile * 100) + " lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
+        System.out.println(nodeArray.id() + " p" + ((int)percentile) + " lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
         int errorMarginInPercent = (int)(errorMargin * 100);
         double error = expectedValue * errorMargin;
         double highBound = expectedValue + error;
@@ -98,7 +98,7 @@ public class Assertions
         }
         integral /= 1000;
 
-        long jhiccupIntegral = loadJHiccupIntegral(reportRootPath, nodeArray);
+        long jhiccupIntegral = loadJHiccupMaxValueIntegral(reportRootPath, nodeArray);
 
         System.out.println(nodeArray.id() + " max lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
         int errorMarginInPercent = (int)(errorMargin * 100);
@@ -114,7 +114,7 @@ public class Assertions
             System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
     }
 
-    public static long loadJHiccupIntegral(Path reportRootPath, NodeArrayConfiguration nodeArray)
+    public static long loadJHiccupMaxValueIntegral(Path reportRootPath, NodeArrayConfiguration nodeArray)
     {
         Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
         Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("jhiccup.hlog");
@@ -129,6 +129,32 @@ public class Assertions
                     break;
 
                 integral += histogram.getMaxValue();
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            return 0L;
+        }
+        integral /= 1000;
+
+        return integral;
+    }
+
+    public static long loadJHiccupPIntegral(Path reportRootPath, NodeArrayConfiguration nodeArray, double percentile)
+    {
+        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
+        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("jhiccup.hlog");
+
+        long integral = 0L;
+        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
+        {
+            while (true)
+            {
+                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
+                if (histogram == null)
+                    break;
+
+                integral += histogram.getValueAtPercentile(percentile);
             }
         }
         catch (FileNotFoundException e)
