@@ -65,7 +65,7 @@ public class Assertions
 
         long jhiccupIntegral = loadJHiccupPIntegral(reportRootPath, nodeArray, percentile);
 
-        System.out.println(nodeArray.id() + " p" + ((int)percentile) + " lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
+        System.out.println(nodeArray.id() + " p" + percentile + " lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
         int errorMarginInPercent = (int)(errorMargin * 100);
         double error = expectedValue * errorMargin;
         double highBound = expectedValue + error;
