@@ -18,19 +18,20 @@ public class Assertions
 
     public static boolean assertThroughput(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws FileNotFoundException
     {
-        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
-        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
-
         long totalCount = 0L;
-        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
+        for (Node node : nodeArray.nodes())
         {
-            while (true)
+            Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
+            try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
             {
-                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
-                if (histogram == null)
-                    break;
+                while (true)
+                {
+                    AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
+                    if (histogram == null)
+                        break;
 
-                totalCount += histogram.getTotalCount();
+                    totalCount += histogram.getTotalCount();
+                }
             }
         }
 
@@ -52,22 +53,23 @@ public class Assertions
 
     public static boolean assertPLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, double percentile) throws FileNotFoundException
     {
-        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
-        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
-
         long integral = 0L;
-        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
+        for (Node node : nodeArray.nodes())
         {
-            while (true)
+            Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
+            try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
             {
-                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
-                if (histogram == null)
-                    break;
+                while (true)
+                {
+                    AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
+                    if (histogram == null)
+                        break;
 
-                integral += histogram.getValueAtPercentile(percentile);
+                    integral += histogram.getValueAtPercentile(percentile);
+                }
             }
         }
-        integral /= 1000;
+        integral /= 1_000; // convert ns -> us
 
         System.out.println(nodeArray.id() + " p" + percentile + " lat integral = " + integral + " vs expected " + expectedValue);
         double error = expectedValue * errorMargin / 100.0;

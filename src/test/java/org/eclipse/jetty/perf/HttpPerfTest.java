@@ -196,7 +196,8 @@ public class HttpPerfTest implements Serializable
 
             // assert loaders did not get too many HTTP errors
             succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 1);
-            //TODO assert loaders throughput
+            System.out.println("Asserting loaders throughput");
+            succeeded &= assertThroughput(reportRootPath, loadersCfg, 240_000, 1);
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
             succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 1);
@@ -304,7 +305,7 @@ public class HttpPerfTest implements Serializable
             .runFor(duration.toSeconds(), TimeUnit.SECONDS)
             .threads(2)
             .rateRampUpPeriod(0)
-            .resourceRate(50_000)
+            .resourceRate(60_000)
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
