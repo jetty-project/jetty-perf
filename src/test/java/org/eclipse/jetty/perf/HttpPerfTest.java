@@ -49,10 +49,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.eclipse.jetty.perf.assertions.Assertions.assertHttpClientStatuses;
-import static org.eclipse.jetty.perf.assertions.Assertions.assertMaxLatency;
 import static org.eclipse.jetty.perf.assertions.Assertions.assertPLatency;
 import static org.eclipse.jetty.perf.assertions.Assertions.assertThroughput;
 import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 
 public class HttpPerfTest implements Serializable
 {
@@ -173,10 +174,12 @@ public class HttpPerfTest implements Serializable
                 NodeJob dump = (tools) ->
                 {
                     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+                    System.err.println("---- ---- ---- ---- ---- ---- ---- ----");
                     for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true))
                     {
                         System.err.println(threadInfo);
                     }
+                    System.err.println("---- ---- ---- ---- ---- ---- ---- ----");
                 };
                 serverArray.executeOnAll(dump).get();
                 loadersArray.executeOnAll(dump).get();
@@ -189,29 +192,55 @@ public class HttpPerfTest implements Serializable
             NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
             NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
 
+            boolean succeeded = true;
+
             // assert loaders did not get too many HTTP errors
-            assertHttpClientStatuses(reportRootPath, loadersCfg, 0.02);
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 1);
+            //TODO assert loaders throughput
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
-            assertHttpClientStatuses(reportRootPath, probeCfg, 0.02);
-            assertThroughput(reportRootPath, probeCfg, 18_000, 0.02);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 50);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 90);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 95);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 99);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 99.9);
-            assertPLatency(reportRootPath, probeCfg, 215_000, 0.02, 99.99);
-            assertMaxLatency(reportRootPath, probeCfg, 215_000, 0.02);
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 1);
+
+            System.out.println("Asserting probe throughput");
+            succeeded &= assertThroughput(reportRootPath, probeCfg, 18_000, 1);
+            System.out.println("Asserting probe latency");
+            switch (params.getProtocol())
+            {
+                case http:
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 870_000, 15, 99);
+                    break;
+                case https:
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 760_000, 15, 99);
+                    break;
+                case h2c:
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 715_000, 15, 99);
+                    break;
+                case h2:
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 800_000, 15, 99);
+                    break;
+            }
 
             // assert server had a given throughput and max latency
-            assertThroughput(reportRootPath, serverCfg, 36_000_000, 0.02);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 50);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 90);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 95);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 99);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 99.9);
-            assertPLatency(reportRootPath, serverCfg, 150_000, 0.02, 99.99);
-            assertMaxLatency(reportRootPath, serverCfg, 150_000, 0.02);
+            System.out.println("Asserting server throughput");
+            succeeded &= assertThroughput(reportRootPath, serverCfg, 36_000_000, 1);
+            System.out.println("Asserting server latency");
+            switch (params.getProtocol())
+            {
+                case http:
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 26_000, 9, 99);
+                    break;
+                case https:
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 33_000, 16, 99);
+                    break;
+                case h2c:
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 62_000, 10, 99);
+                    break;
+                case h2:
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 150_000, 23, 99);
+                    break;
+            }
+
+            assertThat(succeeded, is(true));
         }
     }
 

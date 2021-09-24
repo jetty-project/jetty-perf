@@ -10,12 +10,13 @@ import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 
 public class Assertions
 {
-    public static void assertHttpClientStatuses(Path reportRootPath, NodeArrayConfiguration nodeArray, double errorMargin)
+    public static boolean assertHttpClientStatuses(Path reportRootPath, NodeArrayConfiguration nodeArray, double errorMargin)
     {
         // TODO
+        return true;
     }
 
-    public static void assertThroughput(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws FileNotFoundException
+    public static boolean assertThroughput(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws FileNotFoundException
     {
         Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
         Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
@@ -34,17 +35,22 @@ public class Assertions
         }
 
         System.out.println(nodeArray.id() + " throughput = " + totalCount + " vs expected " + expectedValue);
-        int errorMarginInPercent = (int)(errorMargin * 100);
-        double error = expectedValue * errorMargin;
+        double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
         if (totalCount >= lowBound && totalCount <= highBound)
-            System.out.println("OK; value within " + errorMarginInPercent + "% error margin");
+        {
+            System.out.println("OK; value within " + errorMargin + "% error margin");
+            return true;
+        }
         else
-            System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
+        {
+            System.out.println("NOK; value out of " + errorMargin + "% error margin");
+            return false;
+        }
     }
 
-    public static void assertPLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, double percentile) throws FileNotFoundException
+    public static boolean assertPLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, double percentile) throws FileNotFoundException
     {
         Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
         Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
@@ -63,106 +69,20 @@ public class Assertions
         }
         integral /= 1000;
 
-        long jhiccupIntegral = loadJHiccupPIntegral(reportRootPath, nodeArray, percentile);
-
-        System.out.println(nodeArray.id() + " p" + percentile + " lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
-        int errorMarginInPercent = (int)(errorMargin * 100);
-        double error = expectedValue * errorMargin;
+        System.out.println(nodeArray.id() + " p" + percentile + " lat integral = " + integral + " vs expected " + expectedValue);
+        double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
 
-        integral -= jhiccupIntegral;
-
         if (integral >= lowBound && integral <= highBound)
-            System.out.println("OK; value within " + errorMarginInPercent + "% error margin");
+        {
+            System.out.println("OK; value within " + errorMargin + "% error margin");
+            return true;
+        }
         else
-            System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
-    }
-
-    public static void assertMaxLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws FileNotFoundException
-    {
-        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
-        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
-
-        long integral = 0L;
-        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
         {
-            while (true)
-            {
-                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
-                if (histogram == null)
-                    break;
-
-                integral += histogram.getMaxValue();
-            }
+            System.out.println("NOK; value out of " + errorMargin + "% error margin");
+            return false;
         }
-        integral /= 1000;
-
-        long jhiccupIntegral = loadJHiccupMaxValueIntegral(reportRootPath, nodeArray);
-
-        System.out.println(nodeArray.id() + " max lat integral = " + integral + "; jhiccup integral = " + jhiccupIntegral + "; corrected integral = " + (integral - jhiccupIntegral) + " vs expected " + expectedValue);
-        int errorMarginInPercent = (int)(errorMargin * 100);
-        double error = expectedValue * errorMargin;
-        double highBound = expectedValue + error;
-        double lowBound = expectedValue - error;
-
-        integral -= jhiccupIntegral;
-
-        if (integral >= lowBound && integral <= highBound)
-            System.out.println("OK; value within " + errorMarginInPercent + "% error margin");
-        else
-            System.out.println("NOK; value out of " + errorMarginInPercent + "% error margin");
-    }
-
-    public static long loadJHiccupMaxValueIntegral(Path reportRootPath, NodeArrayConfiguration nodeArray)
-    {
-        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
-        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("jhiccup.hlog");
-
-        long integral = 0L;
-        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
-        {
-            while (true)
-            {
-                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
-                if (histogram == null)
-                    break;
-
-                integral += histogram.getMaxValue();
-            }
-        }
-        catch (FileNotFoundException e)
-        {
-            return 0L;
-        }
-        integral /= 1000;
-
-        return integral;
-    }
-
-    public static long loadJHiccupPIntegral(Path reportRootPath, NodeArrayConfiguration nodeArray, double percentile)
-    {
-        Node node = nodeArray.nodes().stream().findFirst().orElseThrow();
-        Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("jhiccup.hlog");
-
-        long integral = 0L;
-        try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
-        {
-            while (true)
-            {
-                AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
-                if (histogram == null)
-                    break;
-
-                integral += histogram.getValueAtPercentile(percentile);
-            }
-        }
-        catch (FileNotFoundException e)
-        {
-            return 0L;
-        }
-        integral /= 1000;
-
-        return integral;
     }
 }
