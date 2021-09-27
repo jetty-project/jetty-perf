@@ -242,7 +242,7 @@ public class HttpPerfTest implements Serializable
             }
 
             // TODO failed tests prevent jenkins from archiving results
-            //assertThat(succeeded, is(true));
+            assertThat(succeeded, is(true));
         }
     }
 
