@@ -208,16 +208,16 @@ public class HttpPerfTest implements Serializable
             switch (params.getProtocol())
             {
                 case http:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 870_000, 15, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 135_000, 50, 99);
                     break;
                 case https:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 760_000, 15, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 360_000, 50, 99);
                     break;
                 case h2c:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 715_000, 15, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 120_000, 50, 99);
                     break;
                 case h2:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 800_000, 15, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 160_000, 50, 99);
                     break;
             }
 
@@ -228,16 +228,16 @@ public class HttpPerfTest implements Serializable
             switch (params.getProtocol())
             {
                 case http:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 26_000, 9, 99);
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 5_000, 25, 99);
                     break;
                 case https:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 33_000, 16, 99);
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 6_500, 25, 99);
                     break;
                 case h2c:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 62_000, 10, 99);
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 19_000, 50, 99);
                     break;
                 case h2:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 150_000, 23, 99);
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 70_000, 50, 99);
                     break;
             }
 
