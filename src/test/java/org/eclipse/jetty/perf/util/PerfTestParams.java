@@ -160,7 +160,7 @@ public class PerfTestParams implements Serializable
 
     private static String[] defaultJvmOpts(String... extra)
     {
-        List<String> result = new ArrayList<>(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
+        List<String> result = new ArrayList<>(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints", "-XX:+UseZGC"));
         result.addAll(Arrays.asList(extra));
         return result.toArray(new String[0]);
     }

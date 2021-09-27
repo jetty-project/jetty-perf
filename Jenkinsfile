@@ -7,7 +7,7 @@ pipeline {
     }
     environment {
       TEST_TO_RUN = '*'
-      JDK_TO_USE = 'load-jdk11'
+      JDK_TO_USE = 'load-jdk17'
       JETTY_VERSION = '10.0.6'
     }
     tools {
