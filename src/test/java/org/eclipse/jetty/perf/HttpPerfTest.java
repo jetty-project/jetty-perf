@@ -208,16 +208,16 @@ public class HttpPerfTest implements Serializable
             switch (params.getProtocol())
             {
                 case http:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 135_000, 50, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 110_000, 50, 99);
                     break;
                 case https:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 360_000, 50, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 130_000, 50, 99);
                     break;
                 case h2c:
                     succeeded &= assertPLatency(reportRootPath, probeCfg, 120_000, 50, 99);
                     break;
                 case h2:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 160_000, 50, 99);
+                    succeeded &= assertPLatency(reportRootPath, probeCfg, 140_000, 50, 99);
                     break;
             }
 
