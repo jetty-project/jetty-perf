@@ -1,21 +1,14 @@
 package org.eclipse.jetty.perf.histogram.loader;
 
 import java.io.FileNotFoundException;
-import java.util.Timer;
-import java.util.TimerTask;
 
-import org.HdrHistogram.Histogram;
-import org.HdrHistogram.HistogramLogWriter;
-import org.HdrHistogram.Recorder;
+import org.eclipse.jetty.perf.util.HistogramLogRecorder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 
 public class ResponseTimeListener implements Resource.NodeListener, LoadGenerator.CompleteListener
 {
-    private final Recorder recorder = new Recorder(3);
-    private final Timer timer = new Timer();
-    private final HistogramLogWriter writer;
-    private boolean record;
+    private final HistogramLogRecorder recorder;
 
     public ResponseTimeListener() throws FileNotFoundException
     {
@@ -24,40 +17,23 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
 
     public ResponseTimeListener(String histogramFilename) throws FileNotFoundException
     {
-        writer = new HistogramLogWriter(histogramFilename);
+        this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
     }
 
     public void startRecording()
     {
-        this.record = true;
-        long now = System.currentTimeMillis();
-        writer.setBaseTime(now);
-        writer.outputBaseTime(now);
-        writer.outputStartTime(now);
-        timer.schedule(new TimerTask()
-        {
-            private final Histogram h = new Histogram(3);
-
-            @Override
-            public void run()
-            {
-                recorder.getIntervalHistogramInto(h);
-                writer.outputIntervalHistogram(h);
-                h.reset();
-            }
-        }, 1000, 1000);
+        recorder.startRecording();
     }
 
     public void stopRecording()
     {
-        timer.cancel();
-        writer.close();
+        recorder.stopRecording();
     }
 
     @Override
     public void onResourceNode(Resource.Info info)
     {
-        if (record)
+        if (recorder.isRecording())
         {
             long responseTime = info.getResponseTime() - info.getRequestTime();
             recorder.recordValue(responseTime);
