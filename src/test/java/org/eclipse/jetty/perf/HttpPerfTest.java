@@ -234,10 +234,10 @@ public class HttpPerfTest implements Serializable
                     succeeded &= assertPLatency(reportRootPath, serverCfg, 6_500, 25, 99);
                     break;
                 case h2c:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 19_000, 50, 99);
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 13_000, 50, 99);
                     break;
                 case h2:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 70_000, 50, 99);
+                    succeeded &= assertPLatency(reportRootPath, serverCfg, 45_000, 50, 99);
                     break;
             }
 
