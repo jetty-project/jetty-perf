@@ -87,7 +87,7 @@ pipeline {
                   }
                 }
                 junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-                archiveArtifacts artifacts: "**/target/reports/**/**",allowEmptyArchive: true
+                archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
             }
         }
     }
