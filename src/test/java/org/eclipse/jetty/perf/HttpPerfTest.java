@@ -7,7 +7,6 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -73,10 +72,9 @@ public class HttpPerfTest implements Serializable
     @MethodSource("params")
     public void testPerf(PerfTestParams params) throws Exception
     {
-        Path reportRootPath = FileSystems.getDefault().getPath("target", "reports", testName(), params.toString());
-
-        try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), reportRootPath.resolve("outerr.log")))
+        try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), params.toString()))
         {
+            Path reportRootPath = outputCapturingCluster.getReportRootPath();
             Cluster cluster = outputCapturingCluster.getCluster();
             NodeArray serverArray = cluster.nodeArray("server");
             NodeArray loadersArray = cluster.nodeArray("loaders");
@@ -376,13 +374,5 @@ public class HttpPerfTest implements Serializable
             }
         });
         env.put(CompletableFuture.class.getName(), cf);
-    }
-
-    private static String testName()
-    {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        String className = stackTrace[2].getClassName();
-        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        return simpleClassName + "_" + stackTrace[2].getMethodName();
     }
 }

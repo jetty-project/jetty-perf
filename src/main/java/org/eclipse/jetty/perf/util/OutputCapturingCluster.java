@@ -1,10 +1,11 @@
 package org.eclipse.jetty.perf.util;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,12 +22,33 @@ public class OutputCapturingCluster implements AutoCloseable
 
     private final OutErrCapture outErrCapture;
     private final Cluster cluster;
+    private final Path reportRootPath;
 
-    public OutputCapturingCluster(ClusterConfiguration clusterConfiguration, Path outErrCaptureFile) throws Exception
+    public OutputCapturingCluster(ClusterConfiguration clusterConfiguration, String... testParameterNames) throws Exception
     {
+        this(clusterConfiguration, FileSystems.getDefault().getPath("target", "reports"), generateId(), testParameterNames);
+    }
+
+    private OutputCapturingCluster(ClusterConfiguration clusterConfiguration, Path reportsRoot, String testName, String... testParameterNames) throws Exception
+    {
+        Path reportRootPath = reportsRoot.resolve(testName);
+        for (String subPath : testParameterNames)
+            reportRootPath = reportRootPath.resolve(subPath);
+
+        // if report folder already exists, rename it out of the way
+        Path parentFolder = reportRootPath.getParent();
+        if (Files.isDirectory(parentFolder))
+        {
+            String timestamp = "" + Files.getLastModifiedTime(parentFolder).toMillis();
+            Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
+            Files.move(parentFolder, newFolder);
+        }
+
+        this.reportRootPath = reportRootPath;
+        Path outErrCaptureFile = reportRootPath.resolve("outerr.log");
         outErrCapture = new OutErrCapture(outErrCaptureFile);
         LOG.info("=== Output capture started ({}) ===", outErrCaptureFile);
-        cluster = new Cluster(generateId(), clusterConfiguration);
+        cluster = new Cluster(testName, clusterConfiguration);
     }
 
     private static String generateId()
@@ -50,6 +72,11 @@ public class OutputCapturingCluster implements AutoCloseable
         }
     }
 
+    public Path getReportRootPath()
+    {
+        return reportRootPath;
+    }
+
     public Cluster getCluster()
     {
         return cluster;
@@ -63,15 +90,8 @@ public class OutputCapturingCluster implements AutoCloseable
 
         public OutErrCapture(Path captureFile) throws IOException
         {
-            this(captureFile.toFile());
-        }
-
-        private OutErrCapture(File captureFile) throws IOException
-        {
-            if (!captureFile.getParentFile().mkdirs())
-                throw new IOException("Cannot create folder for out/err capture file");
-            ps = new PrintStream(new MultiplexingOutputStream(new FileOutputStream(captureFile), new IgnoreCloseOutputStream(System.out)));
-
+            Files.createDirectories(captureFile.getParent());
+            ps = new PrintStream(new MultiplexingOutputStream(new FileOutputStream(captureFile.toFile()), new IgnoreCloseOutputStream(System.out)));
             oldOut = System.out;
             oldErr = System.err;
             System.setOut(ps);
