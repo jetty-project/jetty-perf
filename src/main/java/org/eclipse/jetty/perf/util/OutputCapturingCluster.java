@@ -36,9 +36,9 @@ public class OutputCapturingCluster implements AutoCloseable
             reportRootPath = reportRootPath.resolve(subPath);
 
         // if report folder already exists, rename it out of the way
-        Path parentFolder = reportRootPath.getParent();
-        if (Files.isDirectory(parentFolder))
+        if (Files.isDirectory(reportRootPath))
         {
+            Path parentFolder = reportsRoot.resolve(testName);
             String timestamp = "" + Files.getLastModifiedTime(parentFolder).toMillis();
             Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
             Files.move(parentFolder, newFolder);

@@ -239,8 +239,7 @@ public class HttpPerfTest implements Serializable
                     break;
             }
 
-            // TODO failed tests prevent jenkins from archiving results
-            assertThat(succeeded, is(true));
+            assertThat("Performance assertion failure for " + params, succeeded, is(true));
         }
     }
 
