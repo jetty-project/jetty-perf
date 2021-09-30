@@ -75,21 +75,25 @@ pipeline {
         stage('jetty-perf') {
             agent { node { label 'load-master' } }
             steps {
-                unstash name: 'toolchains.xml'
-                sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
-                withEnv(["JAVA_HOME=${ tool "jdk11" }",
-                         "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
-                         "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
-                  configFileProvider(
-                          [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
-                    //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
-                  }
+              unstash name: 'toolchains.xml'
+              sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+              withEnv(["JAVA_HOME=${ tool "jdk11" }",
+                       "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
+                       "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                configFileProvider(
+                        [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
+                  //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                 }
-                junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-                archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
+              }
             }
         }
+    }
+    post {
+      always {
+        junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+        archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
+      }
     }
 }
 
