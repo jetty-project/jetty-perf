@@ -20,7 +20,14 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk11");
+    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk17");
+
+    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
+        ConfigurableMonitor.Item.CMDLINE_CPU,
+        ConfigurableMonitor.Item.CMDLINE_MEMORY,
+        ConfigurableMonitor.Item.CMDLINE_NETWORK,
+        ConfigurableMonitor.Item.JHICCUP
+    );
 
     private static final SimpleClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
         .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE)))
@@ -39,15 +46,6 @@ public class PerfTestParams implements Serializable
             .node(new Node("load-sample"))
             .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
-
-    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
-        ConfigurableMonitor.Item.CMDLINE_CPU,
-        ConfigurableMonitor.Item.CMDLINE_MEMORY,
-        ConfigurableMonitor.Item.CMDLINE_NETWORK,
-        ConfigurableMonitor.Item.ASYNC_PROF_CPU,
-        ConfigurableMonitor.Item.JHICCUP
-    );
-
 
     public enum Protocol
     {
@@ -187,7 +185,10 @@ public class PerfTestParams implements Serializable
 
     private static String[] defaultJvmOpts(String... extra)
     {
-        List<String> result = new ArrayList<>(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints", "-XX:+UseZGC"));
+        List<String> result = new ArrayList<>();
+        result.add("-XX:+UseZGC");
+        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
+            result.addAll(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
         result.addAll(Arrays.asList(extra));
         return result.toArray(new String[0]);
     }

@@ -151,8 +151,8 @@ public class HttpPerfTest implements Serializable
             {
                 // signal all participants to start
                 cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
-                // wait for the run duration
-                Thread.sleep(RUN_DURATION.toMillis());
+                // wait for the run duration, plus a little slack time
+                Thread.sleep(RUN_DURATION.plusSeconds(2).toMillis());
                 // signal all participants to stop
                 cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
 

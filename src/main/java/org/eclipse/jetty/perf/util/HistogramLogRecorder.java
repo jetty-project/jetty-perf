@@ -16,19 +16,30 @@ public class HistogramLogRecorder implements Closeable
         NOT_RECORDING, RECORDING, CLOSED
     }
 
-    private final int intervalInMs;
-    private final int numberOfSignificantValueDigits;
     private final Recorder recorder;
     private final Timer timer = new Timer();
     private final HistogramLogWriter writer;
+    private volatile long startTimestamp;
     private volatile State state = State.NOT_RECORDING;
 
     public HistogramLogRecorder(String histogramFilename, int numberOfSignificantValueDigits, int intervalInMs) throws FileNotFoundException
     {
-        this.numberOfSignificantValueDigits = numberOfSignificantValueDigits;
-        this.intervalInMs = intervalInMs;
         this.recorder = new Recorder(numberOfSignificantValueDigits);
         this.writer = new HistogramLogWriter(histogramFilename);
+        timer.schedule(new TimerTask()
+        {
+            private Histogram intervalHistogram;
+            @Override
+            public void run()
+            {
+                intervalHistogram = recorder.getIntervalHistogram(intervalHistogram);
+                if (state == State.RECORDING)
+                {
+                    intervalHistogram.setStartTimeStamp(startTimestamp);
+                    writer.outputIntervalHistogram(intervalHistogram);
+                }
+            }
+        }, intervalInMs, intervalInMs);
     }
 
     public void startRecording()
@@ -38,22 +49,10 @@ public class HistogramLogRecorder implements Closeable
         state = State.RECORDING;
 
         long now = System.currentTimeMillis();
-        recorder.reset();
         writer.setBaseTime(now);
         writer.outputBaseTime(now);
         writer.outputStartTime(now);
-        timer.schedule(new TimerTask()
-        {
-            private final Histogram h = new Histogram(numberOfSignificantValueDigits);
-
-            @Override
-            public void run()
-            {
-                recorder.getIntervalHistogramInto(h);
-                writer.outputIntervalHistogram(h);
-                h.reset();
-            }
-        }, intervalInMs, intervalInMs);
+        startTimestamp = now;
     }
 
     @Override
