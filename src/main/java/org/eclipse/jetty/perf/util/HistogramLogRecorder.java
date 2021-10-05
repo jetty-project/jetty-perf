@@ -44,12 +44,12 @@ public class HistogramLogRecorder implements Closeable
     {
         if (state != State.NOT_RECORDING)
             throw new IllegalStateException("current state: " + state);
-        state = State.RECORDING;
 
         long now = System.currentTimeMillis();
         writer.setBaseTime(now);
         writer.outputBaseTime(now);
         writer.outputStartTime(now);
+        state = State.RECORDING;
     }
 
     @Override
