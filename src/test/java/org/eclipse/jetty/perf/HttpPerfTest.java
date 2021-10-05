@@ -9,7 +9,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,8 +88,8 @@ public class HttpPerfTest implements Serializable
 
             // start the server and the generators
             serverArray.executeOnAll(tools -> startServer(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
-            loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, params.getTotalDuration(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
-            probeArray.executeOnAll(tools -> runProbeGenerator(params, serverUri, params.getTotalDuration(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            probeArray.executeOnAll(tools -> runProbeGenerator(params, serverUri, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
             Thread.sleep(params.getWarmupDuration().toMillis());
@@ -291,7 +290,7 @@ public class HttpPerfTest implements Serializable
         env.put(Server.class.getName(), server);
     }
 
-    private void runLoadGenerator(PerfTestParams params, URI serverUri, Duration duration, Map<String, Object> env) throws IOException
+    private void runLoadGenerator(PerfTestParams params, URI serverUri, Map<String, Object> env) throws IOException
     {
         ResponseTimeListener responseTimeListener = new ResponseTimeListener();
         env.put(ResponseTimeListener.class.getName(), responseTimeListener);
@@ -303,9 +302,9 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .threads(2)
-            .rateRampUpPeriod(0)
+            .runFor(params.getTotalDuration().toSeconds(), TimeUnit.SECONDS)
+            .threads(4)
+            .rateRampUpPeriod(params.getWarmupDuration().toSeconds() / 2)
             .resourceRate(60_000)
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
@@ -335,7 +334,7 @@ public class HttpPerfTest implements Serializable
         env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams params, URI serverUri, Duration duration, Map<String, Object> env) throws IOException
+    private void runProbeGenerator(PerfTestParams params, URI serverUri, Map<String, Object> env) throws IOException
     {
         ResponseTimeListener responseTimeListener = new ResponseTimeListener();
         env.put(ResponseTimeListener.class.getName(), responseTimeListener);
@@ -347,8 +346,9 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(duration.toSeconds(), TimeUnit.SECONDS)
-            .rateRampUpPeriod(0)
+            .runFor(params.getTotalDuration().toSeconds(), TimeUnit.SECONDS)
+            .threads(4)
+            .rateRampUpPeriod(params.getWarmupDuration().toSeconds() / 2)
             .resourceRate(100)
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
