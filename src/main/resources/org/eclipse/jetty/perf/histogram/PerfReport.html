@@ -166,18 +166,30 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
     }
 
     function graphLat(histograms, title) {
+        const percentile = 99;
         const data = {
             labels: [],
             datasets: [{
                 type: 'bar',
                 data: [],
-                borderColor: 'rgba(0, 255, 0, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 1)',
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(x) {
+                      const ts = histograms[x.dataIndex].startTimeStampMsec;
+                      return percentile + 'th percentile\n' + new Date(ts).toISOString();
+                    }
+                  }
+                }
+            }, {
+                type: 'bar',
+                data: [],
                 backgroundColor: 'rgba(255, 206, 86, 1)',
                 tooltip: {
                   callbacks: {
                     afterLabel: function(x) {
                       const ts = histograms[x.dataIndex].startTimeStampMsec;
-                      return new Date(ts).toISOString();
+                      return 'Max value\n' + new Date(ts).toISOString();
                     }
                   }
                 }
@@ -188,14 +200,17 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         var maxIntegral = 0;
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
+            // divide values by 1000 b/c histogram contains ns and the graph is in us
             const min = (histogram._totalCount === 0) ? 0 : histogram.minNonZeroValue / 1000;
             const max = histogram.maxValue / 1000;
+            const pctValue = histogram.getValueAtPercentile(percentile) / 1000;
 
             minIntegral += min;
             maxIntegral += max;
 
-            data.labels.push(i);                       // X axis
-            data.datasets[0].data.push([min, max]);    // Y axis (bottom and top of bar)
+            data.labels.push(i);                          // X axis
+            data.datasets[0].data.push([min, pctValue]);  // Y axis front bar (percentile)
+            data.datasets[1].data.push([min, max]);       // Y axis back bar (max value)
         }
         $('#min-integral-lat').text(minIntegral.toLocaleString());
         $('#max-integral-lat').text(maxIntegral.toLocaleString());
@@ -228,6 +243,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
                   display: true,
                   text: 'Elapsed time (s)'
                 },
+                stacked: true
               },
               y: {
                 title: {
@@ -292,7 +308,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
     </div>
 </div>
 
-<script>
+    <script>
         const title = '##TITLE##';
         const histograms = `##HISTOGRAMS##`;
         report(histograms, title);

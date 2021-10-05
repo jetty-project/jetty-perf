@@ -193,31 +193,32 @@ public class HttpPerfTest implements Serializable
             NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
             NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
             long loadersCount = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).count();
-            long totalRequestCount = params.getLoaderRate() * loadersCount * RUN_DURATION.toSeconds();
+            long totalLoadersRequestCount = params.getLoaderRate() * loadersCount * RUN_DURATION.toSeconds();
+            long totalProbeRequestCount = params.getProbeRate() * RUN_DURATION.toSeconds();
 
             boolean succeeded = true;
 
             // assert loaders did not get too many HTTP errors
             System.out.println(" Asserting loaders statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, totalRequestCount, 0.01); // 1/10_000th of 60K TPS per loader -> max avg of 6 errors per second per loader
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, totalLoadersRequestCount, 0.01); // 1/10_000th of 60K TPS per loader -> max avg of 6 errors per second per loader
 
             // assert loaders had a given throughput
             System.out.println(" Asserting loaders throughput");
-            succeeded &= assertThroughput(reportRootPath, loadersCfg, totalRequestCount, 1);
+            succeeded &= assertThroughput(reportRootPath, loadersCfg, totalLoadersRequestCount, 1);
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
             System.out.println(" Asserting probe statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, totalRequestCount, 0.01);
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, totalProbeRequestCount, 0.01);
 
             // assert probe had a given throughput and max latency
             System.out.println(" Asserting probe throughput");
-            succeeded &= assertThroughput(reportRootPath, probeCfg, 18_000, 1);
+            succeeded &= assertThroughput(reportRootPath, probeCfg, totalProbeRequestCount, 1);
             System.out.println(" Asserting probe latency");
             succeeded &= assertPLatency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 50, 99);
 
             // assert server had a given throughput and max latency
             System.out.println(" Asserting server throughput");
-            succeeded &= assertThroughput(reportRootPath, serverCfg, totalRequestCount, 1);
+            succeeded &= assertThroughput(reportRootPath, serverCfg, totalLoadersRequestCount, 1);
             System.out.println(" Asserting server latency");
             succeeded &= assertPLatency(reportRootPath, serverCfg, params.getExpectedP99ServerLatency(), 25, 99);
 
