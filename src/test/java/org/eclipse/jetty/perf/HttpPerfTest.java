@@ -193,16 +193,19 @@ public class HttpPerfTest implements Serializable
             boolean succeeded = true;
 
             // assert loaders did not get too many HTTP errors
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 1);
-            System.out.println("  Asserting loaders throughput");
+            System.out.println(" Asserting loaders statuses");
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 43_200_000, 1);
+
+            System.out.println(" Asserting loaders throughput");
             succeeded &= assertThroughput(reportRootPath, loadersCfg, 43_200_000, 1); // 43_200_000 == 60K TPS * 4 loaders * 180 seconds
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 1);
+            System.out.println(" Asserting probe statuses");
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 43_200_000, 1);
 
-            System.out.println("  Asserting probe throughput");
+            System.out.println(" Asserting probe throughput");
             succeeded &= assertThroughput(reportRootPath, probeCfg, 18_000, 1);
-            System.out.println("  Asserting probe latency");
+            System.out.println(" Asserting probe latency");
             switch (params.getProtocol())
             {
                 case http:
@@ -220,9 +223,9 @@ public class HttpPerfTest implements Serializable
             }
 
             // assert server had a given throughput and max latency
-            System.out.println("  Asserting server throughput");
+            System.out.println(" Asserting server throughput");
             succeeded &= assertThroughput(reportRootPath, serverCfg, 43_200_000, 1);
-            System.out.println("  Asserting server latency");
+            System.out.println(" Asserting server latency");
             switch (params.getProtocol())
             {
                 case http:
