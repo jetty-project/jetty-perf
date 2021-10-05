@@ -31,7 +31,7 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
 
     public void stopRecording()
     {
-        recorder.stopRecording();
+        recorder.close();
     }
 
     @Override
@@ -43,23 +43,17 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     @Override
     public void onRequestBegin(Request request)
     {
-        if (recorder.isRecording())
-        {
-            long begin = System.nanoTime();
-            timestamps.put(request, begin);
-        }
+        long begin = System.nanoTime();
+        timestamps.put(request, begin);
     }
 
     @Override
     public void onComplete(Request request)
     {
-        if (recorder.isRecording())
-        {
-            Long begin = timestamps.remove(request);
-            if (begin == null)
-                return;
-            long responseTime = System.nanoTime() - begin;
-            recorder.recordValue(responseTime);
-        }
+        Long begin = timestamps.remove(request);
+        if (begin == null)
+            return;
+        long responseTime = System.nanoTime() - begin;
+        recorder.recordValue(responseTime);
     }
 }

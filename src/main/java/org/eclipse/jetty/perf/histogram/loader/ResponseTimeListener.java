@@ -27,17 +27,14 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
 
     public void stopRecording()
     {
-        recorder.stopRecording();
+        recorder.close();
     }
 
     @Override
     public void onResourceNode(Resource.Info info)
     {
-        if (recorder.isRecording())
-        {
-            long responseTime = info.getResponseTime() - info.getRequestTime();
-            recorder.recordValue(responseTime);
-        }
+        long responseTime = info.getResponseTime() - info.getRequestTime();
+        recorder.recordValue(responseTime);
     }
 
     @Override
