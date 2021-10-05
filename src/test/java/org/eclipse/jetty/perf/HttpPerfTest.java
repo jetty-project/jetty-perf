@@ -192,7 +192,7 @@ public class HttpPerfTest implements Serializable
             NodeArrayConfiguration serverCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
             NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
             NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
-            long loadersCount = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).count();
+            int loadersCount = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).mapToInt(nac -> nac.nodes().size()).sum();
             long totalLoadersRequestCount = params.getLoaderRate() * loadersCount * RUN_DURATION.toSeconds();
             long totalProbeRequestCount = params.getProbeRate() * RUN_DURATION.toSeconds();
 
@@ -200,7 +200,7 @@ public class HttpPerfTest implements Serializable
 
             // assert loaders did not get too many HTTP errors
             System.out.println(" Asserting loaders statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, totalLoadersRequestCount, 0.01); // 1/10_000th of 60K TPS per loader -> max avg of 6 errors per second per loader
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, RUN_DURATION.toSeconds() * 5); // max 5 errors per second on avg
 
             // assert loaders had a given throughput
             System.out.println(" Asserting loaders throughput");
@@ -208,7 +208,7 @@ public class HttpPerfTest implements Serializable
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
             System.out.println(" Asserting probe statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, totalProbeRequestCount, 0.01);
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, RUN_DURATION.toSeconds() * 5); // max 5 errors per second on avg
 
             // assert probe had a given throughput and max latency
             System.out.println(" Asserting probe throughput");

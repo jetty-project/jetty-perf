@@ -19,7 +19,7 @@ import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 
 public class Assertions
 {
-    public static boolean assertHttpClientStatuses(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws IOException
+    public static boolean assertHttpClientStatuses(Path reportRootPath, NodeArrayConfiguration nodeArray, long maxErrors) throws IOException
     {
         List<Map.Entry<Long, String>> counters = new ArrayList<>();
         long totalNot200Count = 0L;
@@ -50,15 +50,14 @@ public class Assertions
             }
         }
 
-        double maxErrors = expectedValue * errorMargin / 100.0;
-        if (totalNot200Count < maxErrors)
+        if (totalNot200Count <= maxErrors)
         {
-            System.out.println("  OK; value within " + errorMargin + "% error margin (" + totalNot200Count + " error(s))");
+            System.out.println("  OK; value within " + maxErrors + " avg error rate (" + totalNot200Count + " error(s))");
             return true;
         }
         else
         {
-            System.out.println("  NOK; value out of " + errorMargin + "% error margin (" + totalNot200Count + " errors)");
+            System.out.println("  NOK; value out of " + maxErrors + " avg error rate (" + totalNot200Count + " errors)");
             for (Map.Entry<Long, String> entry : counters)
             {
                 System.out.printf("   %5d %s\n", entry.getKey(), entry.getValue());
