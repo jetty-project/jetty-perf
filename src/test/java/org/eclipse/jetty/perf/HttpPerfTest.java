@@ -194,14 +194,14 @@ public class HttpPerfTest implements Serializable
 
             // assert loaders did not get too many HTTP errors
             System.out.println(" Asserting loaders statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 43_200_000, 1);
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 43_200_000, 0.01); // 1/10_000th of 60K TPS -> max avg of 6 errors per second
 
             System.out.println(" Asserting loaders throughput");
             succeeded &= assertThroughput(reportRootPath, loadersCfg, 43_200_000, 1); // 43_200_000 == 60K TPS * 4 loaders * 180 seconds
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
             System.out.println(" Asserting probe statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 43_200_000, 1);
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 43_200_000, 0.01);
 
             System.out.println(" Asserting probe throughput");
             succeeded &= assertThroughput(reportRootPath, probeCfg, 18_000, 1);
@@ -242,7 +242,7 @@ public class HttpPerfTest implements Serializable
                     break;
             }
 
-            assertThat("Performance assertion failure for " + params, succeeded, is(true));
+            assertThat("Performance assertions failure for " + params, succeeded, is(true));
         }
     }
 

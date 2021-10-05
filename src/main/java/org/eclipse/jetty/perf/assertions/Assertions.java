@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.HdrHistogram.AbstractHistogram;
@@ -19,8 +21,7 @@ public class Assertions
 {
     public static boolean assertHttpClientStatuses(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin) throws IOException
     {
-        Map<Long, String> counters = new HashMap<>();
-
+        List<Map.Entry<Long, String>> counters = new ArrayList<>();
         long totalNot200Count = 0L;
         for (Node node : nodeArray.nodes())
         {
@@ -40,28 +41,27 @@ public class Assertions
                     long count = Long.parseLong(line.substring(0, idx));
                     String status = line.substring(idx + 1);
 
-                    counters.put(count, status);
                     if (!"200".equals(status))
+                    {
                         totalNot200Count += count;
+                        counters.add(new AbstractMap.SimpleImmutableEntry<>(count, status));
+                    }
                 }
             }
         }
 
-        double error = expectedValue * errorMargin / 100.0;
-        double highBound = expectedValue + error;
-        double lowBound = expectedValue - error;
-
-        if (totalNot200Count >= lowBound && totalNot200Count <= highBound)
+        double maxErrors = expectedValue * errorMargin / 100.0;
+        if (totalNot200Count < maxErrors)
         {
-            System.out.println("  OK; value within " + errorMargin + "% error margin");
+            System.out.println("  OK; value within " + errorMargin + "% error margin (" + totalNot200Count + " error(s))");
             return true;
         }
         else
         {
-            System.out.println("  NOK; value out of " + errorMargin + "% error margin");
-            for (Map.Entry<Long, String> entry : counters.entrySet())
+            System.out.println("  NOK; value out of " + errorMargin + "% error margin (" + totalNot200Count + " errors)");
+            for (Map.Entry<Long, String> entry : counters)
             {
-                System.out.println("  " + entry.getKey() + " " + entry.getValue());
+                System.out.printf("   %5d %s\n", entry.getKey(), entry.getValue());
             }
             return false;
         }
