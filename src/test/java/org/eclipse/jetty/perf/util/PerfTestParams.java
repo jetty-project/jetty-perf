@@ -133,6 +133,52 @@ public class PerfTestParams implements Serializable
         return MONITORED_ITEMS;
     }
 
+    public int getLoaderRate()
+    {
+        // TODO rate should vary according to protocol
+        // i.e.: it takes less resources to serve HTTP vs HTTPS -> rate should be higher for HTTP
+        return 60_000;
+    }
+
+    public int getProbeRate()
+    {
+        return 100;
+    }
+
+    public long getExpectedP99ServerLatency()
+    {
+        switch (protocol)
+        {
+            case http:
+                return 5_000;
+            case https:
+                return 6_500;
+            case h2c:
+                return 13_000;
+            case h2:
+                return 45_000;
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    public long getExpectedP99ProbeLatency()
+    {
+        switch (protocol)
+        {
+            case http:
+                return 110_000;
+            case https:
+                return 130_000;
+            case h2c:
+                return 120_000;
+            case h2:
+                return 140_000;
+            default:
+                throw new AssertionError();
+        }
+    }
+
     @Override
     public String toString()
     {

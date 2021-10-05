@@ -58,8 +58,8 @@ public class HttpPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(HttpPerfTest.class);
 
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(90);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(240);
 
     private static Stream<PerfTestParams> params()
     {
@@ -192,58 +192,34 @@ public class HttpPerfTest implements Serializable
             NodeArrayConfiguration serverCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
             NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
             NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
+            long loadersCount = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).count();
+            long totalRequestCount = params.getLoaderRate() * loadersCount * RUN_DURATION.toSeconds();
 
             boolean succeeded = true;
 
             // assert loaders did not get too many HTTP errors
             System.out.println(" Asserting loaders statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, 43_200_000, 0.01); // 1/10_000th of 60K TPS -> max avg of 6 errors per second
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, totalRequestCount, 0.01); // 1/10_000th of 60K TPS per loader -> max avg of 6 errors per second per loader
 
+            // assert loaders had a given throughput
             System.out.println(" Asserting loaders throughput");
-            succeeded &= assertThroughput(reportRootPath, loadersCfg, 43_200_000, 1); // 43_200_000 == 60K TPS * 4 loaders * 180 seconds
+            succeeded &= assertThroughput(reportRootPath, loadersCfg, totalRequestCount, 1);
 
             // assert probe did not get too many HTTP errors and had a given throughput and max latency
             System.out.println(" Asserting probe statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, 43_200_000, 0.01);
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, totalRequestCount, 0.01);
 
+            // assert probe had a given throughput and max latency
             System.out.println(" Asserting probe throughput");
             succeeded &= assertThroughput(reportRootPath, probeCfg, 18_000, 1);
             System.out.println(" Asserting probe latency");
-            switch (params.getProtocol())
-            {
-                case http:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 110_000, 50, 99);
-                    break;
-                case https:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 130_000, 50, 99);
-                    break;
-                case h2c:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 120_000, 50, 99);
-                    break;
-                case h2:
-                    succeeded &= assertPLatency(reportRootPath, probeCfg, 140_000, 50, 99);
-                    break;
-            }
+            succeeded &= assertPLatency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 50, 99);
 
             // assert server had a given throughput and max latency
             System.out.println(" Asserting server throughput");
-            succeeded &= assertThroughput(reportRootPath, serverCfg, 43_200_000, 1);
+            succeeded &= assertThroughput(reportRootPath, serverCfg, totalRequestCount, 1);
             System.out.println(" Asserting server latency");
-            switch (params.getProtocol())
-            {
-                case http:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 5_000, 25, 99);
-                    break;
-                case https:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 6_500, 25, 99);
-                    break;
-                case h2c:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 13_000, 50, 99);
-                    break;
-                case h2:
-                    succeeded &= assertPLatency(reportRootPath, serverCfg, 45_000, 50, 99);
-                    break;
-            }
+            succeeded &= assertPLatency(reportRootPath, serverCfg, params.getExpectedP99ServerLatency(), 25, 99);
 
             assertThat("Performance assertions failure for " + params, succeeded, is(true));
         }
@@ -309,7 +285,7 @@ public class HttpPerfTest implements Serializable
             .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
             .threads(4)
             .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
-            .resourceRate(60_000)
+            .resourceRate(params.getLoaderRate())
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
@@ -353,7 +329,7 @@ public class HttpPerfTest implements Serializable
             .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
             .threads(4)
             .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
-            .resourceRate(100)
+            .resourceRate(params.getProbeRate())
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
