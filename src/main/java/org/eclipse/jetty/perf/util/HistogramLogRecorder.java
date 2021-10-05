@@ -19,7 +19,6 @@ public class HistogramLogRecorder implements Closeable
     private final Recorder recorder;
     private final Timer timer = new Timer();
     private final HistogramLogWriter writer;
-    private volatile long startTimestamp;
     private volatile State state = State.NOT_RECORDING;
 
     public HistogramLogRecorder(String histogramFilename, int numberOfSignificantValueDigits, int intervalInMs) throws FileNotFoundException
@@ -35,7 +34,6 @@ public class HistogramLogRecorder implements Closeable
                 intervalHistogram = recorder.getIntervalHistogram(intervalHistogram);
                 if (state == State.RECORDING)
                 {
-                    intervalHistogram.setStartTimeStamp(startTimestamp);
                     writer.outputIntervalHistogram(intervalHistogram);
                 }
             }
@@ -52,7 +50,6 @@ public class HistogramLogRecorder implements Closeable
         writer.setBaseTime(now);
         writer.outputBaseTime(now);
         writer.outputStartTime(now);
-        startTimestamp = now;
     }
 
     @Override
