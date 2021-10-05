@@ -3,7 +3,6 @@ package org.eclipse.jetty.perf.util;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,9 +39,6 @@ public class PerfTestParams implements Serializable
             .node(new Node("load-sample"))
             .jvm(new Jvm(new JenkinsToolJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
-
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
@@ -96,21 +92,6 @@ public class PerfTestParams implements Serializable
     public Protocol getProtocol()
     {
         return protocol;
-    }
-
-    public Duration getTotalDuration()
-    {
-        return WARMUP_DURATION.plus(RUN_DURATION).plus(Duration.ofSeconds(10));
-    }
-
-    public Duration getWarmupDuration()
-    {
-        return WARMUP_DURATION;
-    }
-
-    public Duration getRunDuration()
-    {
-        return RUN_DURATION;
     }
 
     public ClusterConfiguration getClusterConfiguration()

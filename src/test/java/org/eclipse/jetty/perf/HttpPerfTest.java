@@ -9,6 +9,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,9 @@ public class HttpPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(HttpPerfTest.class);
 
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(90);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
+
     private static Stream<PerfTestParams> params()
     {
         return Stream.of(
@@ -92,7 +96,7 @@ public class HttpPerfTest implements Serializable
             probeArray.executeOnAll(tools -> runProbeGenerator(params, serverUri, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
-            Thread.sleep(params.getWarmupDuration().toMillis());
+            Thread.sleep(WARMUP_DURATION.toMillis());
 
             LOG.info("Running...");
             long before = System.nanoTime();
@@ -148,7 +152,7 @@ public class HttpPerfTest implements Serializable
                 // signal all participants to start
                 cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
                 // wait for the run duration
-                Thread.sleep(params.getRunDuration().toMillis());
+                Thread.sleep(RUN_DURATION.toMillis());
                 // signal all participants to stop
                 cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
 
@@ -302,9 +306,9 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(params.getTotalDuration().toSeconds(), TimeUnit.SECONDS)
+            .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
             .threads(4)
-            .rateRampUpPeriod(params.getWarmupDuration().toSeconds() / 2)
+            .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
             .resourceRate(60_000)
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
@@ -346,9 +350,9 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(params.getTotalDuration().toSeconds(), TimeUnit.SECONDS)
+            .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
             .threads(4)
-            .rateRampUpPeriod(params.getWarmupDuration().toSeconds() / 2)
+            .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
             .resourceRate(100)
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
