@@ -59,7 +59,7 @@ public class HttpPerfTest implements Serializable
     private static final Logger LOG = LoggerFactory.getLogger(HttpPerfTest.class);
 
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(240);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     private static Stream<PerfTestParams> params()
     {
