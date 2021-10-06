@@ -26,6 +26,7 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.CMDLINE_CPU,
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
+        ConfigurableMonitor.Item.ASYNC_PROF_CPU,
         ConfigurableMonitor.Item.JHICCUP
     );
 
