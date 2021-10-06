@@ -186,7 +186,8 @@ public class PerfTestParams implements Serializable
     private static String[] defaultJvmOpts(String... extra)
     {
         List<String> result = new ArrayList<>();
-        result.add("-XX:+UseShenandoahGC");
+        result.add("-Xlog:gc*:file=gc.log:time,level,tags");
+        result.add("-XX:+UseZGC");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
             result.addAll(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
         result.addAll(Arrays.asList(extra));
