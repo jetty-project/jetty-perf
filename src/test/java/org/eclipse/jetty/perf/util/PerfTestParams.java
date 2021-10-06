@@ -188,6 +188,7 @@ public class PerfTestParams implements Serializable
         List<String> result = new ArrayList<>();
         result.add("-Xlog:gc*:file=gc.log:time,level,tags");
         result.add("-XX:+UseZGC");
+        result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
             result.addAll(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
         result.addAll(Arrays.asList(extra));
