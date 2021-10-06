@@ -256,7 +256,7 @@ public class HttpPerfTest implements Serializable
         }
         connectionFactories.add(http);
 
-        ServerConnector serverConnector = new ServerConnector(server, connectionFactories.toArray(new ConnectionFactory[0]));
+        ServerConnector serverConnector = new ServerConnector(server, 4, 32, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
         LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
