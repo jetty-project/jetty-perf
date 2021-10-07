@@ -155,7 +155,7 @@ public class PerfTestParams implements Serializable
             case h2c:
                 return 13_000;
             case h2:
-                return 20_000;
+                return 28_000;
             default:
                 throw new AssertionError();
         }
