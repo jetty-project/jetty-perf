@@ -50,14 +50,15 @@ public class Assertions
             }
         }
 
+        System.out.println("  " + nodeArray.id() + " errors = " + totalNot200Count + " vs max allowed = " + maxErrors);
         if (totalNot200Count <= maxErrors)
         {
-            System.out.println("  OK; value within " + maxErrors + " avg error rate (" + totalNot200Count + " error(s))");
+            System.out.println("  OK; value <= " + maxErrors);
             return true;
         }
         else
         {
-            System.out.println("  NOK; value out of " + maxErrors + " avg error rate (" + totalNot200Count + " errors)");
+            System.out.println("  NOK; value > " + maxErrors);
             for (Map.Entry<Long, String> entry : counters)
             {
                 System.out.printf("   %5d %s\n", entry.getKey(), entry.getValue());
@@ -85,7 +86,7 @@ public class Assertions
             }
         }
 
-        System.out.println("  " + nodeArray.id() + " throughput = " + totalCount + " vs expected " + expectedValue);
+        System.out.println("  " + nodeArray.id() + " throughput is " + totalCount + " vs expected " + expectedValue);
         double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
@@ -121,7 +122,7 @@ public class Assertions
         }
         integral /= 1_000; // convert ns -> us
 
-        System.out.println("  " + nodeArray.id() + " p" + percentile + " lat integral = " + integral + " vs expected " + expectedValue);
+        System.out.println("  " + nodeArray.id() + " p" + percentile + " lat integral is " + integral + " vs expected " + expectedValue);
         double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;

@@ -198,28 +198,24 @@ public class HttpPerfTest implements Serializable
 
             boolean succeeded = true;
 
+            System.out.println(" Asserting loaders");
             // assert loaders did not get too many HTTP errors
-            System.out.println(" Asserting loaders statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, RUN_DURATION.toSeconds() * 5); // max 5 errors per second on avg
-
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, RUN_DURATION.toSeconds() * 2); // max 2 errors per second on avg
             // assert loaders had a given throughput
-            System.out.println(" Asserting loaders throughput");
             succeeded &= assertThroughput(reportRootPath, loadersCfg, totalLoadersRequestCount, 1);
 
-            // assert probe did not get too many HTTP errors and had a given throughput and max latency
-            System.out.println(" Asserting probe statuses");
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, RUN_DURATION.toSeconds() * 5); // max 5 errors per second on avg
-
+            System.out.println(" Asserting probe");
+            // assert probe did not get too many HTTP errors
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, RUN_DURATION.toSeconds() * 2); // max 2 errors per second on avg
             // assert probe had a given throughput and max latency
-            System.out.println(" Asserting probe throughput");
             succeeded &= assertThroughput(reportRootPath, probeCfg, totalProbeRequestCount, 1);
-            System.out.println(" Asserting probe latency");
+            // assert probe had a given max latency
             succeeded &= assertPLatency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 25, 99);
 
-            // assert server had a given throughput and max latency
-            System.out.println(" Asserting server throughput");
+            System.out.println(" Asserting server");
+            // assert server had a given throughput
             succeeded &= assertThroughput(reportRootPath, serverCfg, totalLoadersRequestCount, 1);
-            System.out.println(" Asserting server latency");
+            // assert server had a given max latency
             succeeded &= assertPLatency(reportRootPath, serverCfg, params.getExpectedP99ServerLatency(), 25, 99);
 
             assertThat("Performance assertions failure for " + params, succeeded, is(true));
