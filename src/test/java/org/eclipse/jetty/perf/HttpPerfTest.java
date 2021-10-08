@@ -226,6 +226,9 @@ public class HttpPerfTest implements Serializable
     {
         Server server = new Server();
 
+//        MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
+//        server.addBean(mbContainer);
+
         HttpConfiguration httpConfiguration = new HttpConfiguration();
         if (params.getProtocol().isSecure())
         {
@@ -252,7 +255,7 @@ public class HttpPerfTest implements Serializable
         }
         connectionFactories.add(http);
 
-        ServerConnector serverConnector = new ServerConnector(server, 32, 32, connectionFactories.toArray(new ConnectionFactory[0]));
+        ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
         LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
