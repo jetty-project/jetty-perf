@@ -104,8 +104,6 @@ public class Assertions
 
     public static boolean assertP99Latency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, int toleratedOutliers) throws FileNotFoundException
     {
-        double percentile = 99.0;
-
         // calculate mean p99 value as a basis to eliminate outliers
         long sum = 0L;
         long count = 0L;
@@ -120,14 +118,15 @@ public class Assertions
                     if (histogram == null)
                         break;
 
-                    sum += histogram.getValueAtPercentile(percentile);
+                    sum += histogram.getValueAtPercentile(99.0);
                     count++;
                 }
             }
         }
         long mean = sum / count;
 
-        long integral = 0L;
+        long trueIntegral = 0L;
+        long correctedIntegral = 0L;
         int outliers = 0;
         for (Node node : nodeArray.nodes())
         {
@@ -140,41 +139,51 @@ public class Assertions
                     if (histogram == null)
                         break;
 
-                    long valueAtPercentile = histogram.getValueAtPercentile(percentile);
+                    long valueAtPercentile = histogram.getValueAtPercentile(99.0);
+                    trueIntegral += valueAtPercentile;
 
                     // replace outliers (values over mean * 2) with mean
                     if (valueAtPercentile <= mean * 2)
                     {
-                        integral += valueAtPercentile;
+                        correctedIntegral += valueAtPercentile;
                     }
                     else
                     {
                         outliers++;
-                        integral += mean;
+                        correctedIntegral += mean;
                     }
                 }
             }
         }
-        integral /= 1_000; // convert ns -> us
+        trueIntegral /= 1_000; // convert ns -> us
+        correctedIntegral /= 1_000; // convert ns -> us
 
-        System.out.println("  " + nodeArray.id() + " p" + percentile + " lat integral is " + integral + " vs expected " + expectedValue + " with " + outliers + " outlier(s)");
+        System.out.println("  " + nodeArray.id() + " P99 lat integral is " + trueIntegral + " vs expected " + expectedValue + " with " + outliers + " outlier(s), corrected to " + correctedIntegral);
         double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
 
-        if (outliers > toleratedOutliers)
-        {
-            System.out.println("  NOK; too many outliers: value over max " + toleratedOutliers);
-            return false;
-        }
-        else if (integral >= lowBound && integral <= highBound)
+        if (trueIntegral >= lowBound && trueIntegral <= highBound)
         {
             System.out.println("  OK; value within " + errorMargin + "% error margin");
             return true;
         }
+        else if (outliers <= toleratedOutliers)
+        {
+            if (correctedIntegral >= lowBound && correctedIntegral <= highBound)
+            {
+                System.out.println("  OK; corrected value within " + errorMargin + "% error margin");
+                return true;
+            }
+            else
+            {
+                System.out.println("  NOK; value (even corrected one) out of " + errorMargin + "% error margin");
+                return false;
+            }
+        }
         else
         {
-            System.out.println("  NOK; value out of " + errorMargin + "% error margin");
+            System.out.println("  NOK; value out of " + errorMargin + "% error margin and has too many outliers");
             return false;
         }
     }
