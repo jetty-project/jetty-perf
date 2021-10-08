@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.eclipse.jetty.perf.assertions.Assertions.assertHttpClientStatuses;
-import static org.eclipse.jetty.perf.assertions.Assertions.assertPLatency;
+import static org.eclipse.jetty.perf.assertions.Assertions.assertP99Latency;
 import static org.eclipse.jetty.perf.assertions.Assertions.assertThroughput;
 import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -210,13 +210,13 @@ public class HttpPerfTest implements Serializable
             // assert probe had a given throughput and max latency
             succeeded &= assertThroughput(reportRootPath, probeCfg, totalProbeRequestCount, 1);
             // assert probe had a given max latency
-            succeeded &= assertPLatency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 25, 99);
+            succeeded &= assertP99Latency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 25, 0);
 
             System.out.println(" Asserting server");
             // assert server had a given throughput
             succeeded &= assertThroughput(reportRootPath, serverCfg, totalLoadersRequestCount, 1);
             // assert server had a given max latency
-            succeeded &= assertPLatency(reportRootPath, serverCfg, params.getExpectedP99ServerLatency(), 25, 99);
+            succeeded &= assertP99Latency(reportRootPath, serverCfg, params.getExpectedP99ServerLatency(), 25, 2);
 
             assertThat("Performance assertions failure for " + params, succeeded, is(true));
         }

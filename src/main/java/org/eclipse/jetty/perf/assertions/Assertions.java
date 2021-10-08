@@ -102,9 +102,13 @@ public class Assertions
         }
     }
 
-    public static boolean assertPLatency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, double percentile) throws FileNotFoundException
+    public static boolean assertP99Latency(Path reportRootPath, NodeArrayConfiguration nodeArray, long expectedValue, double errorMargin, int toleratedOutliers) throws FileNotFoundException
     {
-        long integral = 0L;
+        double percentile = 99.0;
+
+        // calculate mean p99 value as a basis to eliminate outliers
+        long sum = 0L;
+        long count = 0L;
         for (Node node : nodeArray.nodes())
         {
             Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
@@ -116,18 +120,54 @@ public class Assertions
                     if (histogram == null)
                         break;
 
-                    integral += histogram.getValueAtPercentile(percentile);
+                    sum += histogram.getValueAtPercentile(percentile);
+                    count++;
+                }
+            }
+        }
+        long mean = sum / count;
+
+        long integral = 0L;
+        int outliers = 0;
+        for (Node node : nodeArray.nodes())
+        {
+            Path perfHlog = reportRootPath.resolve(nodeArray.id()).resolve(node.getId()).resolve("perf.hlog");
+            try (HistogramLogReader histogramLogReader = new HistogramLogReader(perfHlog.toFile()))
+            {
+                while (true)
+                {
+                    AbstractHistogram histogram = (AbstractHistogram)histogramLogReader.nextIntervalHistogram();
+                    if (histogram == null)
+                        break;
+
+                    long valueAtPercentile = histogram.getValueAtPercentile(percentile);
+
+                    // replace outliers (values over mean * 2) with mean
+                    if (valueAtPercentile <= mean * 2)
+                    {
+                        integral += valueAtPercentile;
+                    }
+                    else
+                    {
+                        outliers++;
+                        integral += mean;
+                    }
                 }
             }
         }
         integral /= 1_000; // convert ns -> us
 
-        System.out.println("  " + nodeArray.id() + " p" + percentile + " lat integral is " + integral + " vs expected " + expectedValue);
+        System.out.println("  " + nodeArray.id() + " p" + percentile + " lat integral is " + integral + " vs expected " + expectedValue + " with " + outliers + " outlier(s)");
         double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
 
-        if (integral >= lowBound && integral <= highBound)
+        if (outliers > toleratedOutliers)
+        {
+            System.out.println("  NOK; too many outliers: value over max " + toleratedOutliers);
+            return false;
+        }
+        else if (integral >= lowBound && integral <= highBound)
         {
             System.out.println("  OK; value within " + errorMargin + "% error margin");
             return true;
