@@ -158,7 +158,8 @@ public class Assertions
         trueIntegral /= 1_000; // convert ns -> us
         correctedIntegral /= 1_000; // convert ns -> us
 
-        System.out.println("  " + nodeArray.id() + " P99 lat integral is " + trueIntegral + " vs expected " + expectedValue + " with " + outliers + " outlier(s), corrected to " + correctedIntegral);
+        System.out.println("  " + nodeArray.id() + " P99 lat integral is " + trueIntegral + " vs expected " + expectedValue +
+            " with " + outliers + " outlier(s), max = " + toleratedOutliers + ", corrected to " + correctedIntegral);
         double error = expectedValue * errorMargin / 100.0;
         double highBound = expectedValue + error;
         double lowBound = expectedValue - error;
