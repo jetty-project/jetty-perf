@@ -210,7 +210,7 @@ public class HttpPerfTest implements Serializable
             // assert probe had a given throughput and max latency
             succeeded &= assertThroughput(reportRootPath, probeCfg, totalProbeRequestCount, 1);
             // assert probe had a given max latency
-            succeeded &= assertP99Latency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 25, 0);
+            succeeded &= assertP99Latency(reportRootPath, probeCfg, params.getExpectedP99ProbeLatency(), 25, 2);
 
             System.out.println(" Asserting server");
             // assert server had a given throughput
