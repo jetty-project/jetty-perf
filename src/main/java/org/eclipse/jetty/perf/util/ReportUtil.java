@@ -96,7 +96,7 @@ public class ReportUtil
             }
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".html")))
             {
-                PerfReport.createHtmlHistogram(hlogFile.getFileName().toString().split("\\.")[0], hlogFile.toFile(), os);
+                PerfReport.createHtmlHistogram(hlogFile.toFile(), os);
             }
         }
     }

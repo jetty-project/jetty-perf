@@ -65,7 +65,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
     </script>
 
     <script>
-    function report(data, title) {
+    function report(data) {
         const reader = new hdr.HistogramLogReader(data);
         var histograms = [];
         var histogram;
@@ -73,34 +73,36 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
             histograms.push(histogram);
         }
 
-        graphLat(histograms, title);
+        graphLat(histograms);
     }
 
-    function graphLat(histograms, title) {
+    function graphLat(histograms) {
         const percentile = 99;
         const data = {
             labels: [],
             datasets: [{
                 type: 'bar',
+                label: percentile + 'th percentile',
                 data: [],
                 backgroundColor: 'rgba(255, 99, 132, 1)',
                 tooltip: {
                   callbacks: {
                     afterLabel: function(x) {
                       const ts = histograms[x.dataIndex].startTimeStampMsec;
-                      return percentile + 'th percentile\n' + new Date(ts).toISOString();
+                      return new Date(ts).toISOString();
                     }
                   }
                 }
             }, {
                 type: 'bar',
+                label: 'max value',
                 data: [],
                 backgroundColor: 'rgba(255, 206, 86, 1)',
                 tooltip: {
                   callbacks: {
                     afterLabel: function(x) {
                       const ts = histograms[x.dataIndex].startTimeStampMsec;
-                      return 'Max value\n' + new Date(ts).toISOString();
+                      return new Date(ts).toISOString();
                     }
                   }
                 }
@@ -112,15 +114,15 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         for (var i = 0; i < histograms.length; i++) {
             const histogram = histograms[i];
             // divide values by 1000 b/c histogram contains ns and the graph is in us
-            const max = histogram.maxValue / 1000;
-            const pctValue = histogram.getValueAtPercentile(percentile) / 1000;
+            const max = Math.floor(histogram.maxValue / 1000);
+            const pctValue = Math.floor(histogram.getValueAtPercentile(percentile) / 1000);
 
             pIntegral += pctValue;
             maxIntegral += max;
 
-            data.labels.push(i);                        // X axis
-            data.datasets[0].data.push([0, pctValue]);  // Y axis front bar (percentile)
-            data.datasets[1].data.push([0, max]);       // Y axis back bar (max value)
+            data.labels.push(i);                   // X axis
+            data.datasets[0].data.push(pctValue);  // Y axis front bar (percentile)
+            data.datasets[1].data.push(max);       // Y axis back bar (max value)
         }
         $('#p-value-lat').text(percentile);
         $('#p-integral-lat').text(pIntegral.toLocaleString());
@@ -129,25 +131,6 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         const config = {
           data: data,
           options: {
-            plugins: {
-              zoom: {
-                pan: {
-                  enabled: false
-                },
-                zoom: {
-                  enabled: true,
-                  drag: true,
-                  mode: 'xy'
-                }
-              },
-              legend: {
-                display: false
-              },
-              title: {
-                display: true,
-                text: title
-              }
-            },
             scales: {
               x: {
                 title: {
@@ -170,8 +153,7 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
         const element = document.getElementById('canvas-lat');
         const myChart = new Chart(element, config);
 
-        const originalMaxY = myChart.scales.y.max;
-        $('#input-scale-y-lat').val('' + originalMaxY);
+        $('#input-scale-y-lat').val('' + myChart.scales.y.max);
         $('#button-scale-y-lat').click(function() {
           config.options.scales.y.max = parseInt($('#input-scale-y-lat').val());
           myChart.update();
@@ -194,9 +176,8 @@ l--,_+=n[s++]<<u,u+=8}if(a.nlen=(31&_)+257,_>>>=5,u-=5,a.ndist=(31&_)+1,_>>>=5,u
 </div>
 
     <script>
-        const title = 'Hiccups';
         const histograms = `##HISTOGRAMS##`;
-        report(histograms, title);
+        report(histograms);
     </script>
 </body>
 </html>

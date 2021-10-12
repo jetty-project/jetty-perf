@@ -11,12 +11,11 @@ import java.nio.charset.StandardCharsets;
 
 public class PerfReport
 {
-    public static void createHtmlHistogram(String title, File hlogFile, OutputStream out) throws IOException
+    public static void createHtmlHistogram(File hlogFile, OutputStream out) throws IOException
     {
         String html = loadAsString(PerfReport.class.getResourceAsStream(PerfReport.class.getSimpleName() + ".html"));
         String histograms = loadAsString(new FileInputStream(hlogFile));
 
-        html = html.replace("##TITLE##", title);
         html = html.replace("##HISTOGRAMS##", histograms);
 
         out.write(html.getBytes(StandardCharsets.UTF_8));
