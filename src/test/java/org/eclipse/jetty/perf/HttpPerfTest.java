@@ -1,6 +1,5 @@
 package org.eclipse.jetty.perf;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -83,7 +82,6 @@ public class HttpPerfTest implements Serializable
             NodeArray loadersArray = cluster.nodeArray("loaders");
             NodeArray probeArray = cluster.nodeArray("probe");
             int participantCount = params.getParticipantCount();
-            URI serverUri = params.getServerUri();
 
             NodeJob logSystemProps = tools -> LOG.info("JVM version: '{}', OS name: '{}', OS arch: '{}'", System.getProperty("java.vm.version"), System.getProperty("os.name"), System.getProperty("os.arch"));
             serverArray.executeOnAll(logSystemProps).get();
@@ -92,8 +90,8 @@ public class HttpPerfTest implements Serializable
 
             // start the server and the generators
             serverArray.executeOnAll(tools -> startServer(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
-            loadersArray.executeOnAll(tools -> runLoadGenerator(params, serverUri, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
-            probeArray.executeOnAll(tools -> runProbeGenerator(params, serverUri, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            loadersArray.executeOnAll(tools -> runLoadGenerator(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            probeArray.executeOnAll(tools -> runProbeGenerator(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
             Thread.sleep(WARMUP_DURATION.toMillis());
@@ -162,7 +160,7 @@ public class HttpPerfTest implements Serializable
                 probeFuture.get(30, TimeUnit.SECONDS);
 
                 // stop server
-                serverArray.executeOnAll(tools -> ((Server)tools.nodeEnvironment().get(Server.class.getName())).stop()).get(30, TimeUnit.SECONDS);
+                serverArray.executeOnAll((tools) -> stopServer(tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
                 LOG.info("Generating report...");
                 generateReport(reportRootPath, params.getClusterConfiguration(), cluster);
@@ -270,8 +268,14 @@ public class HttpPerfTest implements Serializable
         env.put(Server.class.getName(), server);
     }
 
-    private void runLoadGenerator(PerfTestParams params, URI serverUri, Map<String, Object> env) throws IOException
+    private void stopServer(Map<String, Object> env) throws Exception
     {
+        ((Server)env.get(Server.class.getName())).stop();
+    }
+
+    private void runLoadGenerator(PerfTestParams params, Map<String, Object> env) throws Exception
+    {
+        URI serverUri = params.getServerUri();
         ResponseTimeListener responseTimeListener = new ResponseTimeListener();
         env.put(ResponseTimeListener.class.getName(), responseTimeListener);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener();
@@ -314,8 +318,9 @@ public class HttpPerfTest implements Serializable
         env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams params, URI serverUri, Map<String, Object> env) throws IOException
+    private void runProbeGenerator(PerfTestParams params, Map<String, Object> env) throws Exception
     {
+        URI serverUri = params.getServerUri();
         ResponseTimeListener responseTimeListener = new ResponseTimeListener();
         env.put(ResponseTimeListener.class.getName(), responseTimeListener);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener();
