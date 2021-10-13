@@ -11,7 +11,7 @@ pipeline {
       JETTY_BRANCH = 'jetty-10.0.x'
     }
     parameters {
-      string(defaultValue: 'latest', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: '10.0.7-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
     }
     tools {
       jdk "${JDK_TO_USE}"
@@ -32,7 +32,7 @@ pipeline {
               when {
                 beforeAgent true
                 expression {
-                  return JETTY_VERSION != 'latest';
+                  return JETTY_VERSION.endsWith("SNAPSHOT");
                 }
               }
               steps {
