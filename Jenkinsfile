@@ -2,16 +2,16 @@
 
 pipeline {
     agent { node { label 'load-master' } }
-    triggers {
-      cron '@hourly'
-    }
     options {
       buildDiscarder logRotator( numToKeepStr: '48' )
     }
     environment {
       TEST_TO_RUN = '*'
       JDK_TO_USE = 'load-jdk17'
-      JETTY_VERSION = '10.0.6'
+      JETTY_BRANCH = 'jetty-10.0.x'
+    }
+    parameters {
+      string(defaultValue: 'latest', description: 'Jetty Version', name: 'JETTY_VERSION')
     }
     tools {
       jdk "${JDK_TO_USE}"
@@ -27,6 +27,31 @@ pipeline {
         }
         stage('Get Load nodes') {
           parallel {
+            stage('Build Jetty') {
+              agent { node { label 'load-master' } }
+              when {
+                beforeAgent true
+                expression {
+                  return JETTY_VERSION != 'latest';
+                }
+              }
+              steps {
+                dir("jetty.build") {
+                  echo "building jetty ${JETTY_BRANCH}"
+                  git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
+                  timeout(time: 30, unit: 'MINUTES') {
+                    withEnv(["JAVA_HOME=${ tool "jdk11" }",
+                             "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
+                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                      configFileProvider(
+                              [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                        sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -DskipTests -T6 -e"
+                      }
+                    }
+                  }
+                }
+              }
+            }
             stage('install load-1') {
               agent { node { label 'load-1' } }
               steps {
