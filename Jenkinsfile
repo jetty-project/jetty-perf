@@ -2,6 +2,9 @@
 
 pipeline {
     agent { node { label 'load-master' } }
+    triggers {
+      cron '@daily'
+    }
     options {
       buildDiscarder logRotator( numToKeepStr: '48' )
     }
