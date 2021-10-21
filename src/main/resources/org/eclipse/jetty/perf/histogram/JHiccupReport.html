@@ -55,63 +55,41 @@
             histograms.push(histogram);
         }
 
-        graphLat(histograms);
+        graphLat(histograms, 99);
     }
 
-    function graphLat(histograms) {
-        const percentile = 99;
-        const data = {
+    function graphLat(histograms, percentile) {
+        const config = {
+          data: {
             labels: [],
             datasets: [{
-                type: 'bar',
-                label: percentile + 'th percentile',
-                data: [],
-                backgroundColor: 'rgba(255, 99, 132, 1)',
-                tooltip: {
-                  callbacks: {
-                    afterLabel: function(x) {
-                      const ts = histograms[x.dataIndex].startTimeStampMsec;
-                      return new Date(ts).toISOString();
-                    }
+              type: 'bar',
+              label: percentile + 'th percentile',
+              data: [],
+              backgroundColor: 'rgba(255, 99, 132, 1)',
+              tooltip: {
+                callbacks: {
+                  afterLabel: function(x) {
+                    const ts = histograms[x.dataIndex].startTimeStampMsec;
+                    return new Date(ts).toISOString();
                   }
                 }
+              }
             }, {
-                type: 'bar',
-                label: 'max value',
-                data: [],
-                backgroundColor: 'rgba(255, 206, 86, 1)',
-                tooltip: {
-                  callbacks: {
-                    afterLabel: function(x) {
-                      const ts = histograms[x.dataIndex].startTimeStampMsec;
-                      return new Date(ts).toISOString();
-                    }
+              type: 'bar',
+              label: 'Max value',
+              data: [],
+              backgroundColor: 'rgba(255, 206, 86, 1)',
+              tooltip: {
+                callbacks: {
+                  afterLabel: function(x) {
+                    const ts = histograms[x.dataIndex].startTimeStampMsec;
+                    return new Date(ts).toISOString();
                   }
                 }
+              }
             }]
-        };
-
-        var pIntegral = 0;
-        var maxIntegral = 0;
-        for (var i = 0; i < histograms.length; i++) {
-            const histogram = histograms[i];
-            // divide values by 1000 b/c histogram contains ns and the graph is in us
-            const max = Math.floor(histogram.maxValue / 1000);
-            const pctValue = Math.floor(histogram.getValueAtPercentile(percentile) / 1000);
-
-            pIntegral += pctValue;
-            maxIntegral += max;
-
-            data.labels.push(i);                   // X axis
-            data.datasets[0].data.push(pctValue);  // Y axis front bar (percentile)
-            data.datasets[1].data.push(max);       // Y axis back bar (max value)
-        }
-        $('#p-value-lat').text(percentile);
-        $('#p-integral-lat').text(pIntegral.toLocaleString());
-        $('#max-integral-lat').text(maxIntegral.toLocaleString());
-
-        const config = {
-          data: data,
+          },
           options: {
             scales: {
               x: {
@@ -124,13 +102,33 @@
               y: {
                 title: {
                   display: true,
-                  text: 'Hiccup time (μs)'
+                  text: 'Response time (μs)'
                 },
                 beginAtZero: true
               }
             }
           },
         };
+
+        var pIntegral = 0;
+        var maxIntegral = 0;
+        for (var i = 0; i < histograms.length; i++) {
+            const histogram = histograms[i];
+            // divide values by 1000 b/c histogram contains ns and the graph is in us
+            const min = Math.floor((histogram._totalCount === 0) ? 0 : histogram.minNonZeroValue / 1000);
+            const max = Math.floor(histogram.maxValue / 1000);
+            const pctValue = Math.floor(histogram.getValueAtPercentile(percentile) / 1000);
+
+            pIntegral += pctValue;
+            maxIntegral += max;
+
+            config.data.labels.push(i);                          // X axis
+            config.data.datasets[0].data.push([min, pctValue]);  // Y axis front bar (percentile)
+            config.data.datasets[1].data.push([min, max]);       // Y axis back bar (max value)
+        }
+        $('#p-value-lat').text(percentile);
+        $('#p-integral-lat').text(pIntegral.toLocaleString());
+        $('#max-integral-lat').text(maxIntegral.toLocaleString());
 
         const element = document.getElementById('canvas-lat');
         const myChart = new Chart(element, config);
