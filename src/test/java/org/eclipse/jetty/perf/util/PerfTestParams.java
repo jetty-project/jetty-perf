@@ -155,7 +155,7 @@ public class PerfTestParams implements Serializable
             case h2c:
                 return 13_000;
             case h2:
-                return 32_000;
+                return 30_000;
             default:
                 throw new AssertionError();
         }
@@ -172,7 +172,24 @@ public class PerfTestParams implements Serializable
             case h2c:
                 return 120_000;
             case h2:
-                return 140_000;
+                return 130_000;
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    public double getExpectedP99ErrorMargin()
+    {
+        switch (protocol)
+        {
+            case http:
+                return 10.0;
+            case https:
+                return 10.0;
+            case h2c:
+                return 15.0;
+            case h2:
+                return 15.0;
             default:
                 throw new AssertionError();
         }
