@@ -51,8 +51,6 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
         File asyncProfilerHome = getAsyncProfilerHome();
         if (!asyncProfilerHome.isDirectory())
         {
-            if (!asyncProfilerHome.mkdirs())
-                throw new IOException("Error creating async profiler home folder: " + asyncProfilerHome);
             LOG.debug("installing async profiler...");
             File tarGzFile = new File(asyncProfilerHome.getParentFile(), "async-profiler-" + VERSION + "-linux-x64.tar.gz");
             try (InputStream is = new URL("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v" + VERSION + "/async-profiler-" + VERSION + "-linux-x64.tar.gz").openStream();
