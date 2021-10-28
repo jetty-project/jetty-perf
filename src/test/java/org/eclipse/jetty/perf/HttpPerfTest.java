@@ -147,17 +147,24 @@ public class HttpPerfTest implements Serializable
 
             try
             {
-                // signal all participants to start
-                cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
-                // wait for the run duration
-                Thread.sleep(RUN_DURATION.toMillis());
-                // signal all participants to stop
-                cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
-
-                // wait for all report files to be written
-                serverFuture.get(30, TimeUnit.SECONDS);
-                loadersFuture.get(30, TimeUnit.SECONDS);
-                probeFuture.get(30, TimeUnit.SECONDS);
+                try
+                {
+                    // signal all participants to start
+                    cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
+                    // wait for the run duration
+                    Thread.sleep(RUN_DURATION.toMillis());
+                    // signal all participants to stop
+                    cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
+                }
+                finally
+                {
+                    // wait for all report files to be written;
+                    // do it in a finally so that if the above barrier awaits time out b/c a job threw an exception
+                    // the future.get() call will re-throw the exception and it'll be logged.
+                    serverFuture.get(30, TimeUnit.SECONDS);
+                    loadersFuture.get(30, TimeUnit.SECONDS);
+                    probeFuture.get(30, TimeUnit.SECONDS);
+                }
 
                 // stop server
                 serverArray.executeOnAll((tools) -> stopServer(tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
