@@ -205,6 +205,7 @@ public class PerfTestParams implements Serializable
     {
         List<String> result = new ArrayList<>();
         result.add("-Xlog:gc*:file=gc.log:time,level,tags");
+        result.add("-XX:+UnlockExperimentalVMOptions"); // JDK 11 needs this flag to enable ZGC
         result.add("-XX:+UseZGC");
         result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
