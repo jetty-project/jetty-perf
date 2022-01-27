@@ -17,9 +17,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpClientTransport;
+import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
+import org.eclipse.jetty.http2.client.HTTP2Client;
+import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.io.ArrayByteBufferPool;
 import org.eclipse.jetty.io.ByteBufferPool;
+import org.eclipse.jetty.io.MappedByteBufferPool;
 import org.eclipse.jetty.perf.handler.AsyncHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
@@ -37,6 +43,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
@@ -309,9 +316,35 @@ public class HttpPerfTest implements Serializable
             .listener(responseStatusListener)
             ;
 
+        ByteBufferPool byteBufferPool = new MappedByteBufferPool(-1, -1, null, -1, -1);
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
-            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder()
+            {
+                @Override
+                public HttpClientTransport build() {
+                    HTTP2Client http2Client = new HTTP2Client();
+                    http2Client.setByteBufferPool(byteBufferPool);
+                    http2Client.setInitialSessionRecvWindow(getSessionRecvWindow());
+                    http2Client.setInitialStreamRecvWindow(getStreamRecvWindow());
+                    http2Client.setSelectors(getSelectors());
+                    return new HttpClientTransportOverHTTP2(http2Client);
+                }
+            });
+        }
+        else
+        {
+            builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder()
+            {
+                @Override
+                public HttpClientTransport build() {
+                    HttpClientTransportOverHTTP httpClientTransport = new HttpClientTransportOverHTTP(getSelectors());
+                    HttpClient httpClient = new HttpClient(httpClientTransport);
+                    httpClient.setByteBufferPool(byteBufferPool);
+                    httpClientTransport.setHttpClient(httpClient);
+                    return httpClientTransport;
+                }
+            });
         }
 
         LoadGenerator loadGenerator = builder.build();
@@ -354,9 +387,35 @@ public class HttpPerfTest implements Serializable
             .listener(responseStatusListener)
             ;
 
+        ByteBufferPool byteBufferPool = new MappedByteBufferPool(-1, -1, null, -1, -1);
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
-            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder()
+            {
+                @Override
+                public HttpClientTransport build() {
+                    HTTP2Client http2Client = new HTTP2Client();
+                    http2Client.setByteBufferPool(byteBufferPool);
+                    http2Client.setInitialSessionRecvWindow(getSessionRecvWindow());
+                    http2Client.setInitialStreamRecvWindow(getStreamRecvWindow());
+                    http2Client.setSelectors(getSelectors());
+                    return new HttpClientTransportOverHTTP2(http2Client);
+                }
+            });
+        }
+        else
+        {
+            builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder()
+            {
+                @Override
+                public HttpClientTransport build() {
+                    HttpClientTransportOverHTTP httpClientTransport = new HttpClientTransportOverHTTP(getSelectors());
+                    HttpClient httpClient = new HttpClient(httpClientTransport);
+                    httpClient.setByteBufferPool(byteBufferPool);
+                    httpClientTransport.setHttpClient(httpClient);
+                    return httpClientTransport;
+                }
+            });
         }
 
         LoadGenerator loadGenerator = builder.build();
