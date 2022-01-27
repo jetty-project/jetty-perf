@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.io.ArrayByteBufferPool;
+import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.perf.handler.AsyncHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
@@ -230,6 +232,9 @@ public class HttpPerfTest implements Serializable
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
         Server server = new Server();
+
+        ByteBufferPool bufferPool = new ArrayByteBufferPool(-1, -1, -1, -1, -1, -1);
+        server.addBean(bufferPool);
 
 //        MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
 //        server.addBean(mbContainer);
