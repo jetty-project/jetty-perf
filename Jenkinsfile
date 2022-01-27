@@ -7,10 +7,10 @@ pipeline {
     }
     environment {
       TEST_TO_RUN = '*'
-      JETTY_BRANCH = 'jetty-9.4.x'
     }
     parameters {
       string(defaultValue: '9.4.45-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: 'jetty-9.4.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
    }
     tools {
