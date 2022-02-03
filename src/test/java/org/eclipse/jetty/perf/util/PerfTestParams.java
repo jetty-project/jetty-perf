@@ -44,7 +44,7 @@ public class PerfTestParams implements Serializable
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
-            .node(new Node("load-sample"))
+            .node(new Node("load-5"))
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
