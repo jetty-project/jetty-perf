@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import org.eclipse.jetty.core.server.Content;
 import org.eclipse.jetty.core.server.Handler;
 import org.eclipse.jetty.core.server.Request;
+import org.eclipse.jetty.core.server.Response;
 
 public class AsyncHandler extends Handler.Abstract
 {
@@ -16,17 +17,18 @@ public class AsyncHandler extends Handler.Abstract
     }
 
     @Override
-    public void offer(Request request, Acceptor acceptor) throws Exception
+    public void handle(Request request) throws Exception
     {
-        acceptor.accept(request, this::process);
+        Response response = request.accept();
+        process(request, response);
     }
 
-    private void process(Exchange exchange)
+    private void process(Request request, Response response)
     {
-        Content content = exchange.readContent();
+        Content content = request.readContent();
         if (content == null)
         {
-            exchange.demandContent(() -> process(exchange));
+            request.demandContent(() -> process(request, response));
             return;
         }
 
@@ -34,8 +36,8 @@ public class AsyncHandler extends Handler.Abstract
         {
             if (content.isLast())
             {
-                exchange.getResponse().setStatus(200);
-                exchange.getResponse().write(true, exchange, ByteBuffer.wrap(answer));
+                response.setStatus(200);
+                response.write(true, response.getCallback(), ByteBuffer.wrap(answer));
             }
         }
         finally
