@@ -3,14 +3,14 @@
 pipeline {
     agent { node { label 'load-master' } }
     options {
-      buildDiscarder logRotator( numToKeepStr: '48' )
+      buildDiscarder logRotator( numToKeepStr: '10' )
     }
     environment {
       TEST_TO_RUN = '*'
-      JETTY_BRANCH = 'jetty-10.0.x'
     }
     parameters {
-      string(defaultValue: '10.0.7-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: 'jetty-12.0.x-7424-AcceptorProcessorExchange', description: 'Jetty branch', name: 'JETTY_BRANCH')
+      string(defaultValue: '12.0.0-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     }
     tools {
@@ -40,8 +40,8 @@ pipeline {
                   echo "building jetty ${JETTY_BRANCH}"
                   git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
                   timeout(time: 30, unit: 'MINUTES') {
-                    withEnv(["JAVA_HOME=${ tool "jdk11" }",
-                             "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
+                    withEnv(["JAVA_HOME=${ tool "jdk17" }",
+                             "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
                              "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                       configFileProvider(
                               [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
@@ -105,8 +105,8 @@ pipeline {
             steps {
               unstash name: 'toolchains.xml'
               sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
-              withEnv(["JAVA_HOME=${ tool "jdk11" }",
-                       "PATH+MAVEN=${ tool "jdk11" }/bin:${tool "maven3"}/bin",
+              withEnv(["JAVA_HOME=${ tool "jdk17" }",
+                       "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                         [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
