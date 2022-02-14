@@ -20,38 +20,29 @@ public class AsyncHandler extends Handler.Abstract
     public void handle(Request request) throws Exception
     {
         Response response = request.accept();
-        new Process(request, response).run();
+        process(request, response);
     }
 
-    class Process implements Runnable
+    private void process(Request request, Response response)
     {
-        private final Request _request;
-        private final Response _response;
-
-        Process(Request request, Response response)
+        Content content = request.readContent();
+        if (content == null)
         {
-            _request = request;
-            _response = response;
+            request.demandContent(() -> process(request, response));
+            return;
         }
 
-        @Override
-        public void run()
+        try
         {
-            while (true)
+            if (content.isLast())
             {
-                Content content = _request.readContent();
-                if (content == null)
-                {
-                    _request.demandContent(this);
-                    return;
-                }
-                content.release();
-                if (content.isLast())
-                {
-                    _response.setStatus(200);
-                    _response.write(true, _response.getCallback(), ByteBuffer.wrap(answer));
-                }
+                response.setStatus(200);
+                response.write(true, response.getCallback(), ByteBuffer.wrap(answer));
             }
+        }
+        finally
+        {
+            content.release();
         }
     }
 }
