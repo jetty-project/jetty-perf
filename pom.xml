@@ -19,7 +19,7 @@
     <jetty-load-generator.version>1.1.0</jetty-load-generator.version>
 
     <!-- The following props are overridden by the jenkins pipeline, see Jenkinsfile. -->
-    <jetty.version>9.4.44.v20210927</jetty.version>
+    <jetty.version>9.4.45.v20220203</jetty.version>
     <test.jdk.name>load-jdk11</test.jdk.name>
   </properties>
 
@@ -103,13 +103,13 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.3.0-alpha10</version>
+      <version>1.3.0-alpha11</version>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.7.1</version>
+      <version>5.8.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
