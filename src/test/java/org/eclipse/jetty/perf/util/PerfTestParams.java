@@ -206,11 +206,7 @@ public class PerfTestParams implements Serializable
         List<String> result = new ArrayList<>();
         result.add("-Xlog:gc*:file=gc.log:time,level,tags");
         result.add("-XX:+UnlockExperimentalVMOptions");
-
-        // disable ZGC and Tiered Compilation to workaround https://bugs.openjdk.java.net/browse/JDK-8281677
-        //result.add("-XX:+UseZGC");
-        result.add("-XX:-TieredCompilation");
-
+        result.add("-XX:+UseZGC");
         result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
             result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
