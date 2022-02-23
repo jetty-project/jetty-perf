@@ -6,8 +6,9 @@ import org.eclipse.jetty.core.server.Content;
 import org.eclipse.jetty.core.server.Handler;
 import org.eclipse.jetty.core.server.Request;
 import org.eclipse.jetty.core.server.Response;
+import org.eclipse.jetty.util.Callback;
 
-public class AsyncHandler extends Handler.Abstract
+public class AsyncHandler extends Handler.Processor
 {
     private final byte[] answer;
 
@@ -17,18 +18,12 @@ public class AsyncHandler extends Handler.Abstract
     }
 
     @Override
-    public void handle(Request request) throws Exception
-    {
-        Response response = request.accept();
-        process(request, response);
-    }
-
-    private void process(Request request, Response response)
+    public void process(Request request, Response response, Callback callback)
     {
         Content content = request.readContent();
         if (content == null)
         {
-            request.demandContent(() -> process(request, response));
+            request.demandContent(() -> process(request, response, callback));
             return;
         }
 
@@ -37,7 +32,7 @@ public class AsyncHandler extends Handler.Abstract
             if (content.isLast())
             {
                 response.setStatus(200);
-                response.write(true, response.getCallback(), ByteBuffer.wrap(answer));
+                response.write(true, callback, ByteBuffer.wrap(answer));
             }
         }
         finally

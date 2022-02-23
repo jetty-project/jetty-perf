@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jetty.perf.util.HistogramLogRecorder;
-import org.eclipse.jetty.server.HttpChannel;
-import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.core.server.HttpChannel;
+import org.eclipse.jetty.core.server.Request;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 public class LatencyRecordingChannelListener extends AbstractLifeCycle implements HttpChannel.Listener

@@ -267,7 +267,7 @@ public class HttpPerfTest implements Serializable
         serverConnector.setPort(params.getServerPort());
 
         LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
-        serverConnector.addBean(listener);
+        server.addBean(listener);
 
         server.addConnector(serverConnector);
 
