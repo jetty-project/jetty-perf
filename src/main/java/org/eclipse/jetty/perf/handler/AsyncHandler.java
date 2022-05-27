@@ -2,10 +2,10 @@ package org.eclipse.jetty.perf.handler;
 
 import java.nio.ByteBuffer;
 
-import org.eclipse.jetty.core.server.Content;
-import org.eclipse.jetty.core.server.Handler;
-import org.eclipse.jetty.core.server.Request;
-import org.eclipse.jetty.core.server.Response;
+import org.eclipse.jetty.server.Content;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
 
 public class AsyncHandler extends Handler.Processor

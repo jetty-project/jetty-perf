@@ -24,13 +24,13 @@ import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturingCluster;
 import org.eclipse.jetty.perf.util.PerfTestParams;
-import org.eclipse.jetty.core.server.ConnectionFactory;
-import org.eclipse.jetty.core.server.HttpConfiguration;
-import org.eclipse.jetty.core.server.HttpConnectionFactory;
-import org.eclipse.jetty.core.server.SecureRequestCustomizer;
-import org.eclipse.jetty.core.server.Server;
-import org.eclipse.jetty.core.server.ServerConnector;
-import org.eclipse.jetty.core.server.SslConnectionFactory;
+import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -62,12 +62,10 @@ public class HttpPerfTest implements Serializable
     private static Stream<PerfTestParams> params()
     {
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http)
-            // TODO HTTPS is disabled for now
-//            new PerfTestParams(PerfTestParams.Protocol.https),
-            // TODO H2 is disabled for now
-//            new PerfTestParams(PerfTestParams.Protocol.h2c),
-//            new PerfTestParams(PerfTestParams.Protocol.h2)
+            new PerfTestParams(PerfTestParams.Protocol.http),
+            new PerfTestParams(PerfTestParams.Protocol.https),
+            new PerfTestParams(PerfTestParams.Protocol.h2c),
+            new PerfTestParams(PerfTestParams.Protocol.h2)
         );
     }
 
@@ -266,6 +264,7 @@ public class HttpPerfTest implements Serializable
         ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
+        // TODO this has no effect in 12.0.x
         LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
         server.addBean(listener);
 

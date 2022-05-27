@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jetty.perf.util.HistogramLogRecorder;
-import org.eclipse.jetty.core.server.HttpChannel;
-import org.eclipse.jetty.core.server.Request;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
-public class LatencyRecordingChannelListener extends AbstractLifeCycle implements HttpChannel.Listener
+// TODO find a replacement to record server latencies in 12.0.x
+public class LatencyRecordingChannelListener extends AbstractLifeCycle //implements HttpChannel.Listener
 {
     private final Map<Request, Long> timestamps = new ConcurrentHashMap<>();
     private final HistogramLogRecorder recorder;
@@ -40,14 +40,14 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
         stopRecording();
     }
 
-    @Override
+//    @Override
     public void onRequestBegin(Request request)
     {
         long begin = System.nanoTime();
         timestamps.put(request, begin);
     }
 
-    @Override
+//    @Override
     public void onComplete(Request request)
     {
         Long begin = timestamps.remove(request);
