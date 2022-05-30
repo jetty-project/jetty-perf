@@ -1,23 +1,16 @@
 package org.eclipse.jetty.perf.histogram.loader;
 
-import java.io.FileNotFoundException;
-
-import org.eclipse.jetty.perf.util.HistogramLogRecorder;
+import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 
 public class ResponseTimeListener implements Resource.NodeListener, LoadGenerator.CompleteListener
 {
-    private final HistogramLogRecorder recorder;
+    private final LatencyRecorder recorder;
 
-    public ResponseTimeListener() throws FileNotFoundException
+    public ResponseTimeListener(LatencyRecorder latencyRecorder)
     {
-        this("perf.hlog");
-    }
-
-    public ResponseTimeListener(String histogramFilename) throws FileNotFoundException
-    {
-        this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
+        this.recorder = latencyRecorder;
     }
 
     public void startRecording()
@@ -27,7 +20,7 @@ public class ResponseTimeListener implements Resource.NodeListener, LoadGenerato
 
     public void stopRecording()
     {
-        recorder.close();
+        recorder.stopRecording();
     }
 
     @Override

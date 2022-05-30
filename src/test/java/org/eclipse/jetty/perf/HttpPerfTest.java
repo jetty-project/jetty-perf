@@ -18,9 +18,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.eclipse.jetty.perf.handler.AsyncHandler;
+import org.eclipse.jetty.perf.handler.LatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
-import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
+import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturingCluster;
 import org.eclipse.jetty.perf.util.PerfTestParams;
@@ -102,11 +103,11 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    LatencyRecordingChannelListener listener = (LatencyRecordingChannelListener)tools.nodeEnvironment().get(LatencyRecordingChannelListener.class.getName());
-                    listener.startRecording();
+                    LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
+                    latencyRecorder.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
-                    listener.stopRecording();
+                    latencyRecorder.stopRecording();
                 }
             });
 
@@ -114,13 +115,13 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    ResponseTimeListener responseTimeListener = (ResponseTimeListener)tools.nodeEnvironment().get(ResponseTimeListener.class.getName());
-                    responseTimeListener.startRecording();
+                    LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
+                    latencyRecorder.startRecording();
                     ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
                     responseStatusListener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
-                    responseTimeListener.stopRecording();
+                    latencyRecorder.stopRecording();
                     responseStatusListener.stopRecording();
                     CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
                     cf.get();
@@ -131,13 +132,13 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    ResponseTimeListener responseTimeListener = (ResponseTimeListener)tools.nodeEnvironment().get(ResponseTimeListener.class.getName());
-                    responseTimeListener.startRecording();
+                    LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
+                    latencyRecorder.startRecording();
                     ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
                     responseStatusListener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
-                    responseTimeListener.stopRecording();
+                    latencyRecorder.stopRecording();
                     responseStatusListener.stopRecording();
                     CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
                     cf.get();
@@ -264,16 +265,18 @@ public class HttpPerfTest implements Serializable
         ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
-        // TODO this has no effect in 12.0.x
-        LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
-        server.addBean(listener);
+        // register LatencyRecorder on the server to get it lifecycled such as the recoding is stopped with the server
+        LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
+        server.addBean(latencyRecorder);
 
         server.addConnector(serverConnector);
 
-        server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+        LatencyRecordingHandler latencyRecordingHandler = new LatencyRecordingHandler(latencyRecorder);
+        latencyRecordingHandler.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+        server.setHandler(latencyRecordingHandler);
         server.start();
 
-        env.put(LatencyRecordingChannelListener.class.getName(), listener);
+        env.put(LatencyRecorder.class.getName(), latencyRecorder);
         env.put(Server.class.getName(), server);
     }
 
@@ -285,9 +288,10 @@ public class HttpPerfTest implements Serializable
     private void runLoadGenerator(PerfTestParams params, Map<String, Object> env) throws Exception
     {
         URI serverUri = params.getServerUri();
-        ResponseTimeListener responseTimeListener = new ResponseTimeListener();
-        env.put(ResponseTimeListener.class.getName(), responseTimeListener);
-        ResponseStatusListener responseStatusListener = new ResponseStatusListener();
+        LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
+        ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
+        env.put(LatencyRecorder.class.getName(), latencyRecorder);
+        ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
         env.put(ResponseStatusListener.class.getName(), responseStatusListener);
 
         LoadGenerator.Builder builder = LoadGenerator.builder()
@@ -330,9 +334,10 @@ public class HttpPerfTest implements Serializable
     private void runProbeGenerator(PerfTestParams params, Map<String, Object> env) throws Exception
     {
         URI serverUri = params.getServerUri();
-        ResponseTimeListener responseTimeListener = new ResponseTimeListener();
-        env.put(ResponseTimeListener.class.getName(), responseTimeListener);
-        ResponseStatusListener responseStatusListener = new ResponseStatusListener();
+        LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
+        ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
+        env.put(LatencyRecorder.class.getName(), latencyRecorder);
+        ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
         env.put(ResponseStatusListener.class.getName(), responseStatusListener);
 
         LoadGenerator.Builder builder = LoadGenerator.builder()

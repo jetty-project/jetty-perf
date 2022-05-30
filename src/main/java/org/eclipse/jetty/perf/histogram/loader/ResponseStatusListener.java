@@ -25,11 +25,6 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
     private int writeCounter;
     private boolean record;
 
-    public ResponseStatusListener() throws IOException
-    {
-        this("http-client-statuses.log");
-    }
-
     public ResponseStatusListener(String statusFilename) throws IOException
     {
         this(statusFilename, true);
