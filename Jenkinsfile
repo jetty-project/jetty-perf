@@ -37,6 +37,19 @@ pipeline {
               }
               steps {
                 dir("jetty.build") {
+                  echo "building jetty-load-generator 4.0.x"
+                  git url: "https://github.com/jetty-project/jetty-load-generator.git", branch: "4.0.x"
+                  timeout(time: 30, unit: 'MINUTES') {
+                    withEnv(["JAVA_HOME=${ tool "jdk17" }",
+                             "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
+                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                      configFileProvider(
+                              [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                        sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -DskipTests -T6 -e"
+                      }
+                    }
+                  }
+
                   echo "building jetty ${JETTY_BRANCH}"
                   git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
                   timeout(time: 30, unit: 'MINUTES') {
