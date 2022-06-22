@@ -13,7 +13,7 @@ pipeline {
       JETTY_BRANCH = 'jetty-11.0.x'
     }
     parameters {
-      string(defaultValue: '11.0.9-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: '11.0.11-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
    }
     tools {
