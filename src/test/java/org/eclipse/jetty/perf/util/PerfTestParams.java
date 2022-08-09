@@ -204,6 +204,7 @@ public class PerfTestParams implements Serializable
     private static String[] defaultJvmOpts(String... extra)
     {
         List<String> result = new ArrayList<>();
+        result.add("--enable-preview");
         result.add("-Xlog:gc*:file=gc.log:time,level,tags");
         result.add("-XX:+UnlockExperimentalVMOptions"); // JDK 11 needs this flag to enable ZGC
         result.add("-XX:+UseZGC");
