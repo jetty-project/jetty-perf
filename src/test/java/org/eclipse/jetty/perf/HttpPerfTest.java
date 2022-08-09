@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -37,6 +38,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
@@ -234,7 +236,19 @@ public class HttpPerfTest implements Serializable
 
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
-        Server server = new Server();
+        QueuedThreadPool qtp = new QueuedThreadPool();
+        try
+        {
+            Method method = QueuedThreadPool.class.getMethod("setUseVirtualThreads", boolean.class);
+            method.invoke(qtp, true);
+            LOG.info("Loom virtual threads support enabled");
+        }
+        catch (NoSuchMethodException e)
+        {
+            LOG.info("Loom virtual threads support NOT enabled");
+        }
+
+        Server server = new Server(qtp);
 
         ByteBufferPool bufferPool = new ArrayByteBufferPool(-1, -1, -1, -1, -1, -1);
         server.addBean(bufferPool);
@@ -312,7 +326,7 @@ public class HttpPerfTest implements Serializable
             ;
 
         ClientConnector clientConnector = new ClientConnector();
-        clientConnector.setByteBufferPool(new MappedByteBufferPool(-1, -1, null, -1, -1));
+        clientConnector.setByteBufferPool(new MappedByteBufferPool());
         clientConnector.setSslContextFactory(new SslContextFactory.Client(true));
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
@@ -377,7 +391,7 @@ public class HttpPerfTest implements Serializable
             ;
 
         ClientConnector clientConnector = new ClientConnector();
-        clientConnector.setByteBufferPool(new MappedByteBufferPool(-1, -1, null, -1, -1));
+        clientConnector.setByteBufferPool(new MappedByteBufferPool());
         clientConnector.setSslContextFactory(new SslContextFactory.Client(true));
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
