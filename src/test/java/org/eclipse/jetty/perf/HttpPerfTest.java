@@ -237,15 +237,18 @@ public class HttpPerfTest implements Serializable
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
         QueuedThreadPool qtp = new QueuedThreadPool();
-        try
+        if (params.useLoom())
         {
-            Method method = QueuedThreadPool.class.getMethod("setUseVirtualThreads", boolean.class);
-            method.invoke(qtp, true);
-            LOG.info("Loom virtual threads support enabled");
-        }
-        catch (NoSuchMethodException e)
-        {
-            LOG.info("Loom virtual threads support NOT enabled");
+            try
+            {
+                Method method = QueuedThreadPool.class.getMethod("setUseVirtualThreads", boolean.class);
+                method.invoke(qtp, true);
+                LOG.info("Loom virtual threads support enabled");
+            }
+            catch (NoSuchMethodException e)
+            {
+                LOG.info("Loom virtual threads support NOT enabled");
+            }
         }
 
         Server server = new Server(qtp);

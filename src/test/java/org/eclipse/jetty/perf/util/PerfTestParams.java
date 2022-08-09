@@ -21,6 +21,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 public class PerfTestParams implements Serializable
 {
     private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk17");
+    private static final boolean USE_LOOM_IF_POSSIBLE = Boolean.getBoolean("test.jdk.useLoom");
 
     private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
@@ -195,6 +196,11 @@ public class PerfTestParams implements Serializable
         }
     }
 
+    public boolean useLoom()
+    {
+        return USE_LOOM_IF_POSSIBLE;
+    }
+
     @Override
     public String toString()
     {
@@ -204,7 +210,8 @@ public class PerfTestParams implements Serializable
     private static String[] defaultJvmOpts(String... extra)
     {
         List<String> result = new ArrayList<>();
-        result.add("--enable-preview");
+        if (USE_LOOM_IF_POSSIBLE)
+            result.add("--enable-preview");
         result.add("-Xlog:gc*:file=gc.log:time,level,tags");
         result.add("-XX:+UnlockExperimentalVMOptions"); // JDK 11 needs this flag to enable ZGC
         result.add("-XX:+UseZGC");

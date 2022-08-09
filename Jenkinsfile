@@ -15,6 +15,7 @@ pipeline {
       string(defaultValue: '10.0.11-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
       string(defaultValue: 'jetty-10.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
+      string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
     }
     tools {
       jdk "${JDK_TO_USE}"
@@ -113,7 +114,7 @@ pipeline {
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                         [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
+                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.useLoom=${USE_LOOM_IF_POSSIBLE}"
                   //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                 }
               }
