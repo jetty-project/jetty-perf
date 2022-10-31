@@ -2,7 +2,7 @@ package org.eclipse.jetty.perf.handler;
 
 import java.nio.ByteBuffer;
 
-import org.eclipse.jetty.server.Content;
+import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
@@ -20,24 +20,24 @@ public class AsyncHandler extends Handler.Processor
     @Override
     public void process(Request request, Response response, Callback callback)
     {
-        Content content = request.readContent();
-        if (content == null)
+        Content.Chunk chunk = request.read();
+        if (chunk == null)
         {
-            request.demandContent(() -> process(request, response, callback));
+            request.demand(() -> process(request, response, callback));
             return;
         }
 
         try
         {
-            if (content.isLast())
+            if (chunk.isLast())
             {
                 response.setStatus(200);
-                response.write(true, callback, ByteBuffer.wrap(answer));
+                response.write(true, ByteBuffer.wrap(answer), callback);
             }
         }
         finally
         {
-            content.release();
+            chunk.release();
         }
     }
 }

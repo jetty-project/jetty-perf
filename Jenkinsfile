@@ -10,7 +10,7 @@ pipeline {
     }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
-      string(defaultValue: '12.0.0-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: '12.0.0.alpha2', description: 'Jetty Version', name: 'JETTY_VERSION')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     }
     tools {
