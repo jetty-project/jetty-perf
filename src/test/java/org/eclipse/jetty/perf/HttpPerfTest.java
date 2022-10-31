@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.perf.handler.AsyncHandler;
 import org.eclipse.jetty.perf.handler.LatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
@@ -244,9 +245,7 @@ public class HttpPerfTest implements Serializable
 
         ConnectionFactory http;
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
-            // TODO H2 is disabled for now
-            // http = new HTTP2CServerConnectionFactory(httpConfiguration);
-            throw new UnsupportedOperationException("H2 is disabled for now");
+            http = new HTTP2CServerConnectionFactory(httpConfiguration);
         else
             http = new HttpConnectionFactory(httpConfiguration);
 

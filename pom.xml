@@ -57,7 +57,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>http2-http-client-transport</artifactId>
+          <artifactId>jetty-http2-client-transport</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
