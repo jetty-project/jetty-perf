@@ -50,7 +50,9 @@ pipeline {
                       }
                     }
                   }
-                  env.JETTY_LOAD_GENERATOR_VERSION="4.0.0-SNAPSHOT"
+                  script {
+                    env.JETTY_LOAD_GENERATOR_VERSION = '4.0.0-SNAPSHOT'
+                  }
 
                   echo "building jetty ${JETTY_BRANCH}"
                   git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
