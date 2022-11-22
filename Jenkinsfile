@@ -1,5 +1,13 @@
 #!groovy
 
+def get_jetty_load_generator_version() {
+  if ("$params.JETTY_VERSION".endsWith("SNAPSHOT") {
+    return "4.0.0-SNAPSHOT"
+  } else {
+    return "4.0.0.alpha2"
+  }
+}
+
 pipeline {
     agent { node { label 'load-master' } }
     options {
@@ -7,11 +15,7 @@ pipeline {
     }
     environment {
       TEST_TO_RUN = '*'
-      if (JETTY_VERSION.endsWith("SNAPSHOT")) {
-        JETTY_LOAD_GENERATOR_VERSION = '4.0.0-SNAPSHOT'
-      } else {
-        JETTY_LOAD_GENERATOR_VERSION = '4.0.0.alpha2'
-      }
+      JETTY_LOAD_GENERATOR_VERSION = get_jetty_load_generator_version()
     }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
