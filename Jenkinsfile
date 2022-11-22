@@ -5,6 +5,9 @@ pipeline {
     options {
       buildDiscarder logRotator( numToKeepStr: '10' )
     }
+    script {
+      env.JETTY_LOAD_GENERATOR_VERSION = JETTY_VERSION.endsWith("SNAPSHOT") ? '4.0.0-SNAPSHOT' : '4.0.0.alpha2'
+    }
     environment {
       TEST_TO_RUN = '*'
       JETTY_LOAD_GENERATOR_VERSION = '4.0.0.alpha2'
@@ -49,9 +52,6 @@ pipeline {
                         sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -DskipTests -T6 -e"
                       }
                     }
-                  }
-                  script {
-                    env.JETTY_LOAD_GENERATOR_VERSION = '4.0.0-SNAPSHOT'
                   }
 
                   echo "building jetty ${JETTY_BRANCH}"
