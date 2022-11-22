@@ -5,12 +5,13 @@ pipeline {
     options {
       buildDiscarder logRotator( numToKeepStr: '10' )
     }
-    script {
-      env.JETTY_LOAD_GENERATOR_VERSION = JETTY_VERSION.endsWith("SNAPSHOT") ? '4.0.0-SNAPSHOT' : '4.0.0.alpha2'
-    }
     environment {
       TEST_TO_RUN = '*'
-      JETTY_LOAD_GENERATOR_VERSION = '4.0.0.alpha2'
+      if (JETTY_VERSION.endsWith("SNAPSHOT")) {
+        JETTY_LOAD_GENERATOR_VERSION = '4.0.0-SNAPSHOT'
+      } else {
+        JETTY_LOAD_GENERATOR_VERSION = '4.0.0.alpha2'
+      }
     }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
