@@ -7,6 +7,7 @@ pipeline {
     }
     environment {
       TEST_TO_RUN = '*'
+      JETTY_LOAD_GENERATOR_VERSION = '4.0.0.alpha2'
     }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
@@ -49,6 +50,7 @@ pipeline {
                       }
                     }
                   }
+                  env.JETTY_LOAD_GENERATOR_VERSION="4.0.0-SNAPSHOT"
 
                   echo "building jetty ${JETTY_BRANCH}"
                   git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
@@ -123,7 +125,7 @@ pipeline {
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                         [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
+                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Djetty-load-generator.version${JETTY_LOAD_GENERATOR_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
                   //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                 }
               }
