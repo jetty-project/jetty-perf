@@ -1,7 +1,7 @@
 #!groovy
 
 def get_jetty_load_generator_version() {
-  if ("$params.JETTY_VERSION".endsWith("SNAPSHOT") {
+  if ("$params.JETTY_VERSION".endsWith("SNAPSHOT")) {
     return "4.0.0-SNAPSHOT"
   } else {
     return "4.0.0.alpha2"
