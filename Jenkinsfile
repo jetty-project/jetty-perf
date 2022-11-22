@@ -132,7 +132,7 @@ pipeline {
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                         [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Djetty-load-generator.version${JETTY_LOAD_GENERATOR_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
+                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Djetty-load-generator.version=${JETTY_LOAD_GENERATOR_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
                   //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
                 }
               }
