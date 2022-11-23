@@ -1,11 +1,10 @@
-package org.eclipse.jetty.perf;
+package org.eclipse.jetty.perf.util;
 
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -15,18 +14,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
-import org.eclipse.jetty.perf.handler.AsyncHandler;
 import org.eclipse.jetty.perf.handler.LatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
-import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
-import org.eclipse.jetty.perf.util.OutputCapturingCluster;
-import org.eclipse.jetty.perf.util.PerfTestParams;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -54,26 +49,11 @@ import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-public class HttpPerfTest implements Serializable
+public abstract class AbstractPerfTest implements Serializable
 {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpPerfTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractPerfTest.class);
 
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
-
-    private static Stream<PerfTestParams> params()
-    {
-        return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http),
-            new PerfTestParams(PerfTestParams.Protocol.https),
-            new PerfTestParams(PerfTestParams.Protocol.h2c),
-            new PerfTestParams(PerfTestParams.Protocol.h2)
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testPerf(PerfTestParams params) throws Exception
+    public void runTest(PerfTestParams params, Duration warmupDuration, Duration runDuration) throws Exception
     {
         try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), params.toString()))
         {
@@ -91,11 +71,11 @@ public class HttpPerfTest implements Serializable
 
             // start the server and the generators
             serverArray.executeOnAll(tools -> startServer(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
-            loadersArray.executeOnAll(tools -> runLoadGenerator(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
-            probeArray.executeOnAll(tools -> runProbeGenerator(params, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            loadersArray.executeOnAll(tools -> runLoadGenerator(params, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+            probeArray.executeOnAll(tools -> runProbeGenerator(params, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Warming up...");
-            Thread.sleep(WARMUP_DURATION.toMillis());
+            Thread.sleep(warmupDuration.toMillis());
 
             LOG.info("Running...");
             long before = System.nanoTime();
@@ -153,7 +133,7 @@ public class HttpPerfTest implements Serializable
                     // signal all participants to start
                     cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
                     // wait for the run duration
-                    Thread.sleep(RUN_DURATION.toMillis());
+                    Thread.sleep(runDuration.toMillis());
                     // signal all participants to stop
                     cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
                 }
@@ -199,20 +179,20 @@ public class HttpPerfTest implements Serializable
             NodeArrayConfiguration loadersCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
             NodeArrayConfiguration probeCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
             int loadersCount = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).mapToInt(nac -> nac.nodes().size()).sum();
-            long totalLoadersRequestCount = params.getLoaderRate() * loadersCount * RUN_DURATION.toSeconds();
-            long totalProbeRequestCount = params.getProbeRate() * RUN_DURATION.toSeconds();
+            long totalLoadersRequestCount = params.getLoaderRate() * loadersCount * runDuration.toSeconds();
+            long totalProbeRequestCount = params.getProbeRate() * runDuration.toSeconds();
 
             boolean succeeded = true;
 
             System.out.println(" Asserting loaders");
             // assert loaders did not get too many HTTP errors
-            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, RUN_DURATION.toSeconds() * 2); // max 2 errors per second on avg
+            succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, runDuration.toSeconds() * 2); // max 2 errors per second on avg
             // assert loaders had a given throughput
             succeeded &= assertThroughput(reportRootPath, loadersCfg, totalLoadersRequestCount, 1);
 
             System.out.println(" Asserting probe");
             // assert probe did not get too many HTTP errors
-            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, RUN_DURATION.toSeconds() * 2); // max 2 errors per second on avg
+            succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, runDuration.toSeconds() * 2); // max 2 errors per second on avg
             // assert probe had a given throughput and max latency
             succeeded &= assertThroughput(reportRootPath, probeCfg, totalProbeRequestCount, 1);
             // assert probe had a given max latency
@@ -271,7 +251,7 @@ public class HttpPerfTest implements Serializable
         server.addConnector(serverConnector);
 
         LatencyRecordingHandler latencyRecordingHandler = new LatencyRecordingHandler(latencyRecorder);
-        latencyRecordingHandler.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+        latencyRecordingHandler.setHandler(createHandler());
         server.setHandler(latencyRecordingHandler);
         server.start();
 
@@ -279,12 +259,14 @@ public class HttpPerfTest implements Serializable
         env.put(Server.class.getName(), server);
     }
 
+    protected abstract Handler createHandler();
+
     private void stopServer(Map<String, Object> env) throws Exception
     {
         ((Server)env.get(Server.class.getName())).stop();
     }
 
-    private void runLoadGenerator(PerfTestParams params, Map<String, Object> env) throws Exception
+    private void runLoadGenerator(PerfTestParams params, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
     {
         URI serverUri = params.getServerUri();
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
@@ -298,9 +280,9 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
+            .runFor(warmupDuration.plus(runDuration).toSeconds(), TimeUnit.SECONDS)
             .threads(2)
-            .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
+            .rateRampUpPeriod(warmupDuration.toSeconds() / 2)
             .resourceRate(params.getLoaderRate())
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
@@ -330,7 +312,7 @@ public class HttpPerfTest implements Serializable
         env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams params, Map<String, Object> env) throws Exception
+    private void runProbeGenerator(PerfTestParams params, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
     {
         URI serverUri = params.getServerUri();
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
@@ -344,9 +326,9 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
+            .runFor(warmupDuration.plus(runDuration).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
-            .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
+            .rateRampUpPeriod(warmupDuration.toSeconds() / 2)
             .resourceRate(params.getProbeRate())
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
