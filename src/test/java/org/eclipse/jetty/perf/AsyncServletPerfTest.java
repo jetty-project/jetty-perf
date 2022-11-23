@@ -14,8 +14,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class AsyncServletPerfTest extends AbstractPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(6);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(18);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     private static Stream<PerfTestParams> params()
     {
