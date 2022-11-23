@@ -24,13 +24,9 @@ public class OutputCapturingCluster implements AutoCloseable
     private final Cluster cluster;
     private final Path reportRootPath;
 
-    public OutputCapturingCluster(ClusterConfiguration clusterConfiguration, String... testParameterNames) throws Exception
+    public OutputCapturingCluster(ClusterConfiguration clusterConfiguration, String testName, String... testParameterNames) throws Exception
     {
-        this(clusterConfiguration, FileSystems.getDefault().getPath("target", "reports"), generateId(), testParameterNames);
-    }
-
-    private OutputCapturingCluster(ClusterConfiguration clusterConfiguration, Path reportsRoot, String testName, String... testParameterNames) throws Exception
-    {
+        Path reportsRoot = FileSystems.getDefault().getPath("target", "reports");
         Path reportRootPath = reportsRoot.resolve(testName);
         for (String subPath : testParameterNames)
             reportRootPath = reportRootPath.resolve(subPath);
@@ -49,14 +45,6 @@ public class OutputCapturingCluster implements AutoCloseable
         outErrCapture = new OutErrCapture(outErrCaptureFile);
         LOG.info("=== Output capture started ({}) ===", outErrCaptureFile);
         cluster = new Cluster(testName, clusterConfiguration);
-    }
-
-    private static String generateId()
-    {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        String className = stackTrace[3].getClassName();
-        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        return simpleClassName + "_" + stackTrace[3].getMethodName();
     }
 
     @Override

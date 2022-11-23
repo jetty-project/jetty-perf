@@ -53,9 +53,17 @@ public abstract class AbstractPerfTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPerfTest.class);
 
+    private static String generateId()
+    {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String className = stackTrace[3].getClassName();
+        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
+        return simpleClassName + "_" + stackTrace[3].getMethodName();
+    }
+
     public void runTest(PerfTestParams params, Duration warmupDuration, Duration runDuration) throws Exception
     {
-        try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), params.toString()))
+        try (OutputCapturingCluster outputCapturingCluster = new OutputCapturingCluster(params.getClusterConfiguration(), generateId(), params.toString()))
         {
             Path reportRootPath = outputCapturingCluster.getReportRootPath();
             Cluster cluster = outputCapturingCluster.getCluster();
