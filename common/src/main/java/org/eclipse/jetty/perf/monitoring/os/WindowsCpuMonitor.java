@@ -6,7 +6,7 @@ public class WindowsCpuMonitor extends AbstractCommandMonitor
 
     public WindowsCpuMonitor()
     {
-        this(DEFAULT_FILENAME, 10);
+        this(DEFAULT_FILENAME, DEFAULT_INTERVAL);
     }
 
     public WindowsCpuMonitor(String filename, int interval)

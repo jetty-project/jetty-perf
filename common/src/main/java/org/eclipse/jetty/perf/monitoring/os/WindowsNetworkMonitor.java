@@ -6,7 +6,7 @@ public class WindowsNetworkMonitor extends AbstractCommandMonitor
 
     public WindowsNetworkMonitor()
     {
-        this(DEFAULT_FILENAME, 10);
+        this(DEFAULT_FILENAME, DEFAULT_INTERVAL);
     }
 
     public WindowsNetworkMonitor(String filename, int interval)
