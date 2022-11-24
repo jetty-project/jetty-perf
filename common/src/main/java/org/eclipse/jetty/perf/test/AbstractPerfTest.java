@@ -1,10 +1,14 @@
 package org.eclipse.jetty.perf.test;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -20,6 +24,7 @@ import org.eclipse.jetty.perf.handler.LatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
+import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.perf.util.OutputCapturingCluster;
 import org.eclipse.jetty.server.ConnectionFactory;
@@ -239,8 +244,16 @@ public abstract class AbstractPerfTest implements Serializable
         if (params.getProtocol().isSecure())
         {
             SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
-            String path = Paths.get(Objects.requireNonNull(getClass().getResource("/keystore.p12")).toURI()).toString();
-            serverSslContextFactory.setKeyStorePath(path);
+            // Copy keystore from classpath to temp file.
+            URL resource = Objects.requireNonNull(getClass().getResource("/keystore.p12"));
+            Path targetTmpFolder = Paths.get(System.getProperty("java.io.tmpdir")).resolve(getClass().getSimpleName());
+            Files.createDirectories(targetTmpFolder);
+            Path targetKeystore = targetTmpFolder.resolve("keystore.p12");
+            try (InputStream inputStream = resource.openStream(); OutputStream outputStream = Files.newOutputStream(targetKeystore))
+            {
+                IOUtil.copy(inputStream, outputStream);
+            }
+            serverSslContextFactory.setKeyStorePath(targetKeystore.toString());
             serverSslContextFactory.setKeyStorePassword("storepwd");
             SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
             connectionFactories.add(ssl);
