@@ -1,8 +1,8 @@
 package org.eclipse.jetty.perf.monitoring;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 class AsyncProfilerAllocationMonitor extends AbstractAsyncProfilerMonitor
 {
@@ -29,13 +29,13 @@ class AsyncProfilerAllocationMonitor extends AbstractAsyncProfilerMonitor
     @Override
     protected Collection<String> extraStartCmdLineArgs()
     {
-        return Arrays.asList("-e", "alloc");
+        return List.of("-e", "alloc");
     }
 
     @Override
     protected Collection<String> extraStopCmdLineArgs()
     {
         File file = new File(outputFilename);
-        return Arrays.asList("-f", file.getAbsolutePath());
+        return List.of("-f", file.getAbsolutePath());
     }
 }

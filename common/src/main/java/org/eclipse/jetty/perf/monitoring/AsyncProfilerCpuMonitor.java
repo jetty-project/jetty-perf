@@ -1,8 +1,8 @@
 package org.eclipse.jetty.perf.monitoring;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
 {
@@ -29,15 +29,13 @@ public class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
     @Override
     protected Collection<String> extraStartCmdLineArgs()
     {
-        // Workaround for JDK 16 bug for when ZGC is enabled.
-        // See: https://github.com/jvm-profiling-tools/async-profiler/issues/422
-        return Arrays.asList("--safe-mode", "64");
+        return List.of();
     }
 
     @Override
     protected Collection<String> extraStopCmdLineArgs()
     {
         File file = new File(outputFilename);
-        return Arrays.asList("-f", file.getAbsolutePath());
+        return List.of("-f", file.getAbsolutePath());
     }
 }
