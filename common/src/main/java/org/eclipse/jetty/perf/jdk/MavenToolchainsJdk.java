@@ -64,7 +64,10 @@ public class MavenToolchainsJdk implements FilenameSupplier
     protected String findJavaHomeFromToolchain(FileSystem fileSystem, String hostname) throws Exception
     {
         String fileName = hostname + "-toolchains.xml";
-        Path toolchainsPath = Paths.get(fileName);
+        Path toolchainsPath = fileSystem.getPath(fileName);
+        if (!Files.exists(toolchainsPath))
+            toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "toolchains.xml");
+
         if (Files.exists(toolchainsPath))
         {
             try (InputStream is = Files.newInputStream(toolchainsPath))
@@ -91,5 +94,4 @@ public class MavenToolchainsJdk implements FilenameSupplier
             return null;
         }
     }
-
 }
