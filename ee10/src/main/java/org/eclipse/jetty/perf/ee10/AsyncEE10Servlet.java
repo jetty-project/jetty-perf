@@ -1,6 +1,7 @@
 package org.eclipse.jetty.perf.ee10;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletOutputStream;
@@ -8,6 +9,7 @@ import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.util.IO;
 
 public class AsyncEE10Servlet extends HttpServlet
 {
@@ -22,6 +24,7 @@ public class AsyncEE10Servlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         AsyncContext asyncContext = request.startAsync(request, response);
+        IO.copy(request.getInputStream(), OutputStream.nullOutputStream());
         ServletOutputStream outputStream = response.getOutputStream();
         outputStream.setWriteListener(new WriteListener() {
             @Override
