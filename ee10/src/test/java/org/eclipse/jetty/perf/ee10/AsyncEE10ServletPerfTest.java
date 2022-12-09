@@ -8,6 +8,9 @@ import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.perf.test.AbstractPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.DelayedHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -32,10 +35,20 @@ public class AsyncEE10ServletPerfTest extends AbstractPerfTest
     @Override
     protected Handler createHandler()
     {
-        ServletContextHandler servletContextHandler = new ServletContextHandler();
-        servletContextHandler.setContextPath("/");
-        servletContextHandler.addServlet(new AsyncEE10Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1)), "/*");
-        return servletContextHandler;
+        DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
+        GzipHandler gzipHandler = new GzipHandler();
+        untilContentHandler.setHandler(gzipHandler);
+        ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+        gzipHandler.setHandler(contextHandlerCollection);
+        ServletContextHandler targetContextHandler = new ServletContextHandler();
+        targetContextHandler.setContextPath("/");
+        targetContextHandler.addServlet(new AsyncEE10Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1)), "/*");
+        contextHandlerCollection.addHandler(targetContextHandler);
+        ServletContextHandler uselessContextHandler = new ServletContextHandler();
+        uselessContextHandler.setContextPath("/useless");
+        uselessContextHandler.addServlet(new Always404Servlet(), "/*");
+        contextHandlerCollection.addHandler(uselessContextHandler);
+        return untilContentHandler;
     }
 
     @ParameterizedTest

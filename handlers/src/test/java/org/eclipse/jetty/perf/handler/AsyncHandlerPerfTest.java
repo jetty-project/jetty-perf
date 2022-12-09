@@ -7,6 +7,10 @@ import java.util.stream.Stream;
 import org.eclipse.jetty.perf.test.AbstractPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.DelayedHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -31,7 +35,18 @@ public class AsyncHandlerPerfTest extends AbstractPerfTest
     @Override
     protected Handler createHandler()
     {
-        return new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+        DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
+        GzipHandler gzipHandler = new GzipHandler();
+        untilContentHandler.setHandler(gzipHandler);
+        ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+        gzipHandler.setHandler(contextHandlerCollection);
+        ContextHandler targetContextHandler = new ContextHandler("/");
+        contextHandlerCollection.addHandler(targetContextHandler);
+        ContextHandler uselessContextHandler = new ContextHandler("/useless");
+        contextHandlerCollection.addHandler(uselessContextHandler);
+        AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+        targetContextHandler.addHandler(asyncHandler);
+        return untilContentHandler;
     }
 
     @ParameterizedTest
