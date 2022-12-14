@@ -24,9 +24,9 @@ public class AsyncHandlerNoDelayNorGzipPerfTest extends AbstractPerfTest
     {
         return Stream.of(
             new PerfTestParams(PerfTestParams.Protocol.http),
-            new PerfTestParams(PerfTestParams.Protocol.https),
-            new PerfTestParams(PerfTestParams.Protocol.h2c),
-            new PerfTestParams(PerfTestParams.Protocol.h2)
+//            new PerfTestParams(PerfTestParams.Protocol.https),
+            new PerfTestParams(PerfTestParams.Protocol.h2c)
+//            new PerfTestParams(PerfTestParams.Protocol.h2)
         );
     }
 

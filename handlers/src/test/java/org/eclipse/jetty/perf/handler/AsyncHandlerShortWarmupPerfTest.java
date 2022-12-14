@@ -17,10 +17,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class AsyncHandlerPerfTest extends AbstractPerfTest
+public class AsyncHandlerShortWarmupPerfTest extends AbstractPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(35);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(205);
 
     private static Stream<PerfTestParams> params()
     {
