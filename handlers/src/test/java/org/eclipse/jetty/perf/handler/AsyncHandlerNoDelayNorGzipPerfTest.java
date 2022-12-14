@@ -9,14 +9,13 @@ import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class AsyncHandlerNoDelayPerfTest extends AbstractPerfTest
+public class AsyncHandlerNoDelayNorGzipPerfTest extends AbstractPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
@@ -34,16 +33,14 @@ public class AsyncHandlerNoDelayPerfTest extends AbstractPerfTest
     @Override
     protected Handler createHandler()
     {
-        GzipHandler gzipHandler = new GzipHandler();
         ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-        gzipHandler.setHandler(contextHandlerCollection);
         ContextHandler targetContextHandler = new ContextHandler("/");
         contextHandlerCollection.addHandler(targetContextHandler);
         ContextHandler uselessContextHandler = new ContextHandler("/useless");
         contextHandlerCollection.addHandler(uselessContextHandler);
         AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
         targetContextHandler.addHandler(asyncHandler);
-        return gzipHandler;
+        return contextHandlerCollection;
     }
 
     @ParameterizedTest

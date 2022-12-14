@@ -11,12 +11,14 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DelayedHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@Disabled
 public class AsyncEE10ServletPerfTest extends AbstractPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);

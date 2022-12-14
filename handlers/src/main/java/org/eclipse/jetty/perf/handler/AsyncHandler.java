@@ -34,6 +34,10 @@ public class AsyncHandler extends Handler.Processor
                 response.setStatus(200);
                 response.write(true, ByteBuffer.wrap(answer), callback);
             }
+            else
+            {
+                request.demand(() -> process(request, response, callback));
+            }
         }
         finally
         {
