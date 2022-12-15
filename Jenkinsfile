@@ -9,7 +9,7 @@ def get_jetty_load_generator_version() {
 }
 
 pipeline {
-    agent { node { label 'load-master' } }
+    agent any
     options {
       buildDiscarder logRotator( numToKeepStr: '10' )
     }
