@@ -27,7 +27,7 @@ pipeline {
     }
     stages {
         stage('generate-toolchains-file') {
-          agent { node { label 'load-master' } }
+          agent any // { node { label 'load-master' } }
           steps {
             jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-sample'],
                         jdkNames: ["${JDK_TO_USE}"]
@@ -36,44 +36,6 @@ pipeline {
         }
         stage('Get Load nodes') {
           parallel {
-            stage('Build Jetty') {
-              agent { node { label 'load-master' } }
-              when {
-                beforeAgent true
-                expression {
-                  return JETTY_VERSION.endsWith("SNAPSHOT");
-                }
-              }
-              steps {
-                dir("jetty.build") {
-                  echo "building jetty-load-generator 4.0.x"
-                  git url: "https://github.com/jetty-project/jetty-load-generator.git", branch: "4.0.x"
-                  timeout(time: 30, unit: 'MINUTES') {
-                    withEnv(["JAVA_HOME=${ tool "jdk17" }",
-                             "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
-                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
-                      configFileProvider(
-                              [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                        sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
-                      }
-                    }
-                  }
-
-                  echo "building jetty ${JETTY_BRANCH}"
-                  git url: "https://github.com/eclipse/jetty.project.git", branch: "$JETTY_BRANCH"
-                  timeout(time: 30, unit: 'MINUTES') {
-                    withEnv(["JAVA_HOME=${ tool "jdk17" }",
-                             "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
-                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
-                      configFileProvider(
-                              [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                        sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
-                      }
-                    }
-                  }
-                }
-              }
-            }
             stage('install load-1') {
               agent { node { label 'load-1' } }
               steps {
@@ -122,20 +84,68 @@ pipeline {
             }
           }
         }
+        stage('Build Jetty') {
+          agent { node { label 'load-master' } }
+          when {
+            beforeAgent true
+            expression {
+              return JETTY_VERSION.endsWith("SNAPSHOT");
+            }
+          }
+          steps {
+            lock('jetty-perf') {  
+              dir("jetty.build") {
+                echo "building jetty-load-generator 4.0.x"
+                checkout([$class: 'GitSCM',
+                      branches: [[name: "*/4.0.x"]],
+                      extensions: [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
+                      userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-load-generator.git']]])                  
+                timeout(time: 30, unit: 'MINUTES') {
+                  withEnv(["JAVA_HOME=${ tool "jdk17" }",
+                           "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
+                           "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                    configFileProvider(
+                            [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                      sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
+                    }
+                  }
+                }
+
+                echo "building jetty ${JETTY_BRANCH}"
+                checkout([$class: 'GitSCM',
+                      branches: [[name: "*/$JETTY_BRANCH"]],
+                      extensions: [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
+                      userRemoteConfigs: [[url: 'https://github.com/eclipse/jetty.project.git']]])  
+                timeout(time: 30, unit: 'MINUTES') {
+                  withEnv(["JAVA_HOME=${ tool "jdk17" }",
+                           "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
+                           "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                    configFileProvider(
+                            [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                      sh "mvn -Pfast --no-transfer-progress -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
+                    }
+                  }
+                }
+              }
+            }  
+          }
+        }      
         stage('jetty-perf') {
             agent { node { label 'load-master' } }
             steps {
-              unstash name: 'toolchains.xml'
-              sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
-              withEnv(["JAVA_HOME=${ tool "jdk17" }",
-                       "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
-                       "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
-                configFileProvider(
-                        [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e -fae clean verify -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Djetty-load-generator.version=${JETTY_LOAD_GENERATOR_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
-                  //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
+              lock('jetty-perf') {              
+                unstash name: 'toolchains.xml'
+                sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+                withEnv(["JAVA_HOME=${ tool "jdk17" }",
+                         "PATH+MAVEN=${ tool "jdk17" }/bin:${tool "maven3"}/bin",
+                         "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                  configFileProvider(
+                          [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                    sh "mvn --no-transfer-progress -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -V -B -e -fae clean verify -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Djetty-load-generator.version=${JETTY_LOAD_GENERATOR_VERSION} -Dtest.jdk.name=${JDK_TO_USE}"
+                    //-Dloadgenerator.version=${LOADGENERATOR_VERSION}"
+                  }
                 }
-              }
+              }  
             }
             post {
               always {
