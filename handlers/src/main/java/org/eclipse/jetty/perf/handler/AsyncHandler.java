@@ -20,28 +20,14 @@ public class AsyncHandler extends Handler.Processor
     @Override
     public void process(Request request, Response response, Callback callback)
     {
-        Content.Chunk chunk = request.read();
-        if (chunk == null)
+        Content.Source.consumeAll(request, new Callback.Nested(callback)
         {
-            request.demand(() -> process(request, response, callback));
-            return;
-        }
-
-        try
-        {
-            if (chunk.isLast())
+            @Override
+            public void succeeded()
             {
                 response.setStatus(200);
-                response.write(true, ByteBuffer.wrap(answer), callback);
+                response.write(true, ByteBuffer.wrap(answer), getCallback());
             }
-            else
-            {
-                request.demand(() -> process(request, response, callback));
-            }
-        }
-        finally
-        {
-            chunk.release();
-        }
+        });
     }
 }

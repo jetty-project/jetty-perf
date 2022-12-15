@@ -10,14 +10,13 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DelayedHandler;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class AsyncHandlerPerfTest extends AbstractPerfTest
+public class AsyncHandlerNoGzipPerfTest extends AbstractPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
@@ -36,10 +35,8 @@ public class AsyncHandlerPerfTest extends AbstractPerfTest
     protected Handler createHandler()
     {
         DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
-        GzipHandler gzipHandler = new GzipHandler();
-        untilContentHandler.setHandler(gzipHandler);
         ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-        gzipHandler.setHandler(contextHandlerCollection);
+        untilContentHandler.setHandler(contextHandlerCollection);
         ContextHandler targetContextHandler = new ContextHandler("/");
         contextHandlerCollection.addHandler(targetContextHandler);
         ContextHandler uselessContextHandler = new ContextHandler("/useless");

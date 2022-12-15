@@ -9,7 +9,6 @@ import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.DelayedHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -17,10 +16,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class AsyncHandlerShortWarmupPerfTest extends AbstractPerfTest
+public class AsyncHandlerNoDelayPerfTest extends AbstractPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(35);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(205);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
+    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     private static Stream<PerfTestParams> params()
     {
@@ -35,9 +34,7 @@ public class AsyncHandlerShortWarmupPerfTest extends AbstractPerfTest
     @Override
     protected Handler createHandler()
     {
-        DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
         GzipHandler gzipHandler = new GzipHandler();
-        untilContentHandler.setHandler(gzipHandler);
         ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
         gzipHandler.setHandler(contextHandlerCollection);
         ContextHandler targetContextHandler = new ContextHandler("/");
@@ -46,7 +43,7 @@ public class AsyncHandlerShortWarmupPerfTest extends AbstractPerfTest
         contextHandlerCollection.addHandler(uselessContextHandler);
         AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
         targetContextHandler.addHandler(asyncHandler);
-        return untilContentHandler;
+        return gzipHandler;
     }
 
     @ParameterizedTest
