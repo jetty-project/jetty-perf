@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-    agent { node { label 'load-master' } }
+    agent any
     triggers {
       cron '@daily'
     }
