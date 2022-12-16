@@ -6,7 +6,7 @@ pipeline {
       cron '@daily'
     }
     options {
-      buildDiscarder logRotator( numToKeepStr: '48' )
+      buildDiscarder logRotator( numToKeepStr: '100' )
     }
     parameters {
       string(defaultValue: '11.0.14-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
