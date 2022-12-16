@@ -6,7 +6,7 @@ pipeline {
     cron '@daily'
   }
   options {
-    buildDiscarder logRotator(numToKeepStr: '48')
+    buildDiscarder logRotator(numToKeepStr: '100')
   }
 
   parameters {
