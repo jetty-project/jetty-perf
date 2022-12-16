@@ -26,6 +26,7 @@ pipeline {
                   parameters: [string(name: 'JETTY_VERSION', value: "${JETTY_VERSION}"),
                                string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
+                               string(name: 'JETTY_PERF_BRANCH', value: "main-10.0.x"),
                                string(name: 'USE_LOOM_IF_POSSIBLE', value: "${USE_LOOM_IF_POSSIBLE}")])
           copyArtifacts(projectName: 'jetty-perf-main', selector: specific("${built.number}"));
         }
