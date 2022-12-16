@@ -14,6 +14,7 @@ pipeline {
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
     string(defaultValue: '', description: 'Load Generator version to use', name: 'JETTY_LOAD_GENERATOR_VERSION')
+    string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
 
   }
   tools {
@@ -106,7 +107,6 @@ pipeline {
               }
             }
 
-
             echo "building jetty ${JETTY_BRANCH}"
             checkout([$class           : 'GitSCM',
                       branches         : [[name: "*/$JETTY_BRANCH"]],
@@ -132,6 +132,11 @@ pipeline {
         lock('jetty-perf') {
           unstash name: 'toolchains.xml'
           sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+
+          checkout([$class           : 'GitSCM',
+                    branches         : [[name: "*/$JETTY_PERF_BRANCH"]],
+                    extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
+                    userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-perf.git']]])
           withEnv(["JAVA_HOME=${tool "jdk11"}",
                    "PATH+MAVEN=${tool "jdk11"}/bin:${tool "maven3"}/bin",
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
@@ -159,10 +164,3 @@ def buildMvnCmd() {
   }
 }
 
-def get_jetty_load_generator_version() {
-  if ("$params.JETTY_VERSION".endsWith("SNAPSHOT")) {
-    return "4.0.0-SNAPSHOT"
-  } else {
-    return "4.0.0.alpha2"
-  }
-}
