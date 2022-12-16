@@ -33,6 +33,7 @@ pipeline {
         post {
           always {
             archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
+          }
         }
       }
     }
