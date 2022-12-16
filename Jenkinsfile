@@ -22,14 +22,14 @@ pipeline {
     stage('Jetty Perf Run') {
       steps {
         script {
-          def built = build(job: 'jetty-perf-main', propagate: false,
+          def built = build(job: '/load_testing/jetty-perf-main', propagate: false,
                   parameters: [string(name: 'JETTY_VERSION', value: "${JETTY_VERSION}"),
                                string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
                                string(name: 'JETTY_PERF_BRANCH', value: "${JETTY_PERF_BRANCH}"),
                                string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}"),
                                string(name: 'USE_LOOM_IF_POSSIBLE', value: "${USE_LOOM_IF_POSSIBLE}")])
-          copyArtifacts(projectName: 'jetty-perf-main', selector: specific("${built.number}"));
+          copyArtifacts(projectName: '/load_testing/jetty-perf-main', selector: specific("${built.number}"));
         }
       }
       post {
