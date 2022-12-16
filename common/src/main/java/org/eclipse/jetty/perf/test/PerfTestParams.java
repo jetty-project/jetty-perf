@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
@@ -19,17 +20,17 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk17");
+    private static final String JDK_TO_USE = Objects.requireNonNull(System.getProperty("test.jdk.name"));
 
     private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
-        ConfigurableMonitor.Item.ASYNC_PROF_CPU,
+//        ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler seems to be the cause of the 59th second latency spike.
         ConfigurableMonitor.Item.JHICCUP
     );
 
-    private static final SimpleClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
+    private static final ClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
         .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))
         .nodeArray(new SimpleNodeArrayConfiguration("server")
             .node(new Node("load-master"))
@@ -81,10 +82,20 @@ public class PerfTestParams implements Serializable
     }
 
     private final Protocol protocol;
+    private final int loaderRate;
+    private final int probeRate;
+    private final long expectedP99ServerLatency;
+    private final long expectedP99ProbeLatency;
+    private final double expectedP99ErrorMargin;
 
-    public PerfTestParams(Protocol protocol)
+    public PerfTestParams(Protocol protocol, int loaderRate, int probeRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin)
     {
         this.protocol = protocol;
+        this.loaderRate = loaderRate;
+        this.probeRate = probeRate;
+        this.expectedP99ServerLatency = expectedP99ServerLatency;
+        this.expectedP99ProbeLatency = expectedP99ProbeLatency;
+        this.expectedP99ErrorMargin = expectedP99ErrorMargin;
     }
 
     public Protocol getProtocol()
@@ -121,11 +132,6 @@ public class PerfTestParams implements Serializable
         return getProtocol().isSecure() ? 9443 : 9080;
     }
 
-    public int getParticipantCount()
-    {
-        return getClusterConfiguration().nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
-    }
-
     public EnumSet<ConfigurableMonitor.Item> getMonitoredItems()
     {
         return MONITORED_ITEMS;
@@ -133,65 +139,27 @@ public class PerfTestParams implements Serializable
 
     public int getLoaderRate()
     {
-        // TODO rate should vary according to protocol
-        // i.e.: it takes less resources to serve HTTP vs HTTPS -> rate should be higher for HTTP
-        return 60_000;
+        return loaderRate;
     }
 
     public int getProbeRate()
     {
-        return 100;
+        return probeRate;
     }
 
     public long getExpectedP99ServerLatency()
     {
-        switch (protocol)
-        {
-            case http:
-                return 5_000;
-            case https:
-                return 6_500;
-            case h2c:
-                return 13_000;
-            case h2:
-                return 30_000;
-            default:
-                throw new AssertionError();
-        }
+        return expectedP99ServerLatency;
     }
 
     public long getExpectedP99ProbeLatency()
     {
-        switch (protocol)
-        {
-            case http:
-                return 110_000;
-            case https:
-                return 130_000;
-            case h2c:
-                return 120_000;
-            case h2:
-                return 130_000;
-            default:
-                throw new AssertionError();
-        }
+        return expectedP99ProbeLatency;
     }
 
     public double getExpectedP99ErrorMargin()
     {
-        switch (protocol)
-        {
-            case http:
-                return 10.0;
-            case https:
-                return 10.0;
-            case h2c:
-                return 15.0;
-            case h2:
-                return 15.0;
-            default:
-                throw new AssertionError();
-        }
+        return expectedP99ErrorMargin;
     }
 
     @Override

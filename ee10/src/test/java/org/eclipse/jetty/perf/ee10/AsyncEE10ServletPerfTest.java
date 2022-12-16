@@ -28,10 +28,10 @@ public class AsyncEE10ServletPerfTest
     private static Stream<PerfTestParams> params()
     {
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http),
-            new PerfTestParams(PerfTestParams.Protocol.https),
-            new PerfTestParams(PerfTestParams.Protocol.h2c),
-            new PerfTestParams(PerfTestParams.Protocol.h2)
+            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 5_000, 110_000, 10.0),
+            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 6_500, 130_000, 10.0),
+            new PerfTestParams(PerfTestParams.Protocol.h2c, 60_000, 100, 13_000, 120_000, 15.0),
+            new PerfTestParams(PerfTestParams.Protocol.h2, 60_000, 100, 30_000, 130_000, 15.0)
         );
     }
 

@@ -68,12 +68,10 @@ public class ClusteredPerfTest implements Serializable, Closeable
     private final SerializableSupplier<Handler> testedHandlerSupplier;
     private final int participantCount;
     private final Collection<String> nodeArrayIds;
-
     private transient Cluster cluster; // not serializable, but there is no need to access this field from remote lambdas.
 
     public ClusteredPerfTest(String testName, PerfTestParams perfTestParams, Duration warmupDuration, Duration runDuration, SerializableSupplier<Handler> testedHandlerSupplier, Path reportRootPath) throws Exception
     {
-
         this.warmupDuration = warmupDuration;
         this.runDuration = runDuration;
         this.monitoredItems = perfTestParams.getMonitoredItems();
