@@ -2,7 +2,6 @@ package org.eclipse.jetty.perf.test;
 
 import java.io.Serializable;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +44,7 @@ public class PerfTestParams implements Serializable
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
             .node(new Node("load-sample"))
-            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
+            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xint", "-Xms8g", "-Xmx8g")))
         );
 
     public enum Protocol
@@ -98,7 +97,7 @@ public class PerfTestParams implements Serializable
         return CLUSTER_CONFIGURATION;
     }
 
-    public URI getServerUri() throws URISyntaxException
+    public URI getServerUri()
     {
         String serverHostname = null;
         for (NodeArrayConfiguration nodeArrayConfiguration : getClusterConfiguration().nodeArrays())
@@ -114,7 +113,7 @@ public class PerfTestParams implements Serializable
         if (serverHostname == null)
             throw new IllegalStateException("cluster configuration must have a node array named 'server'");
 
-        return new URI("http" + (getProtocol().isSecure() ? "s" : "") + "://" + serverHostname + ":" + getServerPort());
+        return URI.create("http" + (getProtocol().isSecure() ? "s" : "") + "://" + serverHostname + ":" + getServerPort());
     }
 
     public int getServerPort()

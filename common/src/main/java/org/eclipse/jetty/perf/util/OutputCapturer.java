@@ -4,70 +4,32 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.mortbay.jetty.orchestrator.Cluster;
-import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OutputCapturingCluster implements AutoCloseable
+public class OutputCapturer implements AutoCloseable
 {
-    private static final Logger LOG = LoggerFactory.getLogger(OutputCapturingCluster.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OutputCapturer.class);
 
     private final OutErrCapture outErrCapture;
-    private final Cluster cluster;
-    private final Path reportRootPath;
 
-    public OutputCapturingCluster(ClusterConfiguration clusterConfiguration, String testName, String... testParameterNames) throws Exception
+    public OutputCapturer(Path reportRootPath) throws Exception
     {
-        Path reportsRoot = FileSystems.getDefault().getPath("target", "reports");
-        Path reportRootPath = reportsRoot.resolve(testName);
-        for (String subPath : testParameterNames)
-            reportRootPath = reportRootPath.resolve(subPath);
-
-        // if report folder already exists, rename it out of the way
-        if (Files.isDirectory(reportRootPath))
-        {
-            Path parentFolder = reportsRoot.resolve(testName);
-            String timestamp = "" + Files.getLastModifiedTime(parentFolder).toMillis();
-            Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
-            Files.move(parentFolder, newFolder);
-        }
-
-        this.reportRootPath = reportRootPath;
         Path outErrCaptureFile = reportRootPath.resolve("outerr.log");
         outErrCapture = new OutErrCapture(outErrCaptureFile);
         LOG.info("=== Output capture started ({}) ===", outErrCaptureFile);
-        cluster = new Cluster(testName, clusterConfiguration);
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
-        try
-        {
-            cluster.close();
-        }
-        finally
-        {
-            outErrCapture.close();
-        }
-    }
-
-    public Path getReportRootPath()
-    {
-        return reportRootPath;
-    }
-
-    public Cluster getCluster()
-    {
-        return cluster;
+        outErrCapture.close();
     }
 
     private static class OutErrCapture implements AutoCloseable
@@ -87,7 +49,7 @@ public class OutputCapturingCluster implements AutoCloseable
         }
 
         @Override
-        public void close() throws Exception
+        public void close()
         {
             System.setOut(oldOut);
             System.setErr(oldErr);
@@ -170,7 +132,7 @@ public class OutputCapturingCluster implements AutoCloseable
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
         }
     }

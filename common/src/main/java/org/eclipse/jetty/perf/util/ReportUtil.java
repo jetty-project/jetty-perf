@@ -4,21 +4,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.eclipse.jetty.perf.histogram.HgrmReport;
 import org.eclipse.jetty.perf.histogram.JHiccupReport;
 import org.eclipse.jetty.perf.histogram.PerfReport;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
-import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
-import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +25,29 @@ public class ReportUtil
 {
     private static final Logger LOG = LoggerFactory.getLogger(ReportUtil.class);
 
-    public static void generateReport(Path reportPath, ClusterConfiguration clusterConfiguration, Cluster cluster) throws IOException
+    public static Path createReportRootPath(String testName, String... testParameterNames) throws IOException
     {
-        for (String nodeArrayId : clusterConfiguration.nodeArrays().stream().map(NodeArrayConfiguration::id).collect(Collectors.toList()))
+        Path reportsRoot = FileSystems.getDefault().getPath("target", "reports");
+        Path reportRootPath = reportsRoot.resolve(testName);
+        for (String subPath : testParameterNames)
+            reportRootPath = reportRootPath.resolve(subPath);
+
+        // if report folder already exists, rename it out of the way
+        if (Files.isDirectory(reportRootPath))
+        {
+            Path parentFolder = reportsRoot.resolve(testName);
+            String timestamp = Long.toString(Files.getLastModifiedTime(parentFolder).toMillis());
+            Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
+            Files.move(parentFolder, newFolder);
+        }
+
+        Files.createDirectories(reportRootPath);
+        return reportRootPath;
+    }
+
+    public static void generateReport(Path reportPath, Collection<String> nodeArrayIds, Cluster cluster) throws IOException
+    {
+        for (String nodeArrayId : nodeArrayIds)
         {
             NodeArray nodeArray = cluster.nodeArray(nodeArrayId);
             Path targetPath = reportPath.resolve(nodeArrayId);
