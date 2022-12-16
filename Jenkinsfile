@@ -30,6 +30,11 @@ pipeline {
                                string(name: 'USE_LOOM_IF_POSSIBLE', value: "${USE_LOOM_IF_POSSIBLE}")])
           copyArtifacts(projectName: 'jetty-perf-main', selector: specific("${built.number}"));
         }
+        post {
+          always {
+            archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
+          }
+        }
       }
     }
   }
