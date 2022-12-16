@@ -3,7 +3,7 @@
 pipeline {
   agent any
   options {
-    buildDiscarder logRotator(numToKeepStr: '48')
+    buildDiscarder logRotator(numToKeepStr: '20')
   }
   environment {
     TEST_TO_RUN = '*'
@@ -15,6 +15,7 @@ pipeline {
     string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
     string(defaultValue: '', description: 'Load Generator version to use', name: 'JETTY_LOAD_GENERATOR_VERSION')
     string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
+    string(defaultValue: '*', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
 
   }
   tools {
