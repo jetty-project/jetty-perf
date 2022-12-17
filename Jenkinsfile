@@ -14,7 +14,7 @@ pipeline {
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
 
       string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
-      string(defaultValue: 'main-10.0.x', description: 'Jetty Branch', name: 'JETTY_PERF_BRANCH')
+      string(defaultValue: 'main-12.0.x', description: 'Jetty Branch', name: 'JETTY_PERF_BRANCH')
       string(defaultValue: '*', description: 'Jetty Branch', name: 'TEST_TO_RUN')
 
     }
