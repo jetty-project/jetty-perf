@@ -6,7 +6,8 @@ pipeline {
       buildDiscarder logRotator( numToKeepStr: '100' )
     }
     environment {
-      JETTY_LOAD_GENERATOR_VERSION = get_jetty_load_generator_version()
+      // Use JETTY_LOAD_GENERATOR_VERSION = get_jetty_load_generator_version() in case new API changes breaking the load generator get merged.
+      JETTY_LOAD_GENERATOR_VERSION = "4.0.0.alpha3";
     }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
@@ -42,12 +43,10 @@ pipeline {
   }
 }
 
-def get_jetty_load_generator_version() {
-  if ("$params.JETTY_VERSION".endsWith("SNAPSHOT")) {
-    return "4.0.0-SNAPSHOT"
-  } else {
-    return "4.0.0.alpha3"
-  }
-}
-
-
+// def get_jetty_load_generator_version() {
+//   if ("$params.JETTY_VERSION".endsWith("SNAPSHOT")) {
+//     return "4.0.0-SNAPSHOT"
+//   } else {
+//     return "4.0.0.alpha3"
+//   }
+// }
