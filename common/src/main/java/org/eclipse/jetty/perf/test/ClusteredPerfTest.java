@@ -103,7 +103,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         NodeArray loadersArray = cluster.nodeArray("loaders");
         NodeArray probeArray = cluster.nodeArray("probe");
 
-        NodeJob logSystemProps = tools -> LOG.info("JVM version: '{}', OS name: '{}', OS arch: '{}'", System.getProperty("java.vm.version"), System.getProperty("os.name"), System.getProperty("os.arch"));
+        NodeJob logSystemProps = tools -> LOG.info("JVM version '{}' running on '{}/{}'", System.getProperty("java.vm.version"), System.getProperty("os.name"), System.getProperty("os.arch"));
         serverArray.executeOnAll(logSystemProps).get();
         loadersArray.executeOnAll(logSystemProps).get();
         probeArray.executeOnAll(logSystemProps).get();
