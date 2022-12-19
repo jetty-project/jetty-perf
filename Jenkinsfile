@@ -161,7 +161,6 @@ pipeline {
 def buildMvnCmd() {
   String cmd = ""
   if ("${params.JETTY_LOAD_GENERATOR_VERSION}") {
-    cmd += "-Djetty-load-generator.version=${params.JETTY_LOAD_GENERATOR_VERSION}"
+    cmd += " -Djetty-load-generator.version=${params.JETTY_LOAD_GENERATOR_VERSION}"
   }
 }
-
