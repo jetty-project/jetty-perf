@@ -138,8 +138,8 @@ pipeline {
                     branches         : [[name: "*/$JETTY_PERF_BRANCH"]],
                     extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
                     userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-perf.git']]])
-          withEnv(["JAVA_HOME=${tool "jdk11"}",
-                   "PATH+MAVEN=${tool "jdk11"}/bin:${tool "maven3"}/bin",
+          withEnv(["JAVA_HOME=${tool "jdk17"}",
+                   "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
             configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
