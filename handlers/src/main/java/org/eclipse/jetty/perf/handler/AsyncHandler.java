@@ -8,7 +8,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
 
-public class AsyncHandler extends Handler.Processor
+public class AsyncHandler extends Handler.Abstract.NonBlocking
 {
     private final byte[] answer;
 
@@ -18,7 +18,7 @@ public class AsyncHandler extends Handler.Processor
     }
 
     @Override
-    public void process(Request request, Response response, Callback callback)
+    public boolean process(Request request, Response response, Callback callback)
     {
         Content.Source.consumeAll(request, new Callback.Nested(callback)
         {
@@ -29,5 +29,6 @@ public class AsyncHandler extends Handler.Processor
                 response.write(true, ByteBuffer.wrap(answer), getCallback());
             }
         });
+        return true;
     }
 }

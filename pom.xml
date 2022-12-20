@@ -20,7 +20,7 @@
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
     <!-- The following props are overridden by the jenkins pipeline, see Jenkinsfile. -->
-    <jetty.version>12.0.0.alpha3</jetty.version>
+    <jetty.version>12.0.0-SNAPSHOT</jetty.version>
     <jetty-load-generator.version>4.0.0.alpha3</jetty-load-generator.version>
     <test.jdk.name>load-jdk17</test.jdk.name>
   </properties>
