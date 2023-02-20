@@ -8,7 +8,6 @@ import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.DelayedHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -52,28 +51,6 @@ public class AsyncHandlerPerfTest
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
-            DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
-            GzipHandler gzipHandler = new GzipHandler();
-            untilContentHandler.setHandler(gzipHandler);
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-            gzipHandler.setHandler(contextHandlerCollection);
-            ContextHandler targetContextHandler = new ContextHandler("/");
-            contextHandlerCollection.addHandler(targetContextHandler);
-            ContextHandler uselessContextHandler = new ContextHandler("/useless");
-            contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.addHandler(asyncHandler);
-            return untilContentHandler;
-        });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
-    }
-
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testNoDelay(PerfTestParams params) throws Exception
-    {
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
-        {
             GzipHandler gzipHandler = new GzipHandler();
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             gzipHandler.setHandler(contextHandlerCollection);
@@ -82,7 +59,7 @@ public class AsyncHandlerPerfTest
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
             AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.addHandler(asyncHandler);
+            targetContextHandler.setHandler(asyncHandler);
             return gzipHandler;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
@@ -94,33 +71,13 @@ public class AsyncHandlerPerfTest
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
-            DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-            untilContentHandler.setHandler(contextHandlerCollection);
-            ContextHandler targetContextHandler = new ContextHandler("/");
-            contextHandlerCollection.addHandler(targetContextHandler);
-            ContextHandler uselessContextHandler = new ContextHandler("/useless");
-            contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.addHandler(asyncHandler);
-            return untilContentHandler;
-        });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
-    }
-
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testNoDelayNorGzip(PerfTestParams params) throws Exception
-    {
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
-        {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ContextHandler targetContextHandler = new ContextHandler("/");
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
             AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.addHandler(asyncHandler);
+            targetContextHandler.setHandler(asyncHandler);
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));

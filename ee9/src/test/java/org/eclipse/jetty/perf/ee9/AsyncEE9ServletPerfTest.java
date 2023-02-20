@@ -9,7 +9,6 @@ import org.eclipse.jetty.ee9.servlet.ServletHolder;
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.DelayedHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -54,9 +53,7 @@ public class AsyncEE9ServletPerfTest
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
-            DelayedHandler.UntilContent untilContentHandler = new DelayedHandler.UntilContent();
             GzipHandler gzipHandler = new GzipHandler();
-            untilContentHandler.setHandler(gzipHandler);
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             gzipHandler.setHandler(contextHandlerCollection);
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -67,7 +64,7 @@ public class AsyncEE9ServletPerfTest
             uselessContextHandler.setContextPath("/useless");
             uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
             contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
-            return untilContentHandler;
+            return gzipHandler;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }

@@ -20,8 +20,8 @@
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
     <!-- The following props are overridden by the jenkins pipeline, see Jenkinsfile. -->
-    <jetty.version>12.0.0-SNAPSHOT</jetty.version>
-    <jetty-load-generator.version>4.0.0.alpha3</jetty-load-generator.version>
+    <jetty.version>12.0.0.beta0</jetty.version>
+    <jetty-load-generator.version>4.0.0.beta0</jetty-load-generator.version>
     <test.jdk.name>load-jdk17</test.jdk.name>
   </properties>
 
@@ -128,13 +128,13 @@
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.3.0-alpha10</version>
+        <version>1.4.5</version>
       </dependency>
 
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
-        <version>5.7.1</version>
+        <version>5.9.2</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -150,7 +150,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0-M7</version>
+          <version>3.0.0-M9</version>
           <configuration>
             <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
           </configuration>
@@ -161,14 +161,23 @@
 
   <repositories>
     <repository>
-      <id>maven-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/jetty-snapshots</url>
-      <layout>default</layout>
+      <id>jetty.snapshot</id>
+      <url>https://oss.sonatype.org/content/repositories/jetty-snapshots/</url>
       <releases>
         <enabled>false</enabled>
       </releases>
       <snapshots>
         <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>jetty.staging</id>
+      <url>https://oss.sonatype.org/content/groups/jetty-with-staging</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
       </snapshots>
     </repository>
   </repositories>
