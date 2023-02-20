@@ -80,19 +80,19 @@ pipeline {
         }
       }
     }
-    stage('Build Jetty') {
+    stage('Build jetty-load-generator') {
       agent { node { label 'load-master' } }
       when {
         beforeAgent true
         expression {
-          return JETTY_VERSION.endsWith("SNAPSHOT");
+          return JETTY_VERSION.endsWith("SNAPSHOT") && JETTY_LOAD_GENERATOR_VERSION.endsWith("SNAPSHOT") && JETTY_LOAD_GENERATOR_VERSION.startsWith("4.0");
         }
       }
       steps {
         lock('jetty-perf') {
           dir("jetty.build") {
+            echo "building jetty-load-generator ${JETTY_LOAD_GENERATOR_VERSION}"
 
-            echo "building jetty-load-generator 4.0.x"
             checkout([$class           : 'GitSCM',
                       branches         : [[name: "*/4.0.x"]],
                       extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
@@ -107,8 +107,23 @@ pipeline {
                 }
               }
             }
-
+          }
+        }
+      }
+    }
+    stage('Build Jetty') {
+      agent { node { label 'load-master' } }
+      when {
+        beforeAgent true
+        expression {
+          return JETTY_VERSION.endsWith("SNAPSHOT");
+        }
+      }
+      steps {
+        lock('jetty-perf') {
+          dir("jetty.build") {
             echo "building jetty ${JETTY_BRANCH}"
+
             checkout([$class           : 'GitSCM',
                       branches         : [[name: "*/$JETTY_BRANCH"]],
                       extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
