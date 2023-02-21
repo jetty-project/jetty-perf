@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
 
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
@@ -20,7 +19,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    private static final String JDK_TO_USE = Objects.requireNonNull(System.getProperty("test.jdk.name"));
+    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk17");
 
     private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
