@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 abstract class AbstractAsyncProfilerMonitor implements Monitor
 {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAsyncProfilerMonitor.class);
-    private static final String VERSION = "2.8.3";
+    private static final String VERSION = "2.9";
 
     private final long pid;
 
