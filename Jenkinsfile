@@ -7,7 +7,7 @@ pipeline {
   }
 
   parameters {
-    string(defaultValue: '9.4.51-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+    string(defaultValue: '9.4.52-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: 'jetty-9.4.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
