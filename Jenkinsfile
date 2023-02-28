@@ -9,10 +9,9 @@ pipeline {
       buildDiscarder logRotator( numToKeepStr: '100' )
     }
     parameters {
-      string(defaultValue: '11.0.14-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+      string(defaultValue: '11.0.15-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
       string(defaultValue: 'jetty-11.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-      string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
       string(defaultValue: 'main-11.0.x', description: 'Jetty Branch', name: 'JETTY_PERF_BRANCH')
       string(defaultValue: '*', description: 'Jetty Branch', name: 'TEST_TO_RUN')
    }
@@ -26,8 +25,7 @@ pipeline {
                                string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
                                string(name: 'JETTY_PERF_BRANCH', value: "${JETTY_PERF_BRANCH}"),
-                               string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}"),
-                               string(name: 'USE_LOOM_IF_POSSIBLE', value: "${USE_LOOM_IF_POSSIBLE}")])
+                               string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}")])
           copyArtifacts(projectName: '/load_testing/jetty-perf-main', selector: specific("${built.number}"));
         }
       }

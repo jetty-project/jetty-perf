@@ -18,6 +18,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.io.ArrayByteBufferPool;
+import org.eclipse.jetty.io.ByteBufferPool;
+import org.eclipse.jetty.io.ClientConnector;
+import org.eclipse.jetty.io.MappedByteBufferPool;
 import org.eclipse.jetty.perf.handler.AsyncHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
@@ -35,6 +39,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
@@ -231,6 +236,9 @@ public class HttpPerfTest implements Serializable
     {
         Server server = new Server();
 
+        ByteBufferPool bufferPool = new ArrayByteBufferPool(-1, -1, -1, -1, -1, -1);
+        server.addBean(bufferPool);
+
 //        MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
 //        server.addBean(mbContainer);
 
@@ -292,7 +300,6 @@ public class HttpPerfTest implements Serializable
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
-            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
             .threads(2)
             .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
@@ -304,9 +311,30 @@ public class HttpPerfTest implements Serializable
             .listener(responseStatusListener)
             ;
 
+        ClientConnector clientConnector = new ClientConnector();
+        clientConnector.setByteBufferPool(new MappedByteBufferPool());
+        clientConnector.setSslContextFactory(new SslContextFactory.Client(true));
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
-            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder()
+            {
+                @Override
+                public ClientConnector getConnector()
+                {
+                    return clientConnector;
+                }
+            });
+        }
+        else
+        {
+            builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder()
+            {
+                @Override
+                public ClientConnector getConnector()
+                {
+                    return clientConnector;
+                }
+            });
         }
 
         LoadGenerator loadGenerator = builder.build();
@@ -337,7 +365,6 @@ public class HttpPerfTest implements Serializable
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
-            .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
             .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
@@ -349,9 +376,30 @@ public class HttpPerfTest implements Serializable
             .listener(responseStatusListener)
             ;
 
+        ClientConnector clientConnector = new ClientConnector();
+        clientConnector.setByteBufferPool(new MappedByteBufferPool());
+        clientConnector.setSslContextFactory(new SslContextFactory.Client(true));
         if (params.getProtocol().getVersion() == PerfTestParams.HttpVersion.HTTP2)
         {
-            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder()
+            {
+                @Override
+                public ClientConnector getConnector()
+                {
+                    return clientConnector;
+                }
+            });
+        }
+        else
+        {
+            builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder()
+            {
+                @Override
+                public ClientConnector getConnector()
+                {
+                    return clientConnector;
+                }
+            });
         }
 
         LoadGenerator loadGenerator = builder.build();

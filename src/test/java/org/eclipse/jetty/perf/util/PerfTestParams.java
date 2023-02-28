@@ -45,7 +45,7 @@ public class PerfTestParams implements Serializable
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
             .node(new Node("load-sample"))
-            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
+            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xint", "-Xms8g", "-Xmx8g")))
         );
 
     public enum Protocol
@@ -166,13 +166,13 @@ public class PerfTestParams implements Serializable
         switch (protocol)
         {
             case http:
-                return 110_000;
+                return 750_000;
             case https:
-                return 130_000;
+                return 750_000;
             case h2c:
-                return 120_000;
+                return 750_000;
             case h2:
-                return 130_000;
+                return 750_000;
             default:
                 throw new AssertionError();
         }
@@ -205,6 +205,7 @@ public class PerfTestParams implements Serializable
     {
         List<String> result = new ArrayList<>();
         result.add("-Xlog:gc*:file=gc.log:time,level,tags");
+        result.add("-XX:+UnlockExperimentalVMOptions"); // JDK 11 needs this flag to enable ZGC
         result.add("-XX:+UseZGC");
         result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
