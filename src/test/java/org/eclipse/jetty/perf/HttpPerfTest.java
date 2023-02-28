@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -38,7 +37,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
@@ -236,22 +234,7 @@ public class HttpPerfTest implements Serializable
 
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
-        QueuedThreadPool qtp = new QueuedThreadPool();
-        if (params.useLoom())
-        {
-            try
-            {
-                Method method = QueuedThreadPool.class.getMethod("setUseVirtualThreads", boolean.class);
-                method.invoke(qtp, true);
-                LOG.info("Loom virtual threads support enabled");
-            }
-            catch (NoSuchMethodException e)
-            {
-                LOG.info("Loom virtual threads support NOT enabled");
-            }
-        }
-
-        Server server = new Server(qtp);
+        Server server = new Server();
 
         ByteBufferPool bufferPool = new ArrayByteBufferPool(-1, -1, -1, -1, -1, -1);
         server.addBean(bufferPool);
