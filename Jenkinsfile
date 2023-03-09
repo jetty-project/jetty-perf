@@ -26,8 +26,7 @@ pipeline {
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
                                string(name: 'JETTY_PERF_BRANCH', value: "${JETTY_PERF_BRANCH}"),
                                string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}"),
-                               string(name: 'JETTY_LOAD_GENERATOR_VERSION', value: "${JETTY_LOAD_GENERATOR_VERSION}"),
-                               string(name: 'USE_LOOM_IF_POSSIBLE', value: "${USE_LOOM_IF_POSSIBLE}")])
+                               string(name: 'JETTY_LOAD_GENERATOR_VERSION', value: "${JETTY_LOAD_GENERATOR_VERSION}")])
           copyArtifacts(projectName: '/load_testing/jetty-perf-main', selector: specific("${built.number}"));
         }
       }
