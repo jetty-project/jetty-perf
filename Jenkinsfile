@@ -24,6 +24,9 @@ pipeline {
   stages {
     stage('generate-toolchains-file') {
       agent any
+      options {
+          timeout(time: 30, unit: 'MINUTES')
+      }      
       steps {
         jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-sample'],
                 jdkNames: ["${JDK_TO_USE}"]
@@ -31,6 +34,9 @@ pipeline {
       }
     }
     stage('Get Load nodes') {
+      options {
+          timeout(time: 30, unit: 'MINUTES')
+      }          
       parallel {
         stage('install load-1') {
           agent { node { label 'load-1' } }
@@ -81,7 +87,7 @@ pipeline {
       }
     }
     stage('Build jetty-load-generator') {
-      agent { node { label 'load-master' } }
+      agent { node { label 'load-master' } }     
       when {
         beforeAgent true
         expression {
@@ -112,7 +118,7 @@ pipeline {
       }
     }
     stage('Build Jetty') {
-      agent { node { label 'load-master' } }
+      agent { node { label 'load-master' } }      
       when {
         beforeAgent true
         expression {
@@ -123,7 +129,6 @@ pipeline {
         lock('jetty-perf') {
           dir("jetty.build") {
             echo "building jetty ${JETTY_BRANCH}"
-
             checkout([$class           : 'GitSCM',
                       branches         : [[name: "*/$JETTY_BRANCH"]],
                       extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
@@ -144,11 +149,13 @@ pipeline {
     }
     stage('jetty-perf') {
       agent { node { label 'load-master' } }
+      options {
+          timeout(time: 120, unit: 'MINUTES')
+      }            
       steps {
         lock('jetty-perf') {
           unstash name: 'toolchains.xml'
           sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
-
           checkout([$class           : 'GitSCM',
                     branches         : [[name: "*/$JETTY_PERF_BRANCH"]],
                     extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
