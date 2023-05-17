@@ -9,13 +9,12 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.cometd.benchmark.client.CometDLoadClient;
-import org.cometd.benchmark.server.CometDLoadServer;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.ReportUtil;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.mortbay.jetty.orchestrator.Cluster;
@@ -33,6 +32,7 @@ import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Disabled("Requires a released version of CometD")
 public class CometdBenchmarkTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(CometdBenchmarkTest.class);
@@ -104,7 +104,8 @@ public class CometdBenchmarkTest implements Serializable
             NodeArrayFuture serverArrayFuture = serverArray.executeOnAll(tools ->
             {
                 List<String> args = Arrays.asList("--auto");
-                CometDLoadServer.main(args.toArray(new String[0]));
+                // TODO
+                //CometDLoadServer.main(args.toArray(new String[0]));
             });
 
             NodeArrayFuture clientArrayFuture = clientsArray.executeOnAll(tools ->
@@ -112,7 +113,8 @@ public class CometdBenchmarkTest implements Serializable
                 Barrier barrier = tools.barrier("clientId", getClientsCount());
                 int clientId = barrier.await();
                 List<String> args = Arrays.asList("--auto", "--host=" + getServerHostname(), "--transport=JAKARTA_WEBSOCKET", "--channel=/a-" + clientId);
-                CometDLoadClient.main(args.toArray(new String[0]));
+                // TODO
+                //CometDLoadClient.main(args.toArray(new String[0]));
             });
 
             serverArrayFuture.get(120, TimeUnit.SECONDS);

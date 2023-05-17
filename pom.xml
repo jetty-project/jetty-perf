@@ -19,7 +19,9 @@
     <!-- Do not fail the build if a test name that only exists in a single module was specified. -->
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
+<!--
     <cometd.version>8.0.0-SNAPSHOT</cometd.version>
+-->
 
     <!-- The following props are overridden by the jenkins pipeline, see Jenkinsfile. -->
     <jetty.version>12.0.0.beta0</jetty.version>
@@ -66,36 +68,38 @@
         <artifactId>jetty-ee10-webapp</artifactId>
         <version>${jetty.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-benchmark-client</artifactId>
-        <version>${cometd.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-benchmark-server</artifactId>
-        <version>${cometd.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
+      <!--
+            <dependency>
+              <groupId>org.cometd.java</groupId>
+              <artifactId>cometd-java-benchmark-client</artifactId>
+              <version>${cometd.version}</version>
+              <exclusions>
+                <exclusion>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-core</artifactId>
+                </exclusion>
+                <exclusion>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-slf4j2-impl</artifactId>
+                </exclusion>
+              </exclusions>
+            </dependency>
+            <dependency>
+              <groupId>org.cometd.java</groupId>
+              <artifactId>cometd-java-benchmark-server</artifactId>
+              <version>${cometd.version}</version>
+              <exclusions>
+                <exclusion>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-core</artifactId>
+                </exclusion>
+                <exclusion>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-slf4j2-impl</artifactId>
+                </exclusion>
+              </exclusions>
+            </dependency>
+      -->
       <dependency>
         <groupId>org.mortbay.jetty.orchestrator</groupId>
         <artifactId>jetty-cluster-orchestrator</artifactId>
