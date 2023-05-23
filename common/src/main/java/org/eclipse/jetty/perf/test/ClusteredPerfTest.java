@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
-import org.eclipse.jetty.perf.handler.LatencyRecordingHandler;
+import org.eclipse.jetty.perf.handler.LegacyLatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
@@ -266,7 +266,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
         server.addConnector(serverConnector);
 
-        LatencyRecordingHandler latencyRecordingHandler = new LatencyRecordingHandler(latencyRecorder);
+        Handler.Wrapper latencyRecordingHandler = new LegacyLatencyRecordingHandler(latencyRecorder);
         latencyRecordingHandler.setHandler(testedHandlerSupplier);
         server.setHandler(latencyRecordingHandler);
         server.start();
