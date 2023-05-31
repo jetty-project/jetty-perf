@@ -10,13 +10,19 @@ import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
-public class LatencyRecorder extends AbstractLifeCycle
+public class LatencyRecorder extends AbstractLifeCycle implements org.eclipse.jetty.server.LatencyRecorder
 {
     private final HistogramLogRecorder recorder;
 
     public LatencyRecorder(String histogramFilename) throws FileNotFoundException
     {
         this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
+    }
+
+    @Override
+    public void accept(long value)
+    {
+        recordValue(value);
     }
 
     public void startRecording()
