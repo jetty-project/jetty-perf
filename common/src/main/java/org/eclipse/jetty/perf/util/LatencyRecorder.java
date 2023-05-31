@@ -10,6 +10,7 @@ import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
+@org.eclipse.jetty.server.LatencyRecorder.Legacy
 public class LatencyRecorder extends AbstractLifeCycle implements org.eclipse.jetty.server.LatencyRecorder
 {
     private final HistogramLogRecorder recorder;
