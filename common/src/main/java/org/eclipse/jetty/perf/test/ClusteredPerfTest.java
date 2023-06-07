@@ -220,6 +220,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
     {
         Server server = new Server();
 
+        server.setDumpBeforeStop(true);
+
 //        MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
 //        server.addBean(mbContainer);
 
