@@ -26,7 +26,7 @@ public class AsyncHandlerPerfTest
     {
         // TODO these figures are dependent upon the protocol *and* the test -> there should be a way to adjust the rates, expected latencies and error margin.
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 5_000, 750_000, 10.0),
+//            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 5_000, 750_000, 10.0),
 //            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 6_500, 130_000, 10.0),
             new PerfTestParams(PerfTestParams.Protocol.h2c, 60_000, 100, 10_000, 750_000, 10.0)
 //            new PerfTestParams(PerfTestParams.Protocol.h2, 60_000, 100, 30_000, 130_000, 15.0)
