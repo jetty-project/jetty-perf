@@ -8,14 +8,15 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
 
 /**
- * Like it used to be done up to 12.0.0.alpha3
+ * Comparable to what 11.0.x does
  */
 public class LegacyLatencyRecordingHandler extends Handler.Wrapper
 {
     private final LatencyRecorder recorder;
 
-    public LegacyLatencyRecordingHandler(LatencyRecorder recorder)
+    public LegacyLatencyRecordingHandler(Handler handler, LatencyRecorder recorder)
     {
+        super(handler);
         this.recorder = recorder;
     }
 

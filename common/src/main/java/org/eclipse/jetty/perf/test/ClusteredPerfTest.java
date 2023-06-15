@@ -268,9 +268,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
         server.addConnector(serverConnector);
 
-        Handler.Wrapper latencyRecordingHandler = new LegacyLatencyRecordingHandler(latencyRecorder);
-        latencyRecordingHandler.setHandler(testedHandlerSupplier);
-        server.setHandler(latencyRecordingHandler);
+        server.setHandler(new LegacyLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder));
         server.start();
 
         env.put(LatencyRecorder.class.getName(), latencyRecorder);
