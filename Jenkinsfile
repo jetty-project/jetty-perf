@@ -1,20 +1,20 @@
 #!groovy
 
 pipeline {
-    agent any
-    triggers {
-      cron '@daily'
-    }
-    options {
-      buildDiscarder logRotator( numToKeepStr: '100' )
-    }
-    parameters {
-      string(defaultValue: '11.0.15-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-      string(defaultValue: 'jetty-11.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
-      string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-      string(defaultValue: 'main-11.0.x', description: 'Jetty Branch', name: 'JETTY_PERF_BRANCH')
-      string(defaultValue: '*', description: 'Jetty Branch', name: 'TEST_TO_RUN')
-   }
+  agent any
+  triggers {
+    cron '@daily'
+  }
+  options {
+    buildDiscarder logRotator( numToKeepStr: '100' )
+  }
+  parameters {
+    string(defaultValue: '11.0.16-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+    string(defaultValue: 'jetty-11.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+    string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
+    string(defaultValue: 'main-11.0.x', description: 'Jetty Branch', name: 'JETTY_PERF_BRANCH')
+    string(defaultValue: '*', description: 'Jetty Branch', name: 'TEST_TO_RUN')
+  }
 
   stages {
     stage('Jetty Perf Run') {
@@ -36,6 +36,4 @@ pipeline {
       }
     }
   }
-
 }
-
