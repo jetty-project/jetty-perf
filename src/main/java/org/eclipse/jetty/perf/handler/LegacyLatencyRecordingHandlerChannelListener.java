@@ -1,27 +1,38 @@
-package org.eclipse.jetty.perf.histogram.server;
+package org.eclipse.jetty.perf.handler;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.perf.util.HistogramLogRecorder;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.component.AbstractLifeCycle;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class LatencyRecordingChannelListener extends AbstractLifeCycle implements HttpChannel.Listener
+/**
+ * Comparable to what 12.0.x does
+ */
+public abstract class LegacyLatencyRecordingHandlerChannelListener extends AbstractHandler implements HttpChannel.Listener
 {
     private final Map<Request, Long> timestamps = new ConcurrentHashMap<>();
     private final HistogramLogRecorder recorder;
 
-    public LatencyRecordingChannelListener() throws FileNotFoundException
+    public LegacyLatencyRecordingHandlerChannelListener() throws Exception
     {
         this("perf.hlog");
     }
 
-    public LatencyRecordingChannelListener(String histogramFilename) throws FileNotFoundException
+    public LegacyLatencyRecordingHandlerChannelListener(String histogramFilename) throws FileNotFoundException
     {
-        this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
+        this(new HistogramLogRecorder(histogramFilename, 3, 1000));
+    }
+
+    public LegacyLatencyRecordingHandlerChannelListener(HistogramLogRecorder recorder)
+    {
+        this.recorder = recorder;
     }
 
     public void startRecording()
@@ -41,10 +52,10 @@ public class LatencyRecordingChannelListener extends AbstractLifeCycle implement
     }
 
     @Override
-    public void onRequestBegin(Request request)
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         long begin = System.nanoTime();
-        timestamps.put(request, begin);
+        timestamps.put(baseRequest, begin);
     }
 
     @Override

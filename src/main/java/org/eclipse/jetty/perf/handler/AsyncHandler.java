@@ -1,21 +1,20 @@
 package org.eclipse.jetty.perf.handler;
 
 import java.io.IOException;
+
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class AsyncHandler extends AbstractHandler
+public class AsyncHandler extends LegacyLatencyRecordingHandlerChannelListener
 {
     private final byte[] answer;
     private final ThreadLocal<byte[]> bufferTl = ThreadLocal.withInitial(() -> new byte[16]);
 
-    public AsyncHandler(byte[] answer)
+    public AsyncHandler(byte[] answer) throws Exception
     {
         this.answer = answer;
     }
@@ -23,6 +22,8 @@ public class AsyncHandler extends AbstractHandler
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
+        super.handle(target, baseRequest, request, response);
+
         AsyncContext asyncContext = request.startAsync();
         ServletInputStream inputStream = request.getInputStream();
         inputStream.setReadListener(new ReadListener()
