@@ -23,6 +23,7 @@ public class ConfigurableMonitor implements Monitor
         ASYNC_PROF_CPU,
         ASYNC_PROF_ALLOCATION,
         JHICCUP,
+        GC_LOGS,
     }
 
     private final List<Monitor> monitors = new ArrayList<>();
