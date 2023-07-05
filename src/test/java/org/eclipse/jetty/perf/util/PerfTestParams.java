@@ -27,7 +27,8 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
         // ConfigurableMonitor.Item.ASYNC_PROF_CPU,
-        ConfigurableMonitor.Item.JHICCUP
+        ConfigurableMonitor.Item.JHICCUP,
+        ConfigurableMonitor.Item.GC_LOGS
     );
 
     private static final SimpleClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
@@ -204,8 +205,9 @@ public class PerfTestParams implements Serializable
     private static String[] defaultJvmOpts(String... extra)
     {
         List<String> result = new ArrayList<>();
-        result.add("-Xlog:gc*:file=gc.log:time,level,tags");
-        result.add("-XX:+UnlockExperimentalVMOptions"); // JDK 11 needs this flag to enable ZGC
+        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.GC_LOGS))
+            result.addAll(Arrays.asList("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
+        //result.add("-XX:+UnlockExperimentalVMOptions"); // JDK 11 needs this flag to enable ZGC
         result.add("-XX:+UseZGC");
         result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
