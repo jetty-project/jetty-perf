@@ -98,7 +98,7 @@ pipeline {
         lock('jetty-perf') {
           dir("jetty.build") {
             echo "building jetty-load-generator ${JETTY_LOAD_GENERATOR_VERSION}"
-
+            sh "rm -rf *"
             checkout([$class           : 'GitSCM',
                       branches         : [[name: "*/4.0.x"]],
                       extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
@@ -129,6 +129,7 @@ pipeline {
         lock('jetty-perf') {
           dir("jetty.build") {
             echo "building jetty ${JETTY_BRANCH}"
+            sh "rm -rf *"
             checkout([$class           : 'GitSCM',
                       branches         : [[name: "*/$JETTY_BRANCH"]],
                       extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
