@@ -77,6 +77,8 @@ public class ConfigurableMonitor implements Monitor
                 return null;
             case JHICCUP:
                 return new JHiccupMonitor();
+            case GC_LOGS:
+                return null;
             default:
                 throw new AssertionError("Unknown monitor item : " +item);
         }
