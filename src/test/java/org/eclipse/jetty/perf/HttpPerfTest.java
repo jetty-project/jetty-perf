@@ -300,7 +300,7 @@ public class HttpPerfTest implements Serializable
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .runFor(WARMUP_DURATION.plus(RUN_DURATION).toSeconds(), TimeUnit.SECONDS)
-            .threads(2)
+            .threads(1)
             .rateRampUpPeriod(WARMUP_DURATION.toSeconds() / 2)
             .resourceRate(params.getLoaderRate())
             .resource(new Resource(serverUri.getPath()))
