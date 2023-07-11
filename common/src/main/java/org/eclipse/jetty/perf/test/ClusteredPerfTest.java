@@ -295,7 +295,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
             .runFor(warmupDuration.plus(runDuration).toSeconds(), TimeUnit.SECONDS)
-            .threads(2)
+            .threads(1)
             .rateRampUpPeriod(warmupDuration.toSeconds() / 2)
             .resourceRate(loaderRate)
             .resource(new Resource(serverUri.getPath()))
