@@ -6,7 +6,7 @@ public class WindowsMemoryMonitor extends AbstractCommandMonitor
 
     public WindowsMemoryMonitor()
     {
-        this(DEFAULT_FILENAME, 10);
+        this(DEFAULT_FILENAME, 5);
     }
 
     public WindowsMemoryMonitor(String filename, int interval)

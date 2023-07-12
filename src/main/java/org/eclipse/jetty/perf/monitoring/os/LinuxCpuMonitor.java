@@ -6,7 +6,7 @@ public class LinuxCpuMonitor extends AbstractCommandMonitor
 
     public LinuxCpuMonitor()
     {
-        this(DEFAULT_FILENAME, 10);
+        this(DEFAULT_FILENAME, 5);
     }
 
     public LinuxCpuMonitor(String filename, int interval)
