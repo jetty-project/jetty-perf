@@ -38,10 +38,10 @@ public class PerfTestParams implements Serializable
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms32g", "-Xmx32g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("loaders")
-            .node(new Node("load-1"))
             .node(new Node("load-2"))
             .node(new Node("load-3"))
             .node(new Node("load-4"))
+            .node(new Node("load-5"))
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
@@ -156,7 +156,7 @@ public class PerfTestParams implements Serializable
             case h2c:
                 return 13_000;
             case h2:
-                return 30_000;
+                return 75_000;
             default:
                 throw new AssertionError();
         }
@@ -167,13 +167,13 @@ public class PerfTestParams implements Serializable
         switch (protocol)
         {
             case http:
-                return 750_000;
+                return 625_000;
             case https:
-                return 750_000;
+                return 1_000_000;
             case h2c:
-                return 750_000;
+                return 700_000;
             case h2:
-                return 750_000;
+                return 1_000_000;
             default:
                 throw new AssertionError();
         }
