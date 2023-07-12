@@ -17,7 +17,7 @@
     <maven.compiler.target>11</maven.compiler.target>
 
     <!-- The following props are overridden by the jenkins pipeline, see Jenkinsfile. -->
-    <jetty.version>10.0.14</jetty.version>
+    <jetty.version>10.0.15</jetty.version>
     <test.jdk.name>load-jdk11</test.jdk.name>
   </properties>
 
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>org.mortbay.jetty.orchestrator</groupId>
       <artifactId>jetty-cluster-orchestrator</artifactId>
-      <version>1.0.4</version>
+      <version>1.1.0</version>
     </dependency>
 
     <!-- Exclude then explicitly depend on jetty-load-generator deps to make sure we use the right jetty version -->
