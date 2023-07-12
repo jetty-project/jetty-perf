@@ -26,7 +26,7 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.CMDLINE_CPU,
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
-        // ConfigurableMonitor.Item.ASYNC_PROF_CPU,
+        ConfigurableMonitor.Item.ASYNC_PROF_CPU,
         ConfigurableMonitor.Item.JHICCUP,
         ConfigurableMonitor.Item.GC_LOGS
     );
@@ -167,13 +167,13 @@ public class PerfTestParams implements Serializable
         switch (protocol)
         {
             case http:
-                return 750_000;
+                return 700_000;
             case https:
-                return 750_000;
+                return 1_000_000;
             case h2c:
-                return 750_000;
+                return 700_000;
             case h2:
-                return 750_000;
+                return 1_000_000;
             default:
                 throw new AssertionError();
         }
