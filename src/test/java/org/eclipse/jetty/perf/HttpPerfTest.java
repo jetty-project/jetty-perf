@@ -182,21 +182,32 @@ public class HttpPerfTest implements Serializable
             }
             catch (Exception e)
             {
+                LOG.info("Downloading artefacts before rethrowing...");
+                generateReport(reportRootPath, params.getClusterConfiguration(), cluster);
+
+                LOG.info("Dumping threads of pending jobs before rethrowing...");
                 NodeJob dump = (tools) ->
                 {
+                    String nodeId = tools.getNodeId();
                     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-                    System.err.println("---- ---- ---- ---- ---- ---- ---- ----");
+                    System.err.println("----- " + nodeId + " -----");
                     for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true))
                     {
                         System.err.println(threadInfo);
                     }
-                    System.err.println("---- ---- ---- ---- ---- ---- ---- ----");
+                    System.err.println("----- " + nodeId + " -----");
                 };
-                serverArray.executeOnAll(dump).get();
-                loadersArray.executeOnAll(dump).get();
-                probeArray.executeOnAll(dump).get();
+                serverArray.executeOn(serverFuture.getNotDoneNodeIds(), dump).get();
+                for (String id : loadersFuture.getNotDoneNodeIds())
+                {
+                    loadersArray.executeOn(id, dump).get();
+                }
+                probeArray.executeOn(probeFuture.getNotDoneNodeIds(), dump).get();
 
-                throw e;
+                String msg = String.format("Error stopping jobs; nodes that failed to stop: server=%s loaders=%s probe=%s",
+                    serverFuture.getNotDoneNodeIds(), loadersFuture.getNotDoneNodeIds(), probeFuture.getNotDoneNodeIds());
+                LOG.error(msg, e);
+                throw new Exception(msg, e);
             }
 
             NodeArrayConfiguration serverCfg = params.getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
