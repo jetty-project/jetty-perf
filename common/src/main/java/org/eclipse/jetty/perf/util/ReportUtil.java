@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.eclipse.jetty.perf.histogram.HgrmReport;
 import org.eclipse.jetty.perf.histogram.JHiccupReport;
@@ -77,18 +78,21 @@ public class ReportUtil
             Path resolvedSourcePath = source.resolve(filename);
             if (Files.isDirectory(resolvedSourcePath))
             {
-                Files.walk(resolvedSourcePath).forEach(path ->
+                try (Stream<Path> stream = Files.walk(resolvedSourcePath))
                 {
-                    try
+                    stream.forEach(path ->
                     {
-                        Path targetPath = destinationDir.resolve(resolvedSourcePath.relativize(path).toString());
-                        Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                    catch (IOException e)
-                    {
-                        LOG.error("Error downloading", e);
-                    }
-                });
+                        try
+                        {
+                            Path targetPath = destinationDir.resolve(resolvedSourcePath.relativize(path).toString());
+                            Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        catch (IOException e)
+                        {
+                            LOG.error("Error downloading", e);
+                        }
+                    });
+                }
             }
             else
             {
@@ -108,6 +112,8 @@ public class ReportUtil
         {
             Path reportFolder = targetFolder.resolve(id);
             Path hlogFile = reportFolder.resolve(filename);
+            if (!Files.isReadable(hlogFile))
+                continue;
 
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))
             {
@@ -126,7 +132,7 @@ public class ReportUtil
         {
             Path reportFolder = targetFolder.resolve(id);
             Path hlogFile = reportFolder.resolve("jhiccup.hlog");
-            if (!Files.exists(hlogFile))
+            if (!Files.isReadable(hlogFile))
                 continue;
 
             try (OutputStream os = new FileOutputStream(new File(reportFolder.toFile(), hlogFile.getFileName() + ".hgrm")))
