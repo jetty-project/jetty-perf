@@ -156,7 +156,7 @@ public class PerfTestParams implements Serializable
             case h2c:
                 return 13_000;
             case h2:
-                return 30_000;
+                return 75_000;
             default:
                 throw new AssertionError();
         }
@@ -167,7 +167,7 @@ public class PerfTestParams implements Serializable
         switch (protocol)
         {
             case http:
-                return 700_000;
+                return 625_000;
             case https:
                 return 1_000_000;
             case h2c:
