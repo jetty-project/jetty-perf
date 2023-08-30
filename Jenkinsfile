@@ -10,7 +10,7 @@ pipeline {
     }
     environment {
       // Use JETTY_LOAD_GENERATOR_VERSION = get_jetty_load_generator_version() in case new API changes breaking the load generator get merged.
-      JETTY_LOAD_GENERATOR_VERSION = "4.0.0.beta3";
+      JETTY_LOAD_GENERATOR_VERSION = "4.0.0";
     }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
