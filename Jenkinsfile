@@ -6,11 +6,12 @@ pipeline {
     buildDiscarder logRotator(numToKeepStr: '20')
   }
   environment {
+    JETTY_LOAD_GENERATOR_VERSION = '4.0.0'
     TEST_TO_RUN = '*'
   }
   parameters {
-    string(defaultValue: '10.0.13-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-    string(defaultValue: 'jetty-10.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+    string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
+    string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
     string(defaultValue: '', description: 'Load Generator version to use', name: 'JETTY_LOAD_GENERATOR_VERSION')
@@ -28,7 +29,7 @@ pipeline {
           timeout(time: 30, unit: 'MINUTES')
       }      
       steps {
-        jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-sample'],
+        jdkpathfinder nodes: ['load-master', 'load-1', 'load-5', 'load-3', 'load-4', 'load-sample'],
                 jdkNames: ["${JDK_TO_USE}"]
         stash name: 'toolchains.xml', includes: '*toolchains.xml'
       }
@@ -47,15 +48,6 @@ pipeline {
             sh "echo load-1"
           }
         }
-        stage('install load-2') {
-          agent { node { label 'load-2' } }
-          steps {
-            tool "${JDK_TO_USE}"
-            unstash name: 'toolchains.xml'
-            sh "cp load-2-toolchains.xml ~/load-2-toolchains.xml"
-            sh "echo load-2"
-          }
-        }
         stage('install load-3') {
           agent { node { label 'load-3' } }
           steps {
@@ -72,6 +64,15 @@ pipeline {
             unstash name: 'toolchains.xml'
             sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
             sh "echo load-4"
+          }
+        }
+        stage('install load-5') {
+          agent { node { label 'load-5' } }
+          steps {
+            tool "${JDK_TO_USE}"
+            unstash name: 'toolchains.xml'
+            sh "cp load-5-toolchains.xml ~/load-5-toolchains.xml"
+            sh "echo load-5"
           }
         }
         stage('install probe') {
