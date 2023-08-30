@@ -11,7 +11,6 @@ import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,7 +18,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Disabled
 public class AsyncEE9ServletPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
@@ -27,11 +25,12 @@ public class AsyncEE9ServletPerfTest
 
     private static Stream<PerfTestParams> params()
     {
+        // TODO these figures are dependent upon the protocol *and* the test -> there should be a way to adjust the rates, expected latencies and error margin.
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 5_000, 110_000, 10.0),
-            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 6_500, 130_000, 10.0),
-            new PerfTestParams(PerfTestParams.Protocol.h2c, 60_000, 100, 13_000, 120_000, 15.0),
-            new PerfTestParams(PerfTestParams.Protocol.h2, 60_000, 100, 30_000, 130_000, 15.0)
+            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 4_000, 625_000, 15.0),
+            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 5_500, 1_150_000, 15.0),
+            new PerfTestParams(PerfTestParams.Protocol.h2c, 60_000, 100, 8_500, 650_000, 15.0),
+            new PerfTestParams(PerfTestParams.Protocol.h2, 60_000, 100, 90_000, 1_000_000, 15.0)
         );
     }
 
