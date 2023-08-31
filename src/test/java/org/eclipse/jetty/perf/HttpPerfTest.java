@@ -38,7 +38,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -73,8 +72,8 @@ public class HttpPerfTest implements Serializable
     private static Stream<PerfTestParams> params()
     {
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http),
-            new PerfTestParams(PerfTestParams.Protocol.https)
+            new PerfTestParams(PerfTestParams.Protocol.http)
+//            new PerfTestParams(PerfTestParams.Protocol.https)
 //            new PerfTestParams(PerfTestParams.Protocol.h2c),
 //            new PerfTestParams(PerfTestParams.Protocol.h2)
         );
@@ -291,9 +290,7 @@ public class HttpPerfTest implements Serializable
 
         AsyncServlet servlet = new AsyncServlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
 
-        GzipHandler handler = new GzipHandler();
         ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-        handler.setHandler(contextHandlerCollection);
         ServletContextHandler targetContextHandler = new ServletContextHandler();
         targetContextHandler.setContextPath("/");
         targetContextHandler.addServlet(new ServletHolder(servlet), "/*");
@@ -305,7 +302,7 @@ public class HttpPerfTest implements Serializable
 
         serverConnector.addBean(servlet); // the servlet is also a HttpChannel.Listener
         //serverConnector.addBean(servlet.asLifeCycle());
-        server.setHandler(handler);
+        server.setHandler(contextHandlerCollection);
         server.start();
 
         env.put(ModernLatencyRecordingServletChannelListener.class.getName(), servlet);
