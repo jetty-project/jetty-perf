@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 
-public class AsyncHandler extends LegacyLatencyRecordingHandlerChannelListener
+public class AsyncHandler extends ModernLatencyRecordingHandlerChannelListener
 {
     private final byte[] answer;
     private final ThreadLocal<byte[]> bufferTl = ThreadLocal.withInitial(() -> new byte[16]);
@@ -22,7 +22,7 @@ public class AsyncHandler extends LegacyLatencyRecordingHandlerChannelListener
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        super.handle(target, baseRequest, request, response);
+        // super.handle(target, baseRequest, request, response);
 
         AsyncContext asyncContext = request.startAsync();
         ServletInputStream inputStream = request.getInputStream();
