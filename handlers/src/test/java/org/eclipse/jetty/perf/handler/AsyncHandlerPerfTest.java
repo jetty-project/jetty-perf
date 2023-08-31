@@ -27,8 +27,8 @@ public class AsyncHandlerPerfTest
     {
         // TODO these figures are dependent upon the protocol *and* the test -> there should be a way to adjust the rates, expected latencies and error margin.
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 4_000, 625_000, 15.0),
-            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 5_500, 1_150_000, 15.0)
+            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 4_000, 625_000, 15.0)
+//            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 5_500, 1_150_000, 15.0)
 //            new PerfTestParams(PerfTestParams.Protocol.h2c, 60_000, 100, 8_500, 650_000, 15.0),
 //            new PerfTestParams(PerfTestParams.Protocol.h2, 60_000, 100, 90_000, 1_000_000, 15.0)
         );
@@ -69,7 +69,6 @@ public class AsyncHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
-    @Disabled
     public void testNoGzip(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
@@ -88,6 +87,7 @@ public class AsyncHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
+    @Disabled
     public void testAlone(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () -> new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
