@@ -22,11 +22,12 @@ import org.eclipse.jetty.io.ArrayByteBufferPool;
 import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.io.MappedByteBufferPool;
-import org.eclipse.jetty.perf.handler.AsyncHandler;
-import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandlerChannelListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
+import org.eclipse.jetty.perf.servlet.Always404Servlet;
+import org.eclipse.jetty.perf.servlet.AsyncServlet;
+import org.eclipse.jetty.perf.servlet.ModernLatencyRecordingServletChannelListener;
 import org.eclipse.jetty.perf.util.OutputCapturingCluster;
 import org.eclipse.jetty.perf.util.PerfTestParams;
 import org.eclipse.jetty.server.ConnectionFactory;
@@ -36,6 +37,10 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -108,7 +113,7 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    ModernLatencyRecordingHandlerChannelListener listener = (ModernLatencyRecordingHandlerChannelListener)tools.nodeEnvironment().get(ModernLatencyRecordingHandlerChannelListener.class.getName());
+                    ModernLatencyRecordingServletChannelListener listener = (ModernLatencyRecordingServletChannelListener)tools.nodeEnvironment().get(ModernLatencyRecordingServletChannelListener.class.getName());
                     listener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -284,12 +289,26 @@ public class HttpPerfTest implements Serializable
 
         server.addConnector(serverConnector);
 
-        AsyncHandler handler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-        serverConnector.addBean(handler); // the handler is also a HttpChannel.Listener
+        AsyncServlet servlet = new AsyncServlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+
+        GzipHandler handler = new GzipHandler();
+        ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+        handler.setHandler(contextHandlerCollection);
+        ServletContextHandler targetContextHandler = new ServletContextHandler();
+        targetContextHandler.setContextPath("/");
+        targetContextHandler.addServlet(new ServletHolder(servlet), "/*");
+        contextHandlerCollection.addHandler(targetContextHandler);
+        ServletContextHandler uselessContextHandler = new ServletContextHandler();
+        uselessContextHandler.setContextPath("/useless");
+        uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
+        contextHandlerCollection.addHandler(uselessContextHandler);
+
+        serverConnector.addBean(servlet); // the servlet is also a HttpChannel.Listener
+        //serverConnector.addBean(servlet.asLifeCycle());
         server.setHandler(handler);
         server.start();
 
-        env.put(ModernLatencyRecordingHandlerChannelListener.class.getName(), handler);
+        env.put(ModernLatencyRecordingServletChannelListener.class.getName(), servlet);
         env.put(Server.class.getName(), server);
     }
 
