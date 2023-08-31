@@ -1,18 +1,17 @@
 package org.eclipse.jetty.perf.ee9;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import jakarta.servlet.AsyncContext;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.WriteListener;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.util.IO;
 
 public class AsyncEE9Servlet extends HttpServlet
 {
+    private final ThreadLocal<byte[]> bufferTl = ThreadLocal.withInitial(() -> new byte[16]);
     private final byte[] answer;
 
     public AsyncEE9Servlet(byte[] answer)
@@ -24,13 +23,23 @@ public class AsyncEE9Servlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         AsyncContext asyncContext = request.startAsync(request, response);
-        IO.copy(request.getInputStream(), OutputStream.nullOutputStream());
-        ServletOutputStream outputStream = response.getOutputStream();
-        outputStream.setWriteListener(new WriteListener() {
+        ServletInputStream inputStream = request.getInputStream();
+        inputStream.setReadListener(new ReadListener()
+        {
             @Override
-            public void onWritePossible() throws IOException
+            public void onDataAvailable() throws IOException
             {
-                outputStream.write(answer);
+                while (inputStream.isReady())
+                {
+                    inputStream.read(bufferTl.get());
+                }
+            }
+
+            @Override
+            public void onAllDataRead() throws IOException
+            {
+                response.setStatus(200);
+                response.getOutputStream().write(answer);
                 asyncContext.complete();
             }
 
