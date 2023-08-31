@@ -48,6 +48,7 @@ public class AsyncHandler extends ModernLatencyRecordingHandlerChannelListener
             @Override
             public void onError(Throwable t)
             {
+                response.setStatus(500);
                 asyncContext.complete();
             }
         });
