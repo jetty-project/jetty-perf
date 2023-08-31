@@ -23,9 +23,9 @@ import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.io.MappedByteBufferPool;
 import org.eclipse.jetty.perf.handler.AsyncHandler;
+import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandlerChannelListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
-import org.eclipse.jetty.perf.histogram.server.LatencyRecordingChannelListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturingCluster;
 import org.eclipse.jetty.perf.util.PerfTestParams;
@@ -108,7 +108,7 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    LatencyRecordingChannelListener listener = (LatencyRecordingChannelListener)tools.nodeEnvironment().get(LatencyRecordingChannelListener.class.getName());
+                    ModernLatencyRecordingHandlerChannelListener listener = (ModernLatencyRecordingHandlerChannelListener)tools.nodeEnvironment().get(ModernLatencyRecordingHandlerChannelListener.class.getName());
                     listener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -282,15 +282,14 @@ public class HttpPerfTest implements Serializable
         ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
-        LatencyRecordingChannelListener listener = new LatencyRecordingChannelListener();
-        serverConnector.addBean(listener);
-
         server.addConnector(serverConnector);
 
-        server.setHandler(new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+        AsyncHandler handler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+        serverConnector.addBean(handler); // the handler is also a HttpChannel.Listener
+        server.setHandler(handler);
         server.start();
 
-        env.put(LatencyRecordingChannelListener.class.getName(), listener);
+        env.put(ModernLatencyRecordingHandlerChannelListener.class.getName(), handler);
         env.put(Server.class.getName(), server);
     }
 
