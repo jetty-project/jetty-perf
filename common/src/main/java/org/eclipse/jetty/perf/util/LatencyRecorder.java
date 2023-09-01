@@ -9,8 +9,9 @@ import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
+import org.eclipse.jetty.util.component.LifeCycle;
 
-public class LatencyRecorder extends AbstractLifeCycle
+public class LatencyRecorder
 {
     private final HistogramLogRecorder recorder;
 
@@ -29,10 +30,15 @@ public class LatencyRecorder extends AbstractLifeCycle
         recorder.close();
     }
 
-    @Override
-    protected void doStop()
+    public LifeCycle asLifeCycle()
     {
-        stopRecording();
+        return new AbstractLifeCycle() {
+            @Override
+            protected void doStop()
+            {
+                stopRecording();
+            }
+        };
     }
 
     public void recordValue(long value)

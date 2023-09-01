@@ -273,12 +273,9 @@ public class ClusteredPerfTest implements Serializable, Closeable
         ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(serverPort);
 
-        // register LatencyRecorder on the server to get it lifecycled such as the recoding is stopped with the server
-        LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
-        server.addBean(latencyRecorder);
-
         server.addConnector(serverConnector);
 
+        LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         server.setHandler(new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder));
         server.start();
 
