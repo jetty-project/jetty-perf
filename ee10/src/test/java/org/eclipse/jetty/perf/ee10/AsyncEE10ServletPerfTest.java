@@ -88,4 +88,24 @@ public class AsyncEE10ServletPerfTest
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
+
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testNoGzipSync(PerfTestParams params) throws Exception
+    {
+        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        {
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+            ServletContextHandler targetContextHandler = new ServletContextHandler();
+            targetContextHandler.setContextPath("/");
+            targetContextHandler.addServlet(new SyncEE10Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1)), "/*");
+            contextHandlerCollection.addHandler(targetContextHandler);
+            ServletContextHandler uselessContextHandler = new ServletContextHandler();
+            uselessContextHandler.setContextPath("/useless");
+            uselessContextHandler.addServlet(new Always404Servlet(), "/*");
+            contextHandlerCollection.addHandler(uselessContextHandler);
+            return contextHandlerCollection;
+        });
+        assertThat("Performance assertions failure for " + params, succeeded, is(true));
+    }
 }
