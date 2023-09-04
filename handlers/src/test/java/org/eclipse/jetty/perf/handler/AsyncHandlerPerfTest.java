@@ -87,6 +87,24 @@ public class AsyncHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
+    public void testNoGzipSync(PerfTestParams params) throws Exception
+    {
+        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        {
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+            ContextHandler targetContextHandler = new ContextHandler("/");
+            contextHandlerCollection.addHandler(targetContextHandler);
+            ContextHandler uselessContextHandler = new ContextHandler("/useless");
+            contextHandlerCollection.addHandler(uselessContextHandler);
+            SyncHandler syncHandler = new SyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            targetContextHandler.setHandler(syncHandler);
+            return contextHandlerCollection;
+        });
+        assertThat("Performance assertions failure for " + params, succeeded, is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("params")
     @Disabled
     public void testAlone(PerfTestParams params) throws Exception
     {
