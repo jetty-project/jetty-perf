@@ -8,7 +8,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
 
-public class AsyncHandler extends Handler.Abstract
+public class AsyncHandler extends Handler.Abstract.NonBlocking
 {
     private final ByteBuffer answer;
 

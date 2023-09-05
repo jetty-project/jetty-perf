@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
+import org.eclipse.jetty.server.handler.BufferedResponseHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
@@ -73,7 +74,7 @@ public class AsyncHandlerPerfTest
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection(false);
             ContextHandler targetContextHandler = new ContextHandler("/");
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
@@ -97,7 +98,7 @@ public class AsyncHandlerPerfTest
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
             SyncHandler syncHandler = new SyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.setHandler(syncHandler);
+            targetContextHandler.setHandler(new BufferedResponseHandler(syncHandler));
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
