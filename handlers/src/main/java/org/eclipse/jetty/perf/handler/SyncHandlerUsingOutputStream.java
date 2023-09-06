@@ -8,11 +8,11 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
 
-public class SyncHandler extends Handler.Abstract
+public class SyncHandlerUsingOutputStream extends Handler.Abstract
 {
     private final byte[] answer;
 
-    public SyncHandler(byte[] answer)
+    public SyncHandlerUsingOutputStream(byte[] answer)
     {
         this.answer = answer;
     }

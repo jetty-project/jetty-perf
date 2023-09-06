@@ -6,11 +6,10 @@ import java.util.stream.Stream;
 
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
+import org.eclipse.jetty.server.handler.BufferedResponseHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -18,7 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class AsyncHandlerPerfTest
+public class SyncHandlerPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
@@ -48,28 +47,7 @@ public class AsyncHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
-    @Disabled
-    public void testComplete(PerfTestParams params) throws Exception
-    {
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
-        {
-            GzipHandler gzipHandler = new GzipHandler();
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-            gzipHandler.setHandler(contextHandlerCollection);
-            ContextHandler targetContextHandler = new ContextHandler("/");
-            contextHandlerCollection.addHandler(targetContextHandler);
-            ContextHandler uselessContextHandler = new ContextHandler("/useless");
-            contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.setHandler(asyncHandler);
-            return gzipHandler;
-        });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
-    }
-
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testNoGzip(PerfTestParams params) throws Exception
+    public void testNoGzipBufferedUsingBlocker(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
@@ -78,8 +56,8 @@ public class AsyncHandlerPerfTest
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.setHandler(asyncHandler);
+            SyncHandlerUsingBlocker syncHandler = new SyncHandlerUsingBlocker("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            targetContextHandler.setHandler(new BufferedResponseHandler(syncHandler));
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
@@ -87,17 +65,17 @@ public class AsyncHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
-    public void testNoGzipFullyAsyncHandlerTree(PerfTestParams params) throws Exception
+    public void testNoGzipBufferedUsingOutputStream(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection(false);
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ContextHandler targetContextHandler = new ContextHandler("/");
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
-            targetContextHandler.setHandler(asyncHandler);
+            SyncHandlerUsingOutputStream syncHandler = new SyncHandlerUsingOutputStream("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            targetContextHandler.setHandler(new BufferedResponseHandler(syncHandler));
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
@@ -105,10 +83,37 @@ public class AsyncHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
-    @Disabled
-    public void testAlone(PerfTestParams params) throws Exception
+    public void testNoGzipUnbufferedUsingBlocker(PerfTestParams params) throws Exception
     {
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () -> new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1)));
+        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        {
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+            ContextHandler targetContextHandler = new ContextHandler("/");
+            contextHandlerCollection.addHandler(targetContextHandler);
+            ContextHandler uselessContextHandler = new ContextHandler("/useless");
+            contextHandlerCollection.addHandler(uselessContextHandler);
+            SyncHandlerUsingBlocker syncHandler = new SyncHandlerUsingBlocker("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            targetContextHandler.setHandler(syncHandler);
+            return contextHandlerCollection;
+        });
+        assertThat("Performance assertions failure for " + params, succeeded, is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testNoGzipUnbufferedUsingOutputStream(PerfTestParams params) throws Exception
+    {
+        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        {
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+            ContextHandler targetContextHandler = new ContextHandler("/");
+            contextHandlerCollection.addHandler(targetContextHandler);
+            ContextHandler uselessContextHandler = new ContextHandler("/useless");
+            contextHandlerCollection.addHandler(uselessContextHandler);
+            SyncHandlerUsingOutputStream syncHandler = new SyncHandlerUsingOutputStream("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            targetContextHandler.setHandler(syncHandler);
+            return contextHandlerCollection;
+        });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 }
