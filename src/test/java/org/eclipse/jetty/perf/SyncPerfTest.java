@@ -62,9 +62,9 @@ import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-public class HttpPerfSyncTest implements Serializable
+public class SyncPerfTest implements Serializable
 {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpPerfSyncTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SyncPerfTest.class);
 
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
