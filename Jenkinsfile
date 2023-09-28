@@ -159,6 +159,8 @@ pipeline {
       }            
       steps {
         lock('jetty-perf') {
+          // clean the directory before clone
+          sh "rm -rf *"
           unstash name: 'toolchains.xml'
           sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
           checkout([$class           : 'GitSCM',
