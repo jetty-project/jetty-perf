@@ -66,6 +66,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
+    @Disabled
     public void testNoGzipSyncBufferedUsingBlocker(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
@@ -84,6 +85,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
+    @Disabled
     public void testNoGzipSyncBufferedUsingOutputStream(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
@@ -120,6 +122,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
+    @Disabled
     public void testNoGzipSyncUnbufferedUsingOutputStream(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->

@@ -49,29 +49,6 @@ public class EE9ServletPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
-    @Disabled
-    public void testComplete(PerfTestParams params) throws Exception
-    {
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
-        {
-            GzipHandler gzipHandler = new GzipHandler();
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-            gzipHandler.setHandler(contextHandlerCollection);
-            ServletContextHandler targetContextHandler = new ServletContextHandler();
-            targetContextHandler.setContextPath("/");
-            targetContextHandler.addServlet(new ServletHolder(new AsyncEE9Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1))), "/*");
-            contextHandlerCollection.addHandler(targetContextHandler.getCoreContextHandler());
-            ServletContextHandler uselessContextHandler = new ServletContextHandler();
-            uselessContextHandler.setContextPath("/useless");
-            uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
-            contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
-            return gzipHandler;
-        });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
-    }
-
-    @ParameterizedTest
-    @MethodSource("params")
     public void testNoGzipAsync(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
@@ -106,6 +83,29 @@ public class EE9ServletPerfTest
             uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
             contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
             return contextHandlerCollection;
+        });
+        assertThat("Performance assertions failure for " + params, succeeded, is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("params")
+    @Disabled
+    public void testComplete(PerfTestParams params) throws Exception
+    {
+        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        {
+            GzipHandler gzipHandler = new GzipHandler();
+            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+            gzipHandler.setHandler(contextHandlerCollection);
+            ServletContextHandler targetContextHandler = new ServletContextHandler();
+            targetContextHandler.setContextPath("/");
+            targetContextHandler.addServlet(new ServletHolder(new AsyncEE9Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1))), "/*");
+            contextHandlerCollection.addHandler(targetContextHandler.getCoreContextHandler());
+            ServletContextHandler uselessContextHandler = new ServletContextHandler();
+            uselessContextHandler.setContextPath("/useless");
+            uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
+            contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
+            return gzipHandler;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
