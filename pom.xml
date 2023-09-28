@@ -31,7 +31,7 @@
 
   <modules>
     <module>common</module>
-    <module>handlers</module>
+    <module>core</module>
     <module>ee9</module>
     <module>ee10</module>
   </modules>

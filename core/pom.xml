@@ -7,8 +7,8 @@
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>jetty-perf-handlers</artifactId>
-  <name>Jetty :: Performance test suite :: Handlers</name>
+  <artifactId>jetty-perf-core</artifactId>
+  <name>Jetty :: Performance test suite :: Core</name>
 
   <dependencies>
     <dependency>
