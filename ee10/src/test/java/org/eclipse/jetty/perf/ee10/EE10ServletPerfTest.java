@@ -1,17 +1,14 @@
-package org.eclipse.jetty.perf.ee9;
+package org.eclipse.jetty.perf.ee10;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.stream.Stream;
 
-import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee9.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,7 +16,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class AsyncEE9ServletPerfTest
+public class EE10ServletPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
@@ -49,42 +46,19 @@ public class AsyncEE9ServletPerfTest
 
     @ParameterizedTest
     @MethodSource("params")
-    @Disabled
-    public void testComplete(PerfTestParams params) throws Exception
-    {
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
-        {
-            GzipHandler gzipHandler = new GzipHandler();
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
-            gzipHandler.setHandler(contextHandlerCollection);
-            ServletContextHandler targetContextHandler = new ServletContextHandler();
-            targetContextHandler.setContextPath("/");
-            targetContextHandler.addServlet(new ServletHolder(new AsyncEE9Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1))), "/*");
-            contextHandlerCollection.addHandler(targetContextHandler.getCoreContextHandler());
-            ServletContextHandler uselessContextHandler = new ServletContextHandler();
-            uselessContextHandler.setContextPath("/useless");
-            uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
-            contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
-            return gzipHandler;
-        });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
-    }
-
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testNoGzip(PerfTestParams params) throws Exception
+    public void testNoGzipAsync(PerfTestParams params) throws Exception
     {
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
             targetContextHandler.setContextPath("/");
-            targetContextHandler.addServlet(new ServletHolder(new AsyncEE9Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1))), "/*");
-            contextHandlerCollection.addHandler(targetContextHandler.getCoreContextHandler());
+            targetContextHandler.addServlet(new AsyncEE10Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1)), "/*");
+            contextHandlerCollection.addHandler(targetContextHandler);
             ServletContextHandler uselessContextHandler = new ServletContextHandler();
             uselessContextHandler.setContextPath("/useless");
-            uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
-            contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
+            uselessContextHandler.addServlet(new Always404Servlet(), "/*");
+            contextHandlerCollection.addHandler(uselessContextHandler);
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
@@ -99,12 +73,12 @@ public class AsyncEE9ServletPerfTest
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
             targetContextHandler.setContextPath("/");
-            targetContextHandler.addServlet(new ServletHolder(new SyncEE9Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1))), "/*");
-            contextHandlerCollection.addHandler(targetContextHandler.getCoreContextHandler());
+            targetContextHandler.addServlet(new SyncEE10Servlet("Hi there!".getBytes(StandardCharsets.ISO_8859_1)), "/*");
+            contextHandlerCollection.addHandler(targetContextHandler);
             ServletContextHandler uselessContextHandler = new ServletContextHandler();
             uselessContextHandler.setContextPath("/useless");
-            uselessContextHandler.addServlet(new ServletHolder(new Always404Servlet()), "/*");
-            contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
+            uselessContextHandler.addServlet(new Always404Servlet(), "/*");
+            contextHandlerCollection.addHandler(uselessContextHandler);
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
