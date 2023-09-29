@@ -25,8 +25,9 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.CMDLINE_CPU,
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
-        //ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler seems to be the cause of the 59th second latency spike.
-        ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION,
+        // Only one kind of async profiling can be enabled at a time.
+        ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler cpu seems to be the cause of the 59th second latency spike.
+        //ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION, // Async Profiler alloc slows the run by a noticeable (~20%) amount.
         ConfigurableMonitor.Item.JHICCUP,
         ConfigurableMonitor.Item.GC_LOGS
     );
