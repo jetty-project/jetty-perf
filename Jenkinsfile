@@ -1,5 +1,4 @@
 #!groovy
-
 pipeline {
     agent any
     triggers {
