@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
@@ -278,7 +279,6 @@ public class ClusteredPerfTest implements Serializable, Closeable
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         server.setHandler(new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder));
         server.start();
-        server.dumpStdErr();
 
         env.put(LatencyRecorder.class.getName(), latencyRecorder);
         env.put(Server.class.getName(), server);
@@ -320,7 +320,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
 
         LoadGenerator loadGenerator = builder.build();
-        LOG.info("load generation begin");
+        LOG.info("load generation begin with client '{}'", HttpClient.USER_AGENT);
         CompletableFuture<Void> cf = loadGenerator.begin();
         cf = cf.whenComplete((x, f) -> {
             if (f == null)
@@ -365,7 +365,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
 
         LoadGenerator loadGenerator = builder.build();
-        LOG.info("probe generation begin");
+        LOG.info("probe generation begin with client '{}'", HttpClient.USER_AGENT);
         CompletableFuture<Void> cf = loadGenerator.begin();
         cf = cf.whenComplete((x, f) -> {
             if (f == null)
