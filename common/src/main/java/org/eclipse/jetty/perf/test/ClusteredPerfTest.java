@@ -278,6 +278,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         server.setHandler(new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder));
         server.start();
+        server.dumpStdErr();
 
         env.put(LatencyRecorder.class.getName(), latencyRecorder);
         env.put(Server.class.getName(), server);
