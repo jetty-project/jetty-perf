@@ -175,6 +175,8 @@ public class PerfTestParams implements Serializable
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.GC_LOGS))
             result.addAll(List.of("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
         result.add("-XX:+UseZGC");
+        if (JDK_TO_USE.contains("21"))
+            result.add("-XX:+ZGenerational");
         result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
             result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
