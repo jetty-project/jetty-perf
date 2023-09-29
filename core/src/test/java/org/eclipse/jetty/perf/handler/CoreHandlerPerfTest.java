@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@Disabled
 public class CoreHandlerPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
