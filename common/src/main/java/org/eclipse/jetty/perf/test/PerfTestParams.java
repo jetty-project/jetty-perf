@@ -177,11 +177,15 @@ public class PerfTestParams implements Serializable
             result.addAll(List.of("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
         result.add("-XX:+UseZGC");
         if (JDK_TO_USE.contains("21"))
-            result.add("-XX:+ZGenerational");
+            result.add("-XX:+ZGenerational"); // use generational ZGC on JDK 21
         result.add("-XX:+AlwaysPreTouch");
         if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
+        {
             result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
-        result.addAll(Arrays.asList(extra));
+            if (JDK_TO_USE.contains("21"))
+                result.add("-XX:+EnableDynamicAgentLoading"); // JDK 21 needs this flag to disable a warning when async prof is used
+        }
+        result.addAll(List.of(extra));
         return result.toArray(new String[0]);
     }
 }
