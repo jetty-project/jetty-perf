@@ -26,8 +26,9 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
         // Only one kind of async profiling can be enabled at a time.
-        ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler cpu seems to be the cause of the 59th second latency spike.
+//        ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler cpu seems to be the cause of the 59th second latency spike.
 //        ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION, // Async Profiler alloc slows the run by a noticeable (~20%) amount.
+        ConfigurableMonitor.Item.ASYNC_PROF_LOCK,
         ConfigurableMonitor.Item.JHICCUP,
         ConfigurableMonitor.Item.GC_LOGS
     );
@@ -179,7 +180,9 @@ public class PerfTestParams implements Serializable
         if (JDK_TO_USE.contains("21"))
             result.add("-XX:+ZGenerational"); // use generational ZGC on JDK 21
         result.add("-XX:+AlwaysPreTouch");
-        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
+        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
+            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION) ||
+            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK))
         {
             result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
             if (JDK_TO_USE.contains("21"))

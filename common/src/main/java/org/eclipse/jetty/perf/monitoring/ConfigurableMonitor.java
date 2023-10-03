@@ -22,6 +22,7 @@ public class ConfigurableMonitor implements Monitor
         CMDLINE_NETWORK,
         ASYNC_PROF_CPU,
         ASYNC_PROF_ALLOCATION,
+        ASYNC_PROF_LOCK,
         JHICCUP,
         GC_LOGS,
     }
@@ -74,6 +75,10 @@ public class ConfigurableMonitor implements Monitor
             case ASYNC_PROF_ALLOCATION:
                 if (osName.contains("linux"))
                     return new AsyncProfilerAllocationMonitor();
+                return null;
+            case ASYNC_PROF_LOCK:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerLockMonitor();
                 return null;
             case JHICCUP:
                 return new JHiccupMonitor();
