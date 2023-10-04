@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-  agent any
+  agent none
   options {
     buildDiscarder logRotator(numToKeepStr: '100')
   }
