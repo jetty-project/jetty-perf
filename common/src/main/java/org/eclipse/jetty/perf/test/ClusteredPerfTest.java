@@ -3,7 +3,6 @@ package org.eclipse.jetty.perf.test;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -40,7 +39,6 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
@@ -279,11 +277,13 @@ public class ClusteredPerfTest implements Serializable, Closeable
         server.addConnector(serverConnector);
 
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
-        StatisticsHandler statisticsHandler = new StatisticsHandler(new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder));
-        server.setHandler(statisticsHandler);
+        ModernLatencyRecordingHandler latencyRecordingHandler = new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder);
+//        StatisticsHandler statisticsHandler = new StatisticsHandler(latencyRecordingHandler);
+//        server.setHandler(statisticsHandler);
+        server.setHandler(latencyRecordingHandler);
         server.start();
 
-        env.put(StatisticsHandler.class.getName(), statisticsHandler);
+//        env.put(StatisticsHandler.class.getName(), statisticsHandler);
         env.put(LatencyRecorder.class.getName(), latencyRecorder);
         env.put(Server.class.getName(), server);
     }
@@ -292,11 +292,11 @@ public class ClusteredPerfTest implements Serializable, Closeable
     private void stopServer(Map<String, Object> env) throws Exception
     {
         ((Server)env.get(Server.class.getName())).stop();
-        StatisticsHandler statisticsHandler = (StatisticsHandler)env.get(StatisticsHandler.class.getName());
-        try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
-        {
-            statisticsHandler.dump(printWriter);
-        }
+//        StatisticsHandler statisticsHandler = (StatisticsHandler)env.get(StatisticsHandler.class.getName());
+//        try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
+//        {
+//            statisticsHandler.dump(printWriter);
+//        }
     }
 
     private void runLoadGenerator(PerfTestParams.Protocol protocol, URI serverUri, int loaderRate, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
