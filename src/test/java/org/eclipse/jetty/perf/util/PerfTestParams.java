@@ -136,7 +136,7 @@ public class PerfTestParams implements Serializable
     {
         // TODO rate should vary according to protocol
         // i.e.: it takes less resources to serve HTTP vs HTTPS -> rate should be higher for HTTP
-        return 45_000;
+        return 60_000;
     }
 
     public int getProbeRate()
