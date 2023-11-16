@@ -104,10 +104,20 @@ public class ClusteredPerfTest implements Serializable, Closeable
         NodeArray loadersArray = cluster.nodeArray("loaders");
         NodeArray probeArray = cluster.nodeArray("probe");
 
-        NodeJob logSystemProps = tools -> LOG.info("JVM version '{}' running on '{}/{}'", System.getProperty("java.vm.version"), System.getProperty("os.name"), System.getProperty("os.arch"));
-        serverArray.executeOnAll(logSystemProps).get();
-        loadersArray.executeOnAll(logSystemProps).get();
-        probeArray.executeOnAll(logSystemProps).get();
+        NodeJob logSysInfo = tools -> LOG.info("{} '{}/{}': running JVM version '{}'",
+            java.net.InetAddress.getLocalHost().getHostName(),
+            System.getProperty("os.name"),
+            System.getProperty("os.arch"),
+            System.getProperty("java.vm.version"));
+        List<NodeArrayFuture> futures = List.of(
+            serverArray.executeOnAll(logSysInfo),
+            loadersArray.executeOnAll(logSysInfo),
+            probeArray.executeOnAll(logSysInfo)
+        );
+        for (NodeArrayFuture future : futures)
+        {
+            future.get(30, TimeUnit.SECONDS);
+        }
 
         // start the server and the generators
         serverArray.executeOnAll(tools -> startServer(protocol, serverUri.getPort(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
