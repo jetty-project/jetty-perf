@@ -7,14 +7,11 @@ pipeline {
     options {
       buildDiscarder logRotator( numToKeepStr: '100' )
     }
-    environment {
-      // Use JETTY_LOAD_GENERATOR_VERSION = get_jetty_load_generator_version() in case new API changes breaking the load generator get merged.
-      JETTY_LOAD_GENERATOR_VERSION = "4.0.0";
-    }
     parameters {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
       string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
+      string(defaultValue: 'GC_LOGS,ASYNC_PROF_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
       string(defaultValue: 'main-12.0.x', description: 'Jetty perf branch', name: 'JETTY_PERF_BRANCH')
       string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
     }
@@ -28,7 +25,8 @@ pipeline {
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
                                string(name: 'JETTY_PERF_BRANCH', value: "${JETTY_PERF_BRANCH}"),
                                string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}"),
-                               string(name: 'JETTY_LOAD_GENERATOR_VERSION', value: "${JETTY_LOAD_GENERATOR_VERSION}")])
+                               string(name: 'OPTIONAL_MONITORED_ITEMS', value: "${OPTIONAL_MONITORED_ITEMS}"),
+                  ])
           copyArtifacts(projectName: '/load_testing/jetty-perf-main', selector: specific("${built.number}"));
         }
       }
@@ -40,11 +38,3 @@ pipeline {
     }
   }
 }
-
-// def get_jetty_load_generator_version() {
-//   if ("$params.JETTY_VERSION".endsWith("SNAPSHOT")) {
-//     return "4.0.0-SNAPSHOT"
-//   } else {
-//     return "4.0.0.beta0"
-//   }
-// }

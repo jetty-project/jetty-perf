@@ -1,9 +1,11 @@
 package org.eclipse.jetty.perf.monitoring;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
@@ -20,9 +22,12 @@ public class ConfigurableMonitor implements Monitor
         CMDLINE_CPU,
         CMDLINE_MEMORY,
         CMDLINE_NETWORK,
+
+        // Only one kind of async profiling can be enabled at a time.
         ASYNC_PROF_CPU,
         ASYNC_PROF_ALLOCATION,
         ASYNC_PROF_LOCK,
+
         JHICCUP,
         GC_LOGS,
     }
@@ -43,6 +48,24 @@ public class ConfigurableMonitor implements Monitor
     public void close()
     {
         monitors.forEach(IOUtil::close);
+    }
+
+    public static List<ConfigurableMonitor.Item> parseConfigurableMonitorItems(String cmd)
+    {
+        return Arrays.stream(cmd.split(","))
+            .map(String::trim)
+            .map(s -> {
+                try
+                {
+                    return ConfigurableMonitor.Item.valueOf(s);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .toList();
     }
 
     private static Monitor monitorOf(Item item) throws Exception
