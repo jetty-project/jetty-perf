@@ -6,17 +6,17 @@ pipeline {
     buildDiscarder logRotator(numToKeepStr: '20')
   }
   environment {
-    JETTY_LOAD_GENERATOR_VERSION = '4.0.0'
     TEST_TO_RUN = '*'
   }
   parameters {
-    string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+    string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
+
+    string(defaultValue: '*', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
+    string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
-    string(defaultValue: '', description: 'Load Generator version to use', name: 'JETTY_LOAD_GENERATOR_VERSION')
-    string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
-    string(defaultValue: '*', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
+    string(defaultValue: 'GC_LOGS,ASYNC_PROF_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
 
   }
   tools {
@@ -87,37 +87,6 @@ pipeline {
         }
       }
     }
-    stage('Build jetty-load-generator') {
-      agent { node { label 'load-master' } }     
-      when {
-        beforeAgent true
-        expression {
-          return JETTY_VERSION.endsWith("SNAPSHOT") && JETTY_LOAD_GENERATOR_VERSION.endsWith("SNAPSHOT") && JETTY_LOAD_GENERATOR_VERSION.startsWith("4.0");
-        }
-      }
-      steps {
-        lock('jetty-perf') {
-          dir("jetty.build") {
-            echo "building jetty-load-generator ${JETTY_LOAD_GENERATOR_VERSION}"
-            sh "rm -rf *"
-            checkout([$class           : 'GitSCM',
-                      branches         : [[name: "*/4.0.x"]],
-                      extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
-                      userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-load-generator.git']]])
-            timeout(time: 30, unit: 'MINUTES') {
-              withEnv(["JAVA_HOME=${tool "jdk17"}",
-                       "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
-                       "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
-                configFileProvider(
-                        [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn -Pfast -ntp -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
     stage('Build Jetty') {
       agent { node { label 'load-master' } }      
       when {
@@ -172,7 +141,7 @@ pipeline {
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
             configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean install -Dtest=${TEST_TO_RUN} -Djetty.version=${JETTY_VERSION} -Dtest.jdk.name=${JDK_TO_USE} -Dtest.jdk.useLoom=${USE_LOOM_IF_POSSIBLE}" + buildMvnCmd()
+              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean install" + buildMvnCmd()
             }
           }
         }
@@ -187,9 +156,12 @@ pipeline {
   }
 }
 
-def buildMvnCmd() {
-  String cmd = ""
-  if ("${params.JETTY_LOAD_GENERATOR_VERSION}") {
-    cmd += " -Djetty-load-generator.version=${params.JETTY_LOAD_GENERATOR_VERSION}"
-  }
+static def buildMvnCmd() {
+    return "" +
+        " -Dtest=${TEST_TO_RUN}" +
+        " -Djetty.version=${JETTY_VERSION}" +
+        " -Dtest.jdk.name=${JDK_TO_USE}" +
+        " -Dtest.jdk.useLoom=${USE_LOOM_IF_POSSIBLE}" +
+        " -Dtest.optional.monitored.items=${OPTIONAL_MONITORED_ITEMS}" +
+        ""
 }
