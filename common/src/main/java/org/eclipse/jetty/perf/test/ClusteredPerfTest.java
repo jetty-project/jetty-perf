@@ -114,10 +114,10 @@ public class ClusteredPerfTest implements Serializable, Closeable
         loadersArray.executeOnAll(tools -> runLoadGenerator(protocol, serverUri, loaderRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
         probeArray.executeOnAll(tools -> runProbeGenerator(protocol, serverUri, probeRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
-        LOG.info("Warming up...");
+        LOG.info("Warming up {}s ...", warmupDuration.toSeconds());
         Thread.sleep(warmupDuration.toMillis());
 
-        LOG.info("Running...");
+        LOG.info("Running {}s ...",runDuration.toSeconds());
         long before = System.nanoTime();
 
         NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
