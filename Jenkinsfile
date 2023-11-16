@@ -11,7 +11,7 @@ pipeline {
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
       string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-      string(defaultValue: 'GC_LOGS,ASYNC_PROF_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
+      string(defaultValue: 'GC_LOGS', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
       string(defaultValue: 'main-12.0.x', description: 'Jetty perf branch', name: 'JETTY_PERF_BRANCH')
       string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
     }
