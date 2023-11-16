@@ -17,7 +17,6 @@ pipeline {
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
     string(defaultValue: 'GC_LOGS,ASYNC_PROF_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
-
   }
   tools {
     jdk "${JDK_TO_USE}"
@@ -141,7 +140,13 @@ pipeline {
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
             configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean install" + buildMvnCmd()
+              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean install" +
+                  " -Dtest=${TEST_TO_RUN}" +
+                  " -Djetty.version=${JETTY_VERSION}" +
+                  " -Dtest.jdk.name=${JDK_TO_USE}" +
+                  " -Dtest.jdk.useLoom=${USE_LOOM_IF_POSSIBLE}" +
+                  " -Dtest.optional.monitored.items=${OPTIONAL_MONITORED_ITEMS}" +
+                  ""
             }
           }
         }
@@ -154,14 +159,4 @@ pipeline {
       }
     }
   }
-}
-
-static def buildMvnCmd() {
-    return "" +
-        " -Dtest=${TEST_TO_RUN}" +
-        " -Djetty.version=${JETTY_VERSION}" +
-        " -Dtest.jdk.name=${JDK_TO_USE}" +
-        " -Dtest.jdk.useLoom=${USE_LOOM_IF_POSSIBLE}" +
-        " -Dtest.optional.monitored.items=${OPTIONAL_MONITORED_ITEMS}" +
-        ""
 }
