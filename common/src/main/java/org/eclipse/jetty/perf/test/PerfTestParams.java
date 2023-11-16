@@ -29,7 +29,7 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.JHICCUP
     );
 
-    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.copyOf(new HashSet<>()
+    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.copyOf(new HashSet<ConfigurableMonitor.Item>() // javac 11 needs HashSet to be typed
     {{
         addAll(DEFAULT_MONITORED_ITEMS);
         addAll(ConfigurableMonitor.parseConfigurableMonitorItems(OPTIONAL_MONITORED_ITEMS));
