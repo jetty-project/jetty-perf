@@ -284,6 +284,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
 //        env.put(StatisticsHandler.class.getName(), statisticsHandler);
         env.put(Recorder.class.getName(), List.of(latencyRecorder));
+        env.put(CompletableFuture.class.getName(), CompletableFuture.completedFuture(null));
         env.put(Server.class.getName(), server);
     }
 
