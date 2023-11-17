@@ -140,14 +140,26 @@ public class ClusteredPerfTest implements Serializable, Closeable
             {
                 @SuppressWarnings("unchecked")
                 List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
+                LOG.info("Recorders list: {}", recorders);
 
+                LOG.info("starting Recorders...");
                 recorders.forEach(Recorder::startRecording);
+                LOG.info("awaiting run-start-barrier...");
                 tools.barrier("run-start-barrier", participantCount).await();
+                LOG.info("awaiting run-end-barrier...");
                 tools.barrier("run-end-barrier", participantCount).await();
+                LOG.info("stopping Recorders...");
                 recorders.forEach(Recorder::stopRecording);
 
                 CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
+                LOG.info("CF: {}", cf);
                 cf.get();
+                LOG.info("All done");
+            }
+            catch (Throwable x)
+            {
+                LOG.error("Caught exception in job", x);
+                throw x;
             }
         };
         NodeArrayFuture serverFuture = serverArray.executeOnAll(recordingJob);
