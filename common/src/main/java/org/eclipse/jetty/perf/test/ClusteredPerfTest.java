@@ -31,6 +31,7 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
+import org.eclipse.jetty.perf.util.Recorder;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Handler;
@@ -133,51 +134,37 @@ public class ClusteredPerfTest implements Serializable, Closeable
         LOG.info("Running {}s ...", runDuration.toSeconds());
         long before = System.nanoTime();
 
-        NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
+        NodeJob recordingJob = tools ->
         {
             try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
             {
-                LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
-                latencyRecorder.startRecording();
-                tools.barrier("run-start-barrier", participantCount).await();
-                tools.barrier("run-end-barrier", participantCount).await();
-                latencyRecorder.stopRecording();
-            }
-        });
+                @SuppressWarnings("unchecked")
+                List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
+                LOG.info("Recorders list: {}", recorders);
 
-        NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
-        {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
-            {
-                LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
-                latencyRecorder.startRecording();
-                ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
-                responseStatusListener.startRecording();
+                LOG.info("starting Recorders...");
+                recorders.forEach(Recorder::startRecording);
+                LOG.info("awaiting run-start-barrier...");
                 tools.barrier("run-start-barrier", participantCount).await();
+                LOG.info("awaiting run-end-barrier...");
                 tools.barrier("run-end-barrier", participantCount).await();
-                latencyRecorder.stopRecording();
-                responseStatusListener.stopRecording();
-                CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
-                cf.get();
-            }
-        });
+                LOG.info("stopping Recorders...");
+                recorders.forEach(Recorder::stopRecording);
 
-        NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
-        {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
-            {
-                LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
-                latencyRecorder.startRecording();
-                ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
-                responseStatusListener.startRecording();
-                tools.barrier("run-start-barrier", participantCount).await();
-                tools.barrier("run-end-barrier", participantCount).await();
-                latencyRecorder.stopRecording();
-                responseStatusListener.stopRecording();
                 CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
+                LOG.info("CF: {}", cf);
                 cf.get();
+                LOG.info("All done");
             }
-        });
+            catch (Throwable x)
+            {
+                LOG.error("Caught exception in job", x);
+                throw x;
+            }
+        };
+        NodeArrayFuture serverFuture = serverArray.executeOnAll(recordingJob);
+        NodeArrayFuture loadersFuture = loadersArray.executeOnAll(recordingJob);
+        NodeArrayFuture probeFuture = probeArray.executeOnAll(recordingJob);
 
         try
         {
@@ -200,7 +187,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
                 serverFuture.get(30, TimeUnit.SECONDS);
                 loadersFuture.get(30, TimeUnit.SECONDS);
                 probeFuture.get(30, TimeUnit.SECONDS);
-                LOG.info("  Reports were written");
+                LOG.info("  Report were written");
             }
 
             LOG.info("Stopping the server...");
@@ -308,7 +295,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
         server.start();
 
 //        env.put(StatisticsHandler.class.getName(), statisticsHandler);
-        env.put(LatencyRecorder.class.getName(), latencyRecorder);
+        env.put(Recorder.class.getName(), List.of(latencyRecorder));
+        env.put(CompletableFuture.class.getName(), CompletableFuture.completedFuture(null));
         env.put(Server.class.getName(), server);
     }
 
@@ -327,9 +315,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
-        env.put(LatencyRecorder.class.getName(), latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
-        env.put(ResponseStatusListener.class.getName(), responseStatusListener);
+        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
@@ -372,9 +359,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
-        env.put(LatencyRecorder.class.getName(), latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
-        env.put(ResponseStatusListener.class.getName(), responseStatusListener);
+        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
