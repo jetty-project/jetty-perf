@@ -209,32 +209,40 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
         catch (Exception e)
         {
-            LOG.info("Downloading artefacts before rethrowing...");
-            generateReport(Path.of(reportRootPath), nodeArrayIds, cluster);
-
-            LOG.info("Dumping threads of pending jobs before rethrowing...");
-            NodeJob dump = (tools) ->
+            StringBuilder msg = new StringBuilder("Error stopping jobs");
+            try
             {
-                String nodeId = tools.getNodeId();
-                ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-                System.err.println("----- " + nodeId + " -----");
-                for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true))
+                LOG.info("Downloading artefacts before rethrowing...");
+                generateReport(Path.of(reportRootPath), nodeArrayIds, cluster);
+
+                LOG.info("Dumping threads of pending jobs before rethrowing...");
+                NodeJob dump = (tools) ->
                 {
-                    System.err.println(threadInfo);
+                    String nodeId = tools.getNodeId();
+                    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+                    System.err.println("----- " + nodeId + " -----");
+                    for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true))
+                    {
+                        System.err.println(threadInfo);
+                    }
+                    System.err.println("----- " + nodeId + " -----");
+                };
+                serverArray.executeOn(serverFuture.getNotDoneNodeIds(), dump).get();
+                for (String id : loadersFuture.getNotDoneNodeIds())
+                {
+                    loadersArray.executeOn(id, dump).get();
                 }
-                System.err.println("----- " + nodeId + " -----");
-            };
-            serverArray.executeOn(serverFuture.getNotDoneNodeIds(), dump).get();
-            for (String id : loadersFuture.getNotDoneNodeIds())
-            {
-                loadersArray.executeOn(id, dump).get();
-            }
-            probeArray.executeOn(probeFuture.getNotDoneNodeIds(), dump).get();
+                probeArray.executeOn(probeFuture.getNotDoneNodeIds(), dump).get();
 
-            String msg = String.format("Error stopping jobs; nodes that failed to stop: server=%s loaders=%s probe=%s",
-                serverFuture.getNotDoneNodeIds(), loadersFuture.getNotDoneNodeIds(), probeFuture.getNotDoneNodeIds());
-            LOG.error(msg, e);
-            throw new Exception(msg, e);
+                msg.append(String.format("; nodes that failed to stop: server=%s loaders=%s probe=%s",
+                    serverFuture.getNotDoneNodeIds(), loadersFuture.getNotDoneNodeIds(), probeFuture.getNotDoneNodeIds()));
+                LOG.error(msg.toString(), e);
+            }
+            catch (Exception subEx)
+            {
+                e.addSuppressed(subEx);
+            }
+            throw new Exception(msg.toString(), e);
         }
     }
 
