@@ -11,11 +11,14 @@ import org.eclipse.jetty.util.Callback;
 
 public class SyncHandlerUsingBlocker extends Handler.Abstract
 {
-    private final byte[] answer;
+    private final ByteBuffer answer;
 
     public SyncHandlerUsingBlocker(byte[] answer)
     {
-        this.answer = answer;
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(answer.length);
+        byteBuffer.put(answer);
+        byteBuffer.flip();
+        this.answer = byteBuffer;
     }
 
     @Override
@@ -23,10 +26,11 @@ public class SyncHandlerUsingBlocker extends Handler.Abstract
     {
         Content.Source.consumeAll(request);
         response.setStatus(200);
+        Content.Sink sink = Response.asBufferedSink(request, response);
         Blocker.Shared blocking = new Blocker.Shared();
         try (Blocker.Callback bc = blocking.callback())
         {
-            response.write(true, ByteBuffer.wrap(answer), bc);
+            sink.write(true, answer.asReadOnlyBuffer(), bc);
             bc.block();
         }
         callback.succeeded();

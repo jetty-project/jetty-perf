@@ -14,7 +14,10 @@ public class AsyncHandler extends Handler.Abstract.NonBlocking
 
     public AsyncHandler(byte[] answer)
     {
-        this.answer = ByteBuffer.wrap(answer);
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(answer.length);
+        byteBuffer.put(answer);
+        byteBuffer.flip();
+        this.answer = byteBuffer;
     }
 
     @Override

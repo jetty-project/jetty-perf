@@ -20,7 +20,7 @@ public class SyncHandlerUsingOutputStream extends Handler.Abstract
     @Override
     public boolean handle(Request request, Response response, Callback callback) throws Exception
     {
-        try (OutputStream outputStream = Content.Sink.asOutputStream(response))
+        try (OutputStream outputStream = Response.asBufferedOutputStream(request, response))
         {
             Content.Source.consumeAll(request);
             response.setStatus(200);
