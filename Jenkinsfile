@@ -5,18 +5,14 @@ pipeline {
   options {
     buildDiscarder logRotator(numToKeepStr: '20')
   }
-  environment {
-    TEST_TO_RUN = '*'
-  }
   parameters {
     string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
-
-    string(defaultValue: '*', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
+    string(defaultValue: '', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
     string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
-    string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-    string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
-    string(defaultValue: 'GC_LOGS,ASYNC_PROF_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
+    string(defaultValue: '', description: 'JDK to use', name: 'JDK_TO_USE')
+    string(defaultValue: '', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
+    string(defaultValue: '', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
   }
   tools {
     jdk "${JDK_TO_USE}"
@@ -140,7 +136,7 @@ pipeline {
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
             configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean install" +
+              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
                   " -Dtest=${TEST_TO_RUN}" +
                   " -Djetty.version=${JETTY_VERSION}" +
                   " -Dtest.jdk.name=${JDK_TO_USE}" +
