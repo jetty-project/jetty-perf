@@ -137,11 +137,11 @@ pipeline {
             configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
               sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
-                  " -Dtest=${TEST_TO_RUN}" +
-                  " -Djetty.version=${JETTY_VERSION}" +
-                  " -Dtest.jdk.name=${JDK_TO_USE}" +
-                  " -Dtest.jdk.useLoom=${USE_LOOM_IF_POSSIBLE}" +
-                  " -Dtest.optional.monitored.items=${OPTIONAL_MONITORED_ITEMS}" +
+                  " -Dtest='${TEST_TO_RUN}'" +
+                  " -Djetty.version='${JETTY_VERSION}'" +
+                  " -Dtest.jdk.name='${JDK_TO_USE}'" +
+                  " -Dtest.jdk.useLoom='${USE_LOOM_IF_POSSIBLE}'" +
+                  " -Dtest.optional.monitored.items='${OPTIONAL_MONITORED_ITEMS}'" +
                   ""
             }
           }
