@@ -31,6 +31,7 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
+import org.eclipse.jetty.perf.util.Recorder;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Handler;
@@ -120,85 +121,64 @@ public class ClusteredPerfTest implements Serializable, Closeable
             future.get(30, TimeUnit.SECONDS);
         }
 
-        // start the server and the generators
+        LOG.info("Starting the server...");
         serverArray.executeOnAll(tools -> startServer(protocol, serverUri.getPort(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        LOG.info("Starting the loaders...");
         loadersArray.executeOnAll(tools -> runLoadGenerator(protocol, serverUri, loaderRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        LOG.info("Starting the probe...");
         probeArray.executeOnAll(tools -> runProbeGenerator(protocol, serverUri, probeRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
         LOG.info("Warming up {}s ...", warmupDuration.toSeconds());
         Thread.sleep(warmupDuration.toMillis());
 
-        LOG.info("Running {}s ...",runDuration.toSeconds());
+        LOG.info("Running {}s ...", runDuration.toSeconds());
         long before = System.nanoTime();
 
-        NodeArrayFuture serverFuture = serverArray.executeOnAll(tools ->
+        NodeJob recordingJob = tools ->
         {
             try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
             {
-                LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
-                latencyRecorder.startRecording();
-                tools.barrier("run-start-barrier", participantCount).await();
-                tools.barrier("run-end-barrier", participantCount).await();
-                latencyRecorder.stopRecording();
-            }
-        });
+                @SuppressWarnings("unchecked")
+                List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
 
-        NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
-        {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
-            {
-                LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
-                latencyRecorder.startRecording();
-                ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
-                responseStatusListener.startRecording();
+                recorders.forEach(Recorder::startRecording);
                 tools.barrier("run-start-barrier", participantCount).await();
                 tools.barrier("run-end-barrier", participantCount).await();
-                latencyRecorder.stopRecording();
-                responseStatusListener.stopRecording();
+                recorders.forEach(Recorder::stopRecording);
+
                 CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
                 cf.get();
             }
-        });
-
-        NodeArrayFuture probeFuture = probeArray.executeOnAll(tools ->
-        {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
-            {
-                LatencyRecorder latencyRecorder = (LatencyRecorder)tools.nodeEnvironment().get(LatencyRecorder.class.getName());
-                latencyRecorder.startRecording();
-                ResponseStatusListener responseStatusListener = (ResponseStatusListener)tools.nodeEnvironment().get(ResponseStatusListener.class.getName());
-                responseStatusListener.startRecording();
-                tools.barrier("run-start-barrier", participantCount).await();
-                tools.barrier("run-end-barrier", participantCount).await();
-                latencyRecorder.stopRecording();
-                responseStatusListener.stopRecording();
-                CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
-                cf.get();
-            }
-        });
+        };
+        NodeArrayFuture serverFuture = serverArray.executeOnAll(recordingJob);
+        NodeArrayFuture loadersFuture = loadersArray.executeOnAll(recordingJob);
+        NodeArrayFuture probeFuture = probeArray.executeOnAll(recordingJob);
 
         try
         {
             try
             {
-                // signal all participants to start
+                LOG.info("  Signalling all participants to start...");
                 cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
-                // wait for the run duration
+                LOG.info("  Waiting for the duration of the run...");
                 Thread.sleep(runDuration.toMillis());
-                // signal all participants to stop
+                LOG.info("  Signalling all participants to stop...");
                 cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
+                LOG.info("  Signalled all participants to stop");
             }
             finally
             {
+                LOG.info("  Waiting for all report files to be written...");
                 // wait for all report files to be written;
                 // do it in a finally so that if the above barrier awaits time out b/c a job threw an exception
                 // the future.get() call will re-throw the exception and it'll be logged.
                 serverFuture.get(30, TimeUnit.SECONDS);
                 loadersFuture.get(30, TimeUnit.SECONDS);
                 probeFuture.get(30, TimeUnit.SECONDS);
+                LOG.info("  Report were written");
             }
 
-            // stop server
+            LOG.info("Stopping the server...");
             serverArray.executeOnAll((tools) -> stopServer(tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Generating report...");
@@ -303,7 +283,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         server.start();
 
 //        env.put(StatisticsHandler.class.getName(), statisticsHandler);
-        env.put(LatencyRecorder.class.getName(), latencyRecorder);
+        env.put(Recorder.class.getName(), List.of(latencyRecorder));
         env.put(Server.class.getName(), server);
     }
 
@@ -322,9 +302,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
-        env.put(LatencyRecorder.class.getName(), latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
-        env.put(ResponseStatusListener.class.getName(), responseStatusListener);
+        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
@@ -367,9 +346,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
-        env.put(LatencyRecorder.class.getName(), latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
-        env.put(ResponseStatusListener.class.getName(), responseStatusListener);
+        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())

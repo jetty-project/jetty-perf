@@ -11,7 +11,7 @@ import org.HdrHistogram.Recorder;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.component.LifeCycle;
 
-public class LatencyRecorder
+public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 {
     private final HistogramLogRecorder recorder;
 
@@ -20,11 +20,13 @@ public class LatencyRecorder
         this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
     }
 
+    @Override
     public void startRecording()
     {
         recorder.startRecording();
     }
 
+    @Override
     public void stopRecording()
     {
         recorder.close();

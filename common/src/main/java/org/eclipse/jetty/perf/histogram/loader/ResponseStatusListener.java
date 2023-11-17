@@ -12,10 +12,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
+import org.eclipse.jetty.perf.util.Recorder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 
-public class ResponseStatusListener implements Resource.NodeListener, LoadGenerator.CompleteListener
+public class ResponseStatusListener implements Resource.NodeListener, LoadGenerator.CompleteListener, Recorder
 {
     private final Timer timer = new Timer();
 
@@ -36,6 +37,7 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
         this.fullStackTrace = fullStackTrace;
     }
 
+    @Override
     public void startRecording()
     {
         this.record = true;
@@ -49,6 +51,7 @@ public class ResponseStatusListener implements Resource.NodeListener, LoadGenera
         }, 1000, 1000);
     }
 
+    @Override
     public void stopRecording()
     {
         record = false;
