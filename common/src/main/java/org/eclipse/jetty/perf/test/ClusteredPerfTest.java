@@ -238,8 +238,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
     private void startServer(PerfTestParams.Protocol protocol, int serverPort, Map<String, Object> env) throws Exception
     {
-//        ArrayByteBufferPool pool = new ArrayByteBufferPool(0, 16, 1025 * 16);
-        ArrayByteBufferPool pool = new ArrayByteBufferPool();
+        ArrayByteBufferPool pool = new ArrayByteBufferPool(0, 16, 2049 * 16);
+//        ArrayByteBufferPool pool = new ArrayByteBufferPool();
         Server server = new Server(null, null, pool);
 
         server.setDumpBeforeStop(true);
