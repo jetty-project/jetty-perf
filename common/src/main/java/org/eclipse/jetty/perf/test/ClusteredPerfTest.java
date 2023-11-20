@@ -140,21 +140,14 @@ public class ClusteredPerfTest implements Serializable, Closeable
             {
                 @SuppressWarnings("unchecked")
                 List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
-                LOG.info("Recorders list: {}", recorders);
 
-                LOG.info("starting Recorders...");
                 recorders.forEach(Recorder::startRecording);
-                LOG.info("awaiting run-start-barrier...");
                 tools.barrier("run-start-barrier", participantCount).await();
-                LOG.info("awaiting run-end-barrier...");
                 tools.barrier("run-end-barrier", participantCount).await();
-                LOG.info("stopping Recorders...");
                 recorders.forEach(Recorder::stopRecording);
 
                 CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
-                LOG.info("CF: {}", cf);
                 cf.get();
-                LOG.info("All done");
             }
             catch (Throwable x)
             {
@@ -178,16 +171,21 @@ public class ClusteredPerfTest implements Serializable, Closeable
                 cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
                 LOG.info("  Signalled all participants to stop");
             }
-            finally
+            catch (Exception ex)
             {
-                LOG.info("  Waiting for all report files to be written...");
-                // wait for all report files to be written;
-                // do it in a finally so that if the above barrier awaits time out b/c a job threw an exception
-                // the future.get() call will re-throw the exception and it'll be logged.
-                serverFuture.get(30, TimeUnit.SECONDS);
-                loadersFuture.get(30, TimeUnit.SECONDS);
-                probeFuture.get(30, TimeUnit.SECONDS);
-                LOG.info("  Report were written");
+                try
+                {
+                    LOG.info("  Waiting for all report files to be written...");
+                    serverFuture.get(30, TimeUnit.SECONDS);
+                    loadersFuture.get(30, TimeUnit.SECONDS);
+                    probeFuture.get(30, TimeUnit.SECONDS);
+                    LOG.info("  Reports were written");
+                }
+                catch (Exception subEx)
+                {
+                    ex.addSuppressed(subEx);
+                }
+                throw ex;
             }
 
             LOG.info("Stopping the server...");
