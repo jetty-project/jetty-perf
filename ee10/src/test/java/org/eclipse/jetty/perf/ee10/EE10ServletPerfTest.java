@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.is;
 
 public class EE10ServletPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(1);
+    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
 
     private static Stream<PerfTestParams> params()
