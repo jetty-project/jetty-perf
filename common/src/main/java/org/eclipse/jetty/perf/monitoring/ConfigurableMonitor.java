@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
+import org.eclipse.jetty.perf.monitoring.os.LinuxDiskMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxNetworkMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
@@ -22,6 +23,7 @@ public class ConfigurableMonitor implements Monitor
         CMDLINE_CPU,
         CMDLINE_MEMORY,
         CMDLINE_NETWORK,
+        CMDLINE_DISK,
 
         // Only one kind of async profiling can be enabled at a time.
         ASYNC_PROF_CPU,
@@ -90,6 +92,10 @@ public class ConfigurableMonitor implements Monitor
                     return new LinuxNetworkMonitor();
                 if (osName.contains("windows"))
                     return new WindowsNetworkMonitor();
+                return null;
+            case CMDLINE_DISK:
+                if (osName.contains("linux"))
+                    return new LinuxDiskMonitor();
                 return null;
             case ASYNC_PROF_CPU:
                 if (osName.contains("linux"))
