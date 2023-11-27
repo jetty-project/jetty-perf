@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
-import org.eclipse.jetty.io.ArrayByteBufferPool;
 import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
@@ -238,10 +237,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
     private void startServer(PerfTestParams.Protocol protocol, int serverPort, Map<String, Object> env) throws Exception
     {
-        int concurrentPoolSize = 1024;
-        ArrayByteBufferPool pool = new ArrayByteBufferPool(0, -1, -1, Integer.MAX_VALUE, 0, 0, null, null, concurrentPoolSize);
-//        ArrayByteBufferPool pool = new ArrayByteBufferPool();
-        Server server = new Server(null, null, pool);
+        Server server = new Server();
 
         server.setDumpBeforeStop(true);
 
