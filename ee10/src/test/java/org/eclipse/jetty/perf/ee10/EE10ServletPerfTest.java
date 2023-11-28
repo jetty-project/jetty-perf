@@ -2,7 +2,6 @@ package org.eclipse.jetty.perf.ee10;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.stream.Stream;
 
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.perf.test.FlatPerfTest;
@@ -11,7 +10,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -20,17 +19,6 @@ public class EE10ServletPerfTest
 {
     private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
     private static final Duration RUN_DURATION = Duration.ofSeconds(180);
-
-    private static Stream<PerfTestParams> params()
-    {
-        // TODO these figures are dependent upon the protocol *and* the test -> there should be a way to adjust the rates, expected latencies and error margin.
-        return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http, 60_000, 100, 5_500, 625_000, 15.0),
-//            new PerfTestParams(PerfTestParams.Protocol.https, 60_000, 100, 5_500, 1_150_000, 15.0)
-            new PerfTestParams(PerfTestParams.Protocol.h2c, 60_000, 100, 21_000, 650_000, 15.0)
-//            new PerfTestParams(PerfTestParams.Protocol.h2, 60_000, 100, 90_000, 1_000_000, 15.0)
-        );
-    }
 
     private String testName;
 
@@ -44,10 +32,14 @@ public class EE10ServletPerfTest
         testName = simpleClassName + "_" + methodName;
     }
 
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testNoGzipAsync(PerfTestParams params) throws Exception
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+        "http, 60_000, 100,  5_500, 625_000, 15.0",
+        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
+    })
+    public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int probeRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
+        PerfTestParams params = new PerfTestParams(protocol, loaderRate, probeRate, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
@@ -64,10 +56,14 @@ public class EE10ServletPerfTest
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
-    @ParameterizedTest
-    @MethodSource("params")
-    public void testNoGzipSync(PerfTestParams params) throws Exception
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+        "http, 60_000, 100,  5_500, 625_000, 15.0",
+        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
+    })
+    public void testNoGzipSync(PerfTestParams.Protocol protocol, int loaderRate, int probeRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
+        PerfTestParams params = new PerfTestParams(protocol, loaderRate, probeRate, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
