@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 
 import org.eclipse.jetty.perf.jdk.LocalJdk;
@@ -20,15 +21,21 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 public class PerfTestParams implements Serializable
 {
     private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk17");
+    private static final String OPTIONAL_MONITORED_ITEMS = System.getProperty("test.optional.monitored.items", "");
 
-    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.of(
+    private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
-        ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler seems to be the cause of the 59th second latency spike.
-        ConfigurableMonitor.Item.JHICCUP,
-        ConfigurableMonitor.Item.GC_LOGS
+        ConfigurableMonitor.Item.CMDLINE_DISK,
+        ConfigurableMonitor.Item.JHICCUP
     );
+
+    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.copyOf(new HashSet<ConfigurableMonitor.Item>() // javac 11 needs HashSet to be typed
+    {{
+        addAll(DEFAULT_MONITORED_ITEMS);
+        addAll(ConfigurableMonitor.parseConfigurableMonitorItems(OPTIONAL_MONITORED_ITEMS));
+    }});
 
     private static final SimpleClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
         .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))

@@ -6,7 +6,7 @@ public class LinuxNetworkMonitor extends AbstractCommandMonitor
 
     public LinuxNetworkMonitor()
     {
-        this(DEFAULT_FILENAME, 10);
+        this(DEFAULT_FILENAME, DEFAULT_INTERVAL);
     }
 
     public LinuxNetworkMonitor(String filename, int interval)

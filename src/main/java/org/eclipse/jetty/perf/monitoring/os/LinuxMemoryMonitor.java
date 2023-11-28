@@ -6,11 +6,11 @@ public class LinuxMemoryMonitor extends AbstractCommandMonitor
 
     public LinuxMemoryMonitor()
     {
-        this(DEFAULT_FILENAME, 10);
+        this(DEFAULT_FILENAME, DEFAULT_INTERVAL);
     }
 
     public LinuxMemoryMonitor(String filename, int interval)
     {
-        super(filename, "free", "-h", "-s", Integer.toString(interval));
+        super(filename, "vmstat", "-w", "-S", "m", Integer.toString(interval));
     }
 }
