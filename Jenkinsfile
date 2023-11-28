@@ -12,8 +12,10 @@ pipeline {
     string(defaultValue: '11.0.19-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: 'jetty-11.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-    string(defaultValue: 'main-11.0.x', description: 'Jetty Branch', name: 'JETTY_PERF_BRANCH')
-    string(defaultValue: '*', description: 'Jetty Branch', name: 'TEST_TO_RUN')
+    string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
+        ' You can choose from this list: GC_LOGS, ASYNC_PROF_CPU, ASYNC_PROF_ALLOCATION, ASYNC_PROF_LOCK', name: 'OPTIONAL_MONITORED_ITEMS')
+    string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
+    string(defaultValue: 'main-11.0.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
   }
 
   stages {
@@ -25,7 +27,9 @@ pipeline {
                                string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
                                string(name: 'JETTY_PERF_BRANCH', value: "${JETTY_PERF_BRANCH}"),
-                               string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}")])
+                               string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}"),
+                               string(name: 'OPTIONAL_MONITORED_ITEMS', value: "${OPTIONAL_MONITORED_ITEMS}"),
+                  ])
           copyArtifacts(projectName: '/load_testing/jetty-perf-main', selector: specific("${built.number}"));
         }
       }
