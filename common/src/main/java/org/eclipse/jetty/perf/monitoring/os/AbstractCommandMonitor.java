@@ -14,7 +14,7 @@ abstract class AbstractCommandMonitor implements Monitor
 
     public static final int DEFAULT_INTERVAL = 5;
 
-    private final Process process;
+    protected final Process process;
 
     protected AbstractCommandMonitor(String outputfilename, String... command)
     {

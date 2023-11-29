@@ -13,4 +13,15 @@ public class LinuxPerfStatMonitor extends AbstractCommandMonitor
     {
         super(filename, "perf", "stat", "--log-fd", "1", "-p", Long.toString(ProcessHandle.current().pid()));
     }
+
+    @Override
+    public void close() throws Exception
+    {
+        // linux perf MUST receive SIGINT or it won't output any information.
+        Process kill = new ProcessBuilder("kill", "-INT", Long.toString(process.toHandle().pid()))
+            .start();
+        kill.waitFor();
+
+        super.close();
+    }
 }
