@@ -17,11 +17,15 @@ public class LinuxPerfStatMonitor extends AbstractCommandMonitor
     @Override
     public void close() throws Exception
     {
-        // linux perf MUST receive SIGINT or it won't output any information.
-        Process kill = new ProcessBuilder("kill", "-INT", Long.toString(process.toHandle().pid()))
-            .start();
-        kill.waitFor();
+        if (process != null)
+        {
+            // linux perf MUST receive SIGINT or it won't output any information.
+            Process kill = new ProcessBuilder("kill", "-INT", Long.toString(process.toHandle().pid()))
+                .start();
+            kill.waitFor();
 
-        super.close();
+            // after kill exited, perf should exist soonish
+            process.waitFor();
+        }
     }
 }
