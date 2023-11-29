@@ -20,8 +20,7 @@ public class LinuxPerfStatMonitor extends AbstractCommandMonitor
         if (process != null)
         {
             // linux perf MUST receive SIGINT or it won't output any information.
-            Process kill = new ProcessBuilder("kill", "-INT", Long.toString(process.toHandle().pid()))
-                .start();
+            Process kill = new ProcessBuilder("kill", "-INT", Long.toString(process.toHandle().pid())).start();
             kill.waitFor();
 
             // after kill exited, perf should exist soonish
