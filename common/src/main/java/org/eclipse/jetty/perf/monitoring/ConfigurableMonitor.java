@@ -11,6 +11,7 @@ import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxDiskMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxNetworkMonitor;
+import org.eclipse.jetty.perf.monitoring.os.LinuxPerfStatMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsNetworkMonitor;
@@ -29,6 +30,8 @@ public class ConfigurableMonitor implements Monitor
         ASYNC_PROF_CPU,
         ASYNC_PROF_ALLOCATION,
         ASYNC_PROF_LOCK,
+
+        PERF_STAT,
 
         JHICCUP,
         GC_LOGS,
@@ -108,6 +111,10 @@ public class ConfigurableMonitor implements Monitor
             case ASYNC_PROF_LOCK:
                 if (osName.contains("linux"))
                     return new AsyncProfilerLockMonitor();
+                return null;
+            case PERF_STAT:
+                if (osName.contains("linux"))
+                    return new LinuxPerfStatMonitor();
                 return null;
             case JHICCUP:
                 return new JHiccupMonitor();
