@@ -170,21 +170,9 @@ public class ClusteredPerfTest implements Serializable, Closeable
                 cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
                 LOG.info("  Signalled all participants to stop");
             }
-            catch (Exception ex)
+            finally
             {
-                try
-                {
-                    LOG.info("  Waiting for all report files to be written...");
-                    serverFuture.get(30, TimeUnit.SECONDS);
-                    loadersFuture.get(30, TimeUnit.SECONDS);
-                    probeFuture.get(30, TimeUnit.SECONDS);
-                    LOG.info("  Reports were written");
-                }
-                catch (Exception subEx)
-                {
-                    ex.addSuppressed(subEx);
-                }
-                throw ex;
+                waitForFutures(30, TimeUnit.SECONDS, serverFuture, loadersFuture, probeFuture);
             }
 
             LOG.info("Stopping the server...");
@@ -233,6 +221,29 @@ public class ClusteredPerfTest implements Serializable, Closeable
             }
             throw new Exception(msg.toString(), e);
         }
+    }
+
+    private void waitForFutures(long time, TimeUnit unit, NodeArrayFuture... futures) throws Exception
+    {
+        LOG.info("  Waiting for all report files to be written...");
+        Exception ex = null;
+        for (NodeArrayFuture future : futures)
+        {
+            try
+            {
+                future.get(time, unit);
+            }
+            catch (Exception e)
+            {
+                if (ex == null)
+                    ex = e;
+                else
+                    ex.addSuppressed(e);
+            }
+        }
+        LOG.info("  Reports were written");
+        if (ex != null)
+            throw ex;
     }
 
     private void startServer(PerfTestParams.Protocol protocol, int serverPort, Map<String, Object> env) throws Exception
