@@ -9,12 +9,13 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.cometd.benchmark.client.CometDLoadClient;
+import org.cometd.benchmark.server.CometDLoadServer;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.ReportUtil;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.mortbay.jetty.orchestrator.Cluster;
@@ -32,7 +33,6 @@ import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Disabled("Requires a released version of CometD")
 public class CometdBenchmarkTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(CometdBenchmarkTest.class);
@@ -43,6 +43,7 @@ public class CometdBenchmarkTest implements Serializable
         ConfigurableMonitor.Item.CMDLINE_CPU,
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
+        ConfigurableMonitor.Item.CMDLINE_DISK,
         ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler seems to be the cause of the 59th second latency spike.
         ConfigurableMonitor.Item.JHICCUP
     );
@@ -50,7 +51,6 @@ public class CometdBenchmarkTest implements Serializable
     private static String[] defaultJvmOpts(String... extra)
     {
         List<String> result = new ArrayList<>();
-        result.add("-Xlog:gc*:file=gc.log:time,level,tags");
         result.add("-XX:+UnlockExperimentalVMOptions");
         result.add("-XX:+UseZGC");
         result.add("-XX:+AlwaysPreTouch");
@@ -67,8 +67,10 @@ public class CometdBenchmarkTest implements Serializable
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms32g", "-Xmx32g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("clients")
+            .node(new Node("load-2"))
+            .node(new Node("load-3"))
+            .node(new Node("load-4"))
             .node(new Node("load-5"))
-            .node(new Node("load-6"))
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
@@ -103,18 +105,18 @@ public class CometdBenchmarkTest implements Serializable
 
             NodeArrayFuture serverArrayFuture = serverArray.executeOnAll(tools ->
             {
-                List<String> args = Arrays.asList("--auto");
+                List<String> args = Arrays.asList("--auto", "--transports=jetty");
                 // TODO
-                //CometDLoadServer.main(args.toArray(new String[0]));
+                CometDLoadServer.main(args.toArray(new String[0]));
             });
 
             NodeArrayFuture clientArrayFuture = clientsArray.executeOnAll(tools ->
             {
                 Barrier barrier = tools.barrier("clientId", getClientsCount());
                 int clientId = barrier.await();
-                List<String> args = Arrays.asList("--auto", "--host=" + getServerHostname(), "--transport=JAKARTA_WEBSOCKET", "--channel=/a-" + clientId);
+                List<String> args = Arrays.asList("--auto", "--host=" + getServerHostname(), "--transport=LONG_POLLING", "--channel=/a/" + clientId);
                 // TODO
-                //CometDLoadClient.main(args.toArray(new String[0]));
+                CometDLoadClient.main(args.toArray(new String[0]));
             });
 
             serverArrayFuture.get(120, TimeUnit.SECONDS);
