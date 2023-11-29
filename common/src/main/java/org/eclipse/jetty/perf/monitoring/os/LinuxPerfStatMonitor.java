@@ -11,7 +11,7 @@ public class LinuxPerfStatMonitor extends AbstractCommandMonitor
 
     public LinuxPerfStatMonitor(String filename)
     {
-        super(filename, "perf", "stat", "-p", Long.toString(ProcessHandle.current().pid()));
+        super("/dev/null", "perf", "stat", "-p", Long.toString(ProcessHandle.current().pid()), "-o", filename);
     }
 
     @Override
