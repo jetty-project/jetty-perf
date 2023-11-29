@@ -13,10 +13,4 @@ public class LinuxPerfStatMonitor extends AbstractCommandMonitor
     {
         super("/dev/null", "perf", "stat", "-p", Long.toString(ProcessHandle.current().pid()), "-o", filename);
     }
-
-    @Override
-    public void close() throws Exception
-    {
-        // no-op; the end of the current process will stop this monitor.
-    }
 }
