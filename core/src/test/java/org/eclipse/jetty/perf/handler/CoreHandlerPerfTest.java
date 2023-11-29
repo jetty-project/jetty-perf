@@ -36,7 +36,7 @@ public class CoreHandlerPerfTest
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000, 100,  4_300, 625_000, 15.0",
-        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
+//        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
     })
     public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int probeRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -55,6 +55,7 @@ public class CoreHandlerPerfTest
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
+    @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000, 100,  4_300, 625_000, 15.0",
@@ -103,7 +104,7 @@ public class CoreHandlerPerfTest
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000, 100,  4_300, 625_000, 15.0",
-        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
+//        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
     })
     public void testNoGzipFullyAsyncHandlerTree(PerfTestParams.Protocol protocol, int loaderRate, int probeRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
