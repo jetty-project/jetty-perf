@@ -28,8 +28,9 @@ public class ConfigurableMonitor implements Monitor
 
         // Only one kind of async profiling can be enabled at a time.
         ASYNC_PROF_CPU,
-        ASYNC_PROF_ALLOCATION,
+        ASYNC_PROF_ALLOC,
         ASYNC_PROF_LOCK,
+        ASYNC_PROF_CACHE_MISSES,
 
         PERF_STAT,
 
@@ -104,13 +105,17 @@ public class ConfigurableMonitor implements Monitor
                 if (osName.contains("linux"))
                     return new AsyncProfilerCpuMonitor();
                 return null;
-            case ASYNC_PROF_ALLOCATION:
+            case ASYNC_PROF_ALLOC:
                 if (osName.contains("linux"))
                     return new AsyncProfilerAllocationMonitor();
                 return null;
             case ASYNC_PROF_LOCK:
                 if (osName.contains("linux"))
                     return new AsyncProfilerLockMonitor();
+                return null;
+            case ASYNC_PROF_CACHE_MISSES:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerCacheMissesMonitor();
                 return null;
             case PERF_STAT:
                 if (osName.contains("linux"))

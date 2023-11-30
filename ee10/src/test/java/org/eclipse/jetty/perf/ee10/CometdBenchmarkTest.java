@@ -54,7 +54,10 @@ public class CometdBenchmarkTest implements Serializable
         result.add("-XX:+UnlockExperimentalVMOptions");
         result.add("-XX:+UseZGC");
         result.add("-XX:+AlwaysPreTouch");
-        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) || MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOCATION))
+        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
+            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOC) ||
+            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK) ||
+            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES))
             result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
         result.addAll(Arrays.asList(extra));
         return result.toArray(new String[0]);
