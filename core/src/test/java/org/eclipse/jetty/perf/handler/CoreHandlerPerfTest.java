@@ -1,6 +1,5 @@
 package org.eclipse.jetty.perf.handler;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import org.eclipse.jetty.perf.test.FlatPerfTest;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -48,14 +48,13 @@ public class CoreHandlerPerfTest
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(asyncHandler);
             return contextHandlerCollection;
         });
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
-    @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000, 100,  4_300, 625_000, 15.0",
@@ -71,7 +70,7 @@ public class CoreHandlerPerfTest
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
-            SyncHandlerUsingBlocker syncHandler = new SyncHandlerUsingBlocker("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            SyncHandlerUsingBlocker syncHandler = new SyncHandlerUsingBlocker("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(syncHandler);
             return contextHandlerCollection;
         });
@@ -94,7 +93,7 @@ public class CoreHandlerPerfTest
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
-            SyncHandlerUsingOutputStream syncHandler = new SyncHandlerUsingOutputStream("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            SyncHandlerUsingOutputStream syncHandler = new SyncHandlerUsingOutputStream("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(syncHandler);
             return contextHandlerCollection;
         });
@@ -103,8 +102,8 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 100,  2_500, 625_000, 15.0",
-        "h2c,  60_000, 100, 21_000, 650_000, 15.0"
+        "http, 60_000, 100,  3_100, 625_000, 15.0",
+        "h2c,  60_000, 100, 16_000, 650_000, 15.0"
     })
     public void testNoGzipFullyAsyncHandlerTree(PerfTestParams.Protocol protocol, int loaderRate, int probeRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -116,7 +115,7 @@ public class CoreHandlerPerfTest
             contextHandlerCollection.addHandler(targetContextHandler);
             ContextHandler uselessContextHandler = new ContextHandler("/useless");
             contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(StandardCharsets.ISO_8859_1));
+            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(asyncHandler);
             return contextHandlerCollection;
         });
