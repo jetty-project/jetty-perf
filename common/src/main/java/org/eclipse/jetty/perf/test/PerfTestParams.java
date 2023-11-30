@@ -146,6 +146,11 @@ public class PerfTestParams implements Serializable
         return loaderRate;
     }
 
+    public int getProbeRate()
+    {
+        return 1000;
+    }
+
     public long getExpectedP99ServerLatency()
     {
         return expectedP99ServerLatency;

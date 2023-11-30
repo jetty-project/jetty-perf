@@ -65,6 +65,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
     private final PerfTestParams.Protocol protocol;
     private final URI serverUri;
     private final int loaderRate;
+    private final int probeRate;
     private final String reportRootPath; // java.nio.Path isn't serializable, so we must use a String.
     private final SerializableSupplier<Handler> testedHandlerSupplier;
     private final int participantCount;
@@ -79,6 +80,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         this.protocol = perfTestParams.getProtocol();
         this.serverUri = perfTestParams.getServerUri();
         this.loaderRate = perfTestParams.getLoaderRate();
+        this.probeRate = perfTestParams.getProbeRate();
         this.testedHandlerSupplier = testedHandlerSupplier;
         this.reportRootPath = reportRootPath.toString();
         ClusterConfiguration clusterConfiguration = perfTestParams.getClusterConfiguration();
@@ -123,7 +125,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         LOG.info("Starting the loaders...");
         loadersArray.executeOnAll(tools -> runLoadGenerator(protocol, serverUri, loaderRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
         LOG.info("Starting the probe...");
-        probeArray.executeOnAll(tools -> runProbeGenerator(protocol, serverUri, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        probeArray.executeOnAll(tools -> runProbeGenerator(protocol, serverUri, probeRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
         LOG.info("Warming up {}s ...", warmupDuration.toSeconds());
         Thread.sleep(warmupDuration.toMillis());
@@ -360,7 +362,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams.Protocol protocol, URI serverUri, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
+    private void runProbeGenerator(PerfTestParams.Protocol protocol, URI serverUri, int probeRate, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
@@ -375,7 +377,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .runFor(warmupDuration.plus(runDuration).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
             .rateRampUpPeriod(warmupDuration.toSeconds() / 2)
-            .resourceRate(1000) // Do 1000 Req/s
+            .resourceRate(probeRate)
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
