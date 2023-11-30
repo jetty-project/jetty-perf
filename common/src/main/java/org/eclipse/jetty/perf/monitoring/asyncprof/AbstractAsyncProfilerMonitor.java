@@ -1,4 +1,4 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.asyncprof;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import org.eclipse.jetty.perf.monitoring.Monitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.kamranzafar.jtar.TarEntry;
 import org.kamranzafar.jtar.TarInputStream;

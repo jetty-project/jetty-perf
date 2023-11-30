@@ -1,4 +1,4 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.asyncprof;
 
 import java.io.File;
 import java.util.Collection;

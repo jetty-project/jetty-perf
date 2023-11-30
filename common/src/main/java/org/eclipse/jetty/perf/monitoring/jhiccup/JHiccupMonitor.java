@@ -1,8 +1,10 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.jhiccup;
 
 import java.io.FileNotFoundException;
 
-class JHiccupMonitor implements Monitor
+import org.eclipse.jetty.perf.monitoring.Monitor;
+
+public class JHiccupMonitor implements Monitor
 {
     public static final String DEFAULT_FILENAME = "jhiccup.hlog";
 

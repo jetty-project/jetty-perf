@@ -5,7 +5,7 @@
  * @author Gil Tene
  */
 
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.jhiccup;
 
 import java.io.File;
 import java.io.FileNotFoundException;

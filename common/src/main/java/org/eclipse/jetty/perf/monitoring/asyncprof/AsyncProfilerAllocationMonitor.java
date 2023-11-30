@@ -1,26 +1,26 @@
-package org.eclipse.jetty.perf.monitoring;
+package org.eclipse.jetty.perf.monitoring.asyncprof;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-class AsyncProfilerCacheMissesMonitor extends AbstractAsyncProfilerMonitor
+public class AsyncProfilerAllocationMonitor extends AbstractAsyncProfilerMonitor
 {
-    public static final String DEFAULT_FILENAME = "async-profiler-cache-misses.html";
+    public static final String DEFAULT_FILENAME = "async-profiler-alloc.html";
 
     private final String outputFilename;
 
-    public AsyncProfilerCacheMissesMonitor() throws Exception
+    public AsyncProfilerAllocationMonitor() throws Exception
     {
         this.outputFilename = DEFAULT_FILENAME;
     }
 
-    public AsyncProfilerCacheMissesMonitor(String outputFilename) throws Exception
+    public AsyncProfilerAllocationMonitor(String outputFilename) throws Exception
     {
         this.outputFilename = outputFilename;
     }
 
-    public AsyncProfilerCacheMissesMonitor(String outputFilename, long pid) throws Exception
+    public AsyncProfilerAllocationMonitor(String outputFilename, long pid) throws Exception
     {
         super(pid);
         this.outputFilename = outputFilename;
@@ -29,7 +29,7 @@ class AsyncProfilerCacheMissesMonitor extends AbstractAsyncProfilerMonitor
     @Override
     protected Collection<String> extraStartCmdLineArgs()
     {
-        return List.of("-e", "cache-misses");
+        return List.of("-e", "alloc");
     }
 
     @Override
