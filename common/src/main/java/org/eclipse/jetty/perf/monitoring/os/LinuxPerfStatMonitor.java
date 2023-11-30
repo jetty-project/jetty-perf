@@ -23,7 +23,7 @@ public class LinuxPerfStatMonitor extends AbstractCommandMonitor
             Process kill = new ProcessBuilder("kill", "-INT", Long.toString(process.toHandle().pid())).start();
             kill.waitFor();
 
-            // after kill exited, perf should exist soonish
+            // after kill exited, perf should exit soonish
             process.waitFor();
         }
     }
