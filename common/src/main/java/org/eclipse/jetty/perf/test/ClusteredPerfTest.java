@@ -162,13 +162,13 @@ public class ClusteredPerfTest implements Serializable, Closeable
         {
             try
             {
-                LOG.info("  Signalling all participants to start...");
+                LOG.info("  Signalling all participants to start recording...");
                 cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
                 LOG.info("  Waiting for the duration of the run...");
                 Thread.sleep(runDuration.toMillis());
-                LOG.info("  Signalling all participants to stop...");
+                LOG.info("  Signalling all participants to stop recording...");
                 cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
-                LOG.info("  Signalled all participants to stop");
+                LOG.info("  Signalled all participants to stop recording");
             }
             finally
             {
@@ -241,7 +241,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
                     ex.addSuppressed(e);
             }
         }
-        LOG.info("  Reports were written");
+        LOG.info("  All report files were written");
         if (ex != null)
             throw ex;
     }
