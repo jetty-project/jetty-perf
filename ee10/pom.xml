@@ -19,6 +19,7 @@
       <groupId>org.eclipse.jetty.ee10</groupId>
       <artifactId>jetty-ee10-webapp</artifactId>
     </dependency>
+<!--
     <dependency>
       <groupId>org.cometd.java</groupId>
       <artifactId>cometd-java-benchmark-client</artifactId>
@@ -27,6 +28,7 @@
       <groupId>org.cometd.java</groupId>
       <artifactId>cometd-java-benchmark-server</artifactId>
     </dependency>
+-->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>

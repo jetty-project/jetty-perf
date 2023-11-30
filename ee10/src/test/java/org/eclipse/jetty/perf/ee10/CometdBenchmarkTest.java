@@ -9,13 +9,12 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.cometd.benchmark.client.CometDLoadClient;
-import org.cometd.benchmark.server.CometDLoadServer;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.ReportUtil;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.mortbay.jetty.orchestrator.Cluster;
@@ -33,6 +32,7 @@ import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Disabled("Need a new CometD release")
 public class CometdBenchmarkTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(CometdBenchmarkTest.class);
@@ -107,7 +107,7 @@ public class CometdBenchmarkTest implements Serializable
             {
                 List<String> args = Arrays.asList("--auto", "--transports=jetty");
                 // TODO
-                CometDLoadServer.main(args.toArray(new String[0]));
+//                CometDLoadServer.main(args.toArray(new String[0]));
             });
 
             NodeArrayFuture clientArrayFuture = clientsArray.executeOnAll(tools ->
@@ -116,7 +116,7 @@ public class CometdBenchmarkTest implements Serializable
                 int clientId = barrier.await();
                 List<String> args = Arrays.asList("--auto", "--host=" + getServerHostname(), "--transport=LONG_POLLING", "--channel=/a/" + clientId);
                 // TODO
-                CometDLoadClient.main(args.toArray(new String[0]));
+//                CometDLoadClient.main(args.toArray(new String[0]));
             });
 
             serverArrayFuture.get(120, TimeUnit.SECONDS);
