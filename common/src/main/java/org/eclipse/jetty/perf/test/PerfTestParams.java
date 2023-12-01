@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
@@ -23,18 +25,42 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    private static final String JDK_TO_USE = System.getenv("JDK_TO_USE").trim();
-    private static final String OPTIONAL_MONITORED_ITEMS = System.getenv("_OPTIONAL_MONITORED_ITEMS").trim();
-    private static final String SERVER_NAME = System.getenv("_SERVER_NAME").trim();
-    private static final String SERVER_JVM_OPTS = System.getenv("_SERVER_JVM_OPTS").trim();
-    private static final String LOADER_NAMES = System.getenv("_LOADER_NAMES").trim();
-    private static final String LOADER_JVM_OPTS = System.getenv("_LOADER_JVM_OPTS").trim();
-    private static final String PROBE_NAME = System.getenv("_PROBE_NAME").trim();
-    private static final String PROBE_JVM_OPTS = System.getenv("_PROBE_JVM_OPTS").trim();
-    private static final String WARMUP_DURATION = System.getenv("_WARMUP_DURATION").trim();
-    private static final String RUN_DURATION = System.getenv("_RUN_DURATION").trim();
-    private static final String LOADER_RATE = System.getenv("_LOADER_RATE").trim();
-    private static final String PROBE_RATE = System.getenv("_PROBE_RATE").trim();
+    static
+    {
+        System.out.println("========== ENV ==========");
+        Map<String, String> env = System.getenv();
+        for (Map.Entry<String, String> entry : env.entrySet())
+        {
+            System.out.println(entry.getKey() + " = " + entry.getValue());
+        }
+        System.out.println("========== PROP ==========");
+        Properties properties = System.getProperties();
+        for (Map.Entry<Object, Object> entry : properties.entrySet())
+        {
+            System.out.println(entry.getKey() + " = " + entry.getValue());
+        }
+    }
+
+    private static final String JDK_TO_USE = readConfigSetting("JDK_TO_USE");
+    private static final String OPTIONAL_MONITORED_ITEMS = readConfigSetting("OPTIONAL_MONITORED_ITEMS");
+    private static final String SERVER_NAME = readConfigSetting("SERVER_NAME");
+    private static final String SERVER_JVM_OPTS = readConfigSetting("SERVER_JVM_OPTS");
+    private static final String LOADER_NAMES = readConfigSetting("LOADER_NAMES");
+    private static final String LOADER_JVM_OPTS = readConfigSetting("LOADER_JVM_OPTS");
+    private static final String PROBE_NAME = readConfigSetting("PROBE_NAME");
+    private static final String PROBE_JVM_OPTS = readConfigSetting("PROBE_JVM_OPTS");
+    private static final String WARMUP_DURATION = readConfigSetting("WARMUP_DURATION");
+    private static final String RUN_DURATION = readConfigSetting("RUN_DURATION");
+    private static final String LOADER_RATE = readConfigSetting("LOADER_RATE");
+    private static final String PROBE_RATE = readConfigSetting("PROBE_RATE");
+
+    private static String readConfigSetting(String name)
+    {
+        String env = System.getenv(name);
+        if (env == null)
+            return null;
+        return env.trim();
+    }
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
