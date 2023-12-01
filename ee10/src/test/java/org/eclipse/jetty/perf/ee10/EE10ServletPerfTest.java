@@ -26,7 +26,7 @@ public class EE10ServletPerfTest
     @Test
     public void testNoGzipAsync() throws Exception
     {
-        ClusteredPerfTest.runTest(testName,() ->
+        ClusteredPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
