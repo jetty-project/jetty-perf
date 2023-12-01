@@ -1,7 +1,5 @@
 package org.eclipse.jetty.perf.handler;
 
-import java.time.Duration;
-
 import org.eclipse.jetty.perf.test.ClusteredPerfTest;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -13,9 +11,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class CoreHandlerPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
-
     private String testName;
 
     @BeforeEach

@@ -1,7 +1,6 @@
 package org.eclipse.jetty.perf.ee10;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.perf.test.ClusteredPerfTest;
@@ -12,9 +11,6 @@ import org.junit.jupiter.api.TestInfo;
 
 public class EE10ServletPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
-
     private String testName;
 
     @BeforeEach
