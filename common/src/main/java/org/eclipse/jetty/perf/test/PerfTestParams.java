@@ -9,8 +9,6 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
@@ -25,40 +23,25 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    static
-    {
-        System.out.println("========== ENV ==========");
-        Map<String, String> env = System.getenv();
-        for (Map.Entry<String, String> entry : env.entrySet())
-        {
-            System.out.println(entry.getKey() + " = " + entry.getValue());
-        }
-        System.out.println("========== PROP ==========");
-        Properties properties = System.getProperties();
-        for (Map.Entry<Object, Object> entry : properties.entrySet())
-        {
-            System.out.println(entry.getKey() + " = " + entry.getValue());
-        }
-    }
-
-    private static final String JDK_TO_USE = readConfigSetting("JDK_TO_USE");
-    private static final String OPTIONAL_MONITORED_ITEMS = readConfigSetting("OPTIONAL_MONITORED_ITEMS");
-    private static final String SERVER_NAME = readConfigSetting("SERVER_NAME");
-    private static final String SERVER_JVM_OPTS = readConfigSetting("SERVER_JVM_OPTS");
-    private static final String LOADER_NAMES = readConfigSetting("LOADER_NAMES");
-    private static final String LOADER_JVM_OPTS = readConfigSetting("LOADER_JVM_OPTS");
-    private static final String PROBE_NAME = readConfigSetting("PROBE_NAME");
-    private static final String PROBE_JVM_OPTS = readConfigSetting("PROBE_JVM_OPTS");
-    private static final String WARMUP_DURATION = readConfigSetting("WARMUP_DURATION");
-    private static final String RUN_DURATION = readConfigSetting("RUN_DURATION");
-    private static final String LOADER_RATE = readConfigSetting("LOADER_RATE");
-    private static final String PROBE_RATE = readConfigSetting("PROBE_RATE");
+    // Must not be final as we want the test instance's read values.
+    private final String JDK_TO_USE = readConfigSetting("JDK_TO_USE");
+    private final String OPTIONAL_MONITORED_ITEMS = readConfigSetting("OPTIONAL_MONITORED_ITEMS");
+    private final String SERVER_NAME = readConfigSetting("SERVER_NAME");
+    private final String SERVER_JVM_OPTS = readConfigSetting("SERVER_JVM_OPTS");
+    private final String LOADER_NAMES = readConfigSetting("LOADER_NAMES");
+    private final String LOADER_JVM_OPTS = readConfigSetting("LOADER_JVM_OPTS");
+    private final String PROBE_NAME = readConfigSetting("PROBE_NAME");
+    private final String PROBE_JVM_OPTS = readConfigSetting("PROBE_JVM_OPTS");
+    private final String WARMUP_DURATION = readConfigSetting("WARMUP_DURATION");
+    private final String RUN_DURATION = readConfigSetting("RUN_DURATION");
+    private final String LOADER_RATE = readConfigSetting("LOADER_RATE");
+    private final String PROBE_RATE = readConfigSetting("PROBE_RATE");
 
     private static String readConfigSetting(String name)
     {
         String env = System.getenv(name);
         if (env == null)
-            return null;
+            return "";
         return env.trim();
     }
 
