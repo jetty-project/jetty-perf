@@ -103,9 +103,9 @@ public class PerfTestParams implements Serializable
         return clusterConfiguration;
     }
 
-    private String[] defaultJvmOpts(String extraCsv)
+    private String[] defaultJvmOpts(String extraArgLine)
     {
-        List<String> extra = Arrays.stream(extraCsv.split(",")).map(String::trim).toList();
+        List<String> extra = Arrays.stream(extraArgLine.split(" ")).map(String::trim).toList();
 
         List<String> result = new ArrayList<>();
         if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
