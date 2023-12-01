@@ -2,7 +2,7 @@ package org.eclipse.jetty.perf.handler;
 
 import java.time.Duration;
 
-import org.eclipse.jetty.perf.test.FlatPerfTest;
+import org.eclipse.jetty.perf.test.ClusteredPerfTest;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ public class CoreHandlerPerfTest
     @Test
     public void testNoGzipAsync() throws Exception
     {
-        FlatPerfTest.runTest(testName, () ->
+        ClusteredPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ContextHandler targetContextHandler = new ContextHandler("/");
@@ -47,7 +47,7 @@ public class CoreHandlerPerfTest
     @Test
     public void testNoGzipFullyAsyncHandlerTree() throws Exception
     {
-        FlatPerfTest.runTest(testName, () ->
+        ClusteredPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection(false);
             ContextHandler targetContextHandler = new ContextHandler("/");

@@ -3,6 +3,7 @@ package org.eclipse.jetty.perf.test;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -28,7 +29,9 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
+import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.Recorder;
+import org.eclipse.jetty.perf.util.ReportUtil;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Handler;
@@ -38,7 +41,9 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
@@ -60,12 +65,25 @@ public class ClusteredPerfTest implements Serializable, Closeable
     private final SerializableSupplier<Handler> testedHandlerSupplier;
     private transient Cluster cluster; // not serializable, but there is no need to access this field from remote lambdas.
 
-    public ClusteredPerfTest(String testName, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, Path reportRootPath) throws Exception
+    private ClusteredPerfTest(String testName, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, Path reportRootPath) throws Exception
     {
         this.perfTestParams = perfTestParams;
         this.testedHandlerSupplier = testedHandlerSupplier;
         this.reportRootPath = reportRootPath.toString();
         this.cluster = perfTestParams.buildCluster(testName);
+    }
+
+    public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
+    {
+        PerfTestParams params = new PerfTestParams();
+        Path reportRootPath = ReportUtil.createReportRootPath(testName, params.toString());
+        try (OutputCapturer ignore = new OutputCapturer(reportRootPath))
+        {
+            try (ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, params, testedHandlerSupplier, reportRootPath))
+            {
+                clusteredPerfTest.execute();
+            }
+        }
     }
 
     @Override
@@ -227,12 +245,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
     private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
-        Server server = new Server();
-
-//        server.setDumpBeforeStop(true);
-
-//        MBeanContainer mbContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
-//        server.addBean(mbContainer);
+        MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool();
+        Server server = new Server(qtp);
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
         if (params.isTlsEnabled())
@@ -268,33 +282,43 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
         connectionFactories.add(http);
 
-        ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
+        ServerConnector serverConnector = new ServerConnector(server, params.getServerAcceptorCount(), params.getServerSelectorCount(), connectionFactories.toArray(new ConnectionFactory[0]));
         serverConnector.setPort(params.getServerPort());
 
         server.addConnector(serverConnector);
 
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         Handler latencyRecordingHandler = new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder);
-//        StatisticsHandler statisticsHandler = new StatisticsHandler(latencyRecordingHandler);
-//        server.setHandler(statisticsHandler);
-        server.setHandler(latencyRecordingHandler);
+        StatisticsHandler statisticsHandler = new StatisticsHandler(latencyRecordingHandler);
+        server.setHandler(statisticsHandler);
         server.start();
 
-//        env.put(StatisticsHandler.class.getName(), statisticsHandler);
+        env.put(MonitoredQueuedThreadPool.class.getName(), qtp);
+        env.put(StatisticsHandler.class.getName(), statisticsHandler);
         env.put(Recorder.class.getName(), List.of(latencyRecorder));
         env.put(CompletableFuture.class.getName(), CompletableFuture.completedFuture(null));
         env.put(Server.class.getName(), server);
     }
 
-
     private void stopServer(Map<String, Object> env) throws Exception
     {
+        StatisticsHandler statisticsHandler = (StatisticsHandler)env.get(StatisticsHandler.class.getName());
+        try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
+        {
+            statisticsHandler.dump(printWriter);
+        }
+        MonitoredQueuedThreadPool qtp = (MonitoredQueuedThreadPool)env.get(MonitoredQueuedThreadPool.class.getName());
+        try (PrintWriter printWriter = new PrintWriter("MonitoredQueuedThreadPool.txt"))
+        {
+            printWriter.println(String.format("Average queue latency=%d", qtp.getAverageQueueLatency()));
+            printWriter.println(String.format("Max queue latency=%d", qtp.getMaxQueueLatency()));
+            printWriter.println(String.format("Max queue size=%d", qtp.getMaxQueueSize()));
+            printWriter.println(String.format("Average task latency=%d", qtp.getAverageTaskLatency()));
+            printWriter.println(String.format("Max task latency=%d", qtp.getMaxTaskLatency()));
+            printWriter.println(String.format("Max busy threads=%d", qtp.getMaxBusyThreads()));
+        }
+
         ((Server)env.get(Server.class.getName())).stop();
-//        StatisticsHandler statisticsHandler = (StatisticsHandler)env.get(StatisticsHandler.class.getName());
-//        try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
-//        {
-//            statisticsHandler.dump(printWriter);
-//        }
     }
 
     private void runLoadGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception

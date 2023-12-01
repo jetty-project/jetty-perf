@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee9.servlet.ServletHolder;
-import org.eclipse.jetty.perf.test.FlatPerfTest;
+import org.eclipse.jetty.perf.test.ClusteredPerfTest;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ public class EE9ServletPerfTest
     @Test
     public void testNoGzipAsync() throws Exception
     {
-        FlatPerfTest.runTest(testName, () ->
+        ClusteredPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -45,7 +45,7 @@ public class EE9ServletPerfTest
     @Test
     public void testNoGzipSync() throws Exception
     {
-        FlatPerfTest.runTest(testName, () ->
+        ClusteredPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
