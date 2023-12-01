@@ -11,9 +11,8 @@ pipeline {
         string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
         string(defaultValue: '*', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
 
-        // Those settings are used by the test JVM.
+        // Those settings are used by the test JVM, and some by this script too.
         string(defaultValue: 'load-jdk17', description: 'JDK to use', name: '_JDK_TO_USE')
-        string(defaultValue: 'false', description: 'Use Loom if possible', name: '_USE_LOOM_IF_POSSIBLE')
         string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
             ' You can choose from this list: GC_LOGS, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: '_OPTIONAL_MONITORED_ITEMS')
 
@@ -30,7 +29,7 @@ pipeline {
         string(defaultValue: '1000', description: 'Rate of requests/s of the probe', name: '_PROBE_RATE')
     }
     tools {
-        jdk "${JDK_TO_USE}"
+        jdk "${_JDK_TO_USE}"
     }
     stages {
         stage('generate-toolchains-file') {
@@ -40,7 +39,7 @@ pipeline {
             }
             steps {
                 jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample'],
-                    jdkNames: ["${JDK_TO_USE}"]
+                    jdkNames: ["${_JDK_TO_USE}"]
                 stash name: 'toolchains.xml', includes: '*toolchains.xml'
             }
         }
@@ -58,7 +57,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-1-toolchains.xml ~/load-1-toolchains.xml"
                         sh "echo load-1"
@@ -73,7 +72,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-2-toolchains.xml ~/load-2-toolchains.xml"
                         sh "echo load-2"
@@ -88,7 +87,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-3-toolchains.xml ~/load-3-toolchains.xml"
                         sh "echo load-3"
@@ -103,7 +102,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
                         sh "echo load-4"
@@ -118,7 +117,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-5-toolchains.xml ~/load-5-toolchains.xml"
                         sh "echo load-5"
@@ -133,7 +132,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
                         sh "echo load-6"
@@ -148,7 +147,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-7-toolchains.xml ~/load-7-toolchains.xml"
                         sh "echo load-7"
@@ -163,7 +162,7 @@ pipeline {
                         }
                     }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-8-toolchains.xml ~/load-8-toolchains.xml"
                         sh "echo load-8"
@@ -172,7 +171,7 @@ pipeline {
                 stage('install probe') {
                     agent { node { label 'load-sample' } }
                     steps {
-                        tool "${JDK_TO_USE}"
+                        tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
                         sh "cp load-sample-toolchains.xml  ~/load-sample-toolchains.xml "
                         sh "cat load-sample-toolchains.xml"
