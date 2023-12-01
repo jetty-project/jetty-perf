@@ -9,7 +9,7 @@ pipeline {
         // These settings are only used in this script.
         string(defaultValue: 'jetty-12.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
         string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-        string(defaultValue: '*', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
+        string(defaultValue: '*', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
 
         // Those settings are used by the test JVM, and some by this script too.
         string(defaultValue: 'load-jdk17', description: 'JDK to use', name: '_JDK_TO_USE')

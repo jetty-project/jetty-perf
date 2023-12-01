@@ -3,13 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.mortbay.jetty.perf</groupId>
-  <artifactId>jetty-perf</artifactId>
+  <artifactId>jetty-perf-profiling</artifactId>
   <version>12.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Jetty :: Performance test suite</name>
+  <name>Jetty :: Performance profiling test suite</name>
   <url>https://github.com/jetty-project/jetty-perf</url>
   <description>
-    The Jetty performance test suite
+    The Jetty performance profiling test suite
   </description>
 
   <properties>
@@ -19,7 +19,6 @@
     <!-- Do not fail the build if a test name that only exists in a single module was specified. -->
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
-    <cometd.version>8.0.0-SNAPSHOT</cometd.version>
     <jetty.version>12.0.4-SNAPSHOT</jetty.version>
     <jetty-load-generator.version>4.0.2</jetty-load-generator.version>
   </properties>
@@ -62,36 +61,6 @@
         <groupId>org.eclipse.jetty.ee10</groupId>
         <artifactId>jetty-ee10-webapp</artifactId>
         <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-benchmark-client</artifactId>
-        <version>${cometd.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-benchmark-server</artifactId>
-        <version>${cometd.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.mortbay.jetty.orchestrator</groupId>
@@ -189,16 +158,6 @@
   </build>
 
   <repositories>
-    <repository>
-      <id>cometd.snapshot</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
     <repository>
       <id>jetty.snapshot</id>
       <url>https://oss.sonatype.org/content/repositories/jetty-snapshots/</url>
