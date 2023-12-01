@@ -11,8 +11,10 @@ pipeline {
         string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
         string(defaultValue: '*', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
 
-        // Those settings are used by the test JVM, and some by this script too.
-        string(defaultValue: 'load-jdk17', description: 'JDK to use', name: '_JDK_TO_USE')
+        // These settings are used both by the test JVM and by this script too.
+        string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
+
+        // These settings are only used by the test JVM.
         string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
             ' You can choose from this list: GC_LOGS, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: '_OPTIONAL_MONITORED_ITEMS')
 
@@ -50,12 +52,6 @@ pipeline {
             parallel {
                 stage('install load-1') {
                     agent { node { label 'load-1' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-1");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -65,12 +61,6 @@ pipeline {
                 }
                 stage('install load-2') {
                     agent { node { label 'load-2' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-2");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -80,12 +70,6 @@ pipeline {
                 }
                 stage('install load-3') {
                     agent { node { label 'load-3' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-3");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -95,12 +79,6 @@ pipeline {
                 }
                 stage('install load-4') {
                     agent { node { label 'load-4' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-4");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -110,12 +88,6 @@ pipeline {
                 }
                 stage('install load-5') {
                     agent { node { label 'load-5' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-5");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -125,12 +97,6 @@ pipeline {
                 }
                 stage('install load-6') {
                     agent { node { label 'load-6' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-6");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -140,12 +106,6 @@ pipeline {
                 }
                 stage('install load-7') {
                     agent { node { label 'load-7' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-7");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
@@ -155,12 +115,6 @@ pipeline {
                 }
                 stage('install load-8') {
                     agent { node { label 'load-8' } }
-                    when {
-                        beforeAgent true
-                        expression {
-                            return ${_LOADER_NAMES}.contains("load-8");
-                        }
-                    }
                     steps {
                         tool "${_JDK_TO_USE}"
                         unstash name: 'toolchains.xml'

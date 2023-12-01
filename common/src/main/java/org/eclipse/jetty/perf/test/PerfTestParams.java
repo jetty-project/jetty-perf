@@ -23,7 +23,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    private static final String JDK_TO_USE = System.getenv("_JDK_TO_USE").trim();
+    private static final String JDK_TO_USE = System.getenv("JDK_TO_USE").trim();
     private static final String OPTIONAL_MONITORED_ITEMS = System.getenv("_OPTIONAL_MONITORED_ITEMS").trim();
     private static final String SERVER_NAME = System.getenv("_SERVER_NAME").trim();
     private static final String SERVER_JVM_OPTS = System.getenv("_SERVER_JVM_OPTS").trim();
