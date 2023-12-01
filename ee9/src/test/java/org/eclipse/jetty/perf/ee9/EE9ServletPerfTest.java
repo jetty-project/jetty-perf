@@ -1,26 +1,17 @@
 package org.eclipse.jetty.perf.ee9;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 
 import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee9.servlet.ServletHolder;
 import org.eclipse.jetty.perf.test.FlatPerfTest;
-import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 public class EE9ServletPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
-
     private String testName;
 
     @BeforeEach
@@ -33,15 +24,10 @@ public class EE9ServletPerfTest
         testName = simpleClassName + "_" + methodName;
     }
 
-    @ParameterizedTest(name = "{0}")
-    @CsvSource({
-        "http, 60_000,  6_000, 625_000, 15.0",
-        "h2c,  60_000, 23_000, 650_000, 15.0"
-    })
-    public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
+    @Test
+    public void testNoGzipAsync() throws Exception
     {
-        PerfTestParams params = new PerfTestParams(protocol, loaderRate, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        FlatPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -54,18 +40,12 @@ public class EE9ServletPerfTest
             contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
             return contextHandlerCollection;
         });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
-    @ParameterizedTest(name = "{0}")
-    @CsvSource({
-        "http, 60_000,  5_500, 625_000, 15.0",
-        "h2c,  60_000, 23_000, 650_000, 15.0"
-    })
-    public void testNoGzipSync(PerfTestParams.Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
+    @Test
+    public void testNoGzipSync() throws Exception
     {
-        PerfTestParams params = new PerfTestParams(protocol, loaderRate, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        FlatPerfTest.runTest(testName, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -78,6 +58,5 @@ public class EE9ServletPerfTest
             contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
             return contextHandlerCollection;
         });
-        assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 }

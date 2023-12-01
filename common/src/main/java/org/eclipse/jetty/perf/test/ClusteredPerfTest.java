@@ -12,10 +12,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
@@ -48,8 +46,6 @@ import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
-import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
-import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,34 +55,17 @@ public class ClusteredPerfTest implements Serializable, Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(ClusteredPerfTest.class);
 
-    private final Duration warmupDuration;
-    private final Duration runDuration;
-    private final EnumSet<ConfigurableMonitor.Item> monitoredItems;
-    private final PerfTestParams.Protocol protocol;
-    private final URI serverUri;
-    private final int loaderRate;
-    private final int probeRate;
+    private final PerfTestParams perfTestParams;
     private final String reportRootPath; // java.nio.Path isn't serializable, so we must use a String.
     private final SerializableSupplier<Handler> testedHandlerSupplier;
-    private final int participantCount;
-    private final Collection<String> nodeArrayIds;
     private transient Cluster cluster; // not serializable, but there is no need to access this field from remote lambdas.
 
-    public ClusteredPerfTest(String testName, PerfTestParams perfTestParams, Duration warmupDuration, Duration runDuration, SerializableSupplier<Handler> testedHandlerSupplier, Path reportRootPath) throws Exception
+    public ClusteredPerfTest(String testName, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, Path reportRootPath) throws Exception
     {
-        this.warmupDuration = warmupDuration;
-        this.runDuration = runDuration;
-        this.monitoredItems = perfTestParams.getMonitoredItems();
-        this.protocol = perfTestParams.getProtocol();
-        this.serverUri = perfTestParams.getServerUri();
-        this.loaderRate = perfTestParams.getLoaderRate();
-        this.probeRate = perfTestParams.getProbeRate();
+        this.perfTestParams = perfTestParams;
         this.testedHandlerSupplier = testedHandlerSupplier;
         this.reportRootPath = reportRootPath.toString();
-        ClusterConfiguration clusterConfiguration = perfTestParams.getClusterConfiguration();
-        this.participantCount = clusterConfiguration.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
-        this.nodeArrayIds = clusterConfiguration.nodeArrays().stream().map(NodeArrayConfiguration::id).toList();
-        this.cluster = new Cluster(testName, clusterConfiguration);
+        this.cluster = perfTestParams.buildCluster(testName);
     }
 
     @Override
@@ -121,28 +100,28 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
 
         LOG.info("Starting the server...");
-        serverArray.executeOnAll(tools -> startServer(protocol, serverUri.getPort(), tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        serverArray.executeOnAll(tools -> startServer(perfTestParams, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
         LOG.info("Starting the loaders...");
-        loadersArray.executeOnAll(tools -> runLoadGenerator(protocol, serverUri, loaderRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        loadersArray.executeOnAll(tools -> runLoadGenerator(perfTestParams, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
         LOG.info("Starting the probe...");
-        probeArray.executeOnAll(tools -> runProbeGenerator(protocol, serverUri, probeRate, warmupDuration, runDuration, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        probeArray.executeOnAll(tools -> runProbeGenerator(perfTestParams, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
-        LOG.info("Warming up {}s ...", warmupDuration.toSeconds());
-        Thread.sleep(warmupDuration.toMillis());
+        LOG.info("Warming up {}s ...", perfTestParams.getWarmupDuration().toSeconds());
+        Thread.sleep(perfTestParams.getWarmupDuration().toMillis());
 
-        LOG.info("Running {}s ...", runDuration.toSeconds());
+        LOG.info("Running {}s ...", perfTestParams.getRunDuration().toSeconds());
         long before = System.nanoTime();
 
         NodeJob recordingJob = tools ->
         {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
+            try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
             {
                 @SuppressWarnings("unchecked")
                 List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
 
                 recorders.forEach(Recorder::startRecording);
-                tools.barrier("run-start-barrier", participantCount).await();
-                tools.barrier("run-end-barrier", participantCount).await();
+                tools.barrier("run-start-barrier", perfTestParams.getParticipantCount()).await();
+                tools.barrier("run-end-barrier", perfTestParams.getParticipantCount()).await();
                 recorders.forEach(Recorder::stopRecording);
 
                 CompletableFuture<?> cf = (CompletableFuture<?>)tools.nodeEnvironment().get(CompletableFuture.class.getName());
@@ -163,11 +142,11 @@ public class ClusteredPerfTest implements Serializable, Closeable
             try
             {
                 LOG.info("  Signalling all participants to start recording...");
-                cluster.tools().barrier("run-start-barrier", participantCount).await(30, TimeUnit.SECONDS);
+                cluster.tools().barrier("run-start-barrier", perfTestParams.getParticipantCount()).await(30, TimeUnit.SECONDS);
                 LOG.info("  Waiting for the duration of the run...");
-                Thread.sleep(runDuration.toMillis());
+                Thread.sleep(perfTestParams.getRunDuration().toMillis());
                 LOG.info("  Signalling all participants to stop recording...");
-                cluster.tools().barrier("run-end-barrier", participantCount).await(30, TimeUnit.SECONDS);
+                cluster.tools().barrier("run-end-barrier", perfTestParams.getParticipantCount()).await(30, TimeUnit.SECONDS);
                 LOG.info("  Signalled all participants to stop recording");
             }
             finally
@@ -179,7 +158,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             serverArray.executeOnAll((tools) -> stopServer(tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
 
             LOG.info("Generating report...");
-            generateReport(Path.of(reportRootPath), nodeArrayIds, cluster);
+            generateReport(Path.of(reportRootPath), perfTestParams.getNodeArrayIds(), cluster);
 
             long after = System.nanoTime();
             LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
@@ -190,7 +169,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             try
             {
                 LOG.info("Downloading artefacts before rethrowing...");
-                generateReport(Path.of(reportRootPath), nodeArrayIds, cluster);
+                generateReport(Path.of(reportRootPath), perfTestParams.getNodeArrayIds(), cluster);
 
                 LOG.info("Dumping threads of pending jobs before rethrowing...");
                 NodeJob dump = (tools) ->
@@ -246,7 +225,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             throw ex;
     }
 
-    private void startServer(PerfTestParams.Protocol protocol, int serverPort, Map<String, Object> env) throws Exception
+    private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
     {
         Server server = new Server();
 
@@ -256,7 +235,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
 //        server.addBean(mbContainer);
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
-        if (protocol.isSecure())
+        if (params.isTlsEnabled())
         {
             SecureRequestCustomizer customizer = new SecureRequestCustomizer();
             customizer.setSniHostCheck(false);
@@ -264,13 +243,13 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
 
         ConnectionFactory http;
-        if (protocol.getVersion() == PerfTestParams.HttpVersion.HTTP2)
+        if (params.getHttpVersion() == HttpVersion.HTTP_2)
             http = new HTTP2CServerConnectionFactory(httpConfiguration);
         else
             http = new HttpConnectionFactory(httpConfiguration);
 
         List<ConnectionFactory> connectionFactories = new ArrayList<>();
-        if (protocol.isSecure())
+        if (params.isTlsEnabled())
         {
             SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
             // Copy keystore from classpath to temp file.
@@ -290,7 +269,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         connectionFactories.add(http);
 
         ServerConnector serverConnector = new ServerConnector(server, 4, 24, connectionFactories.toArray(new ConnectionFactory[0]));
-        serverConnector.setPort(serverPort);
+        serverConnector.setPort(params.getServerPort());
 
         server.addConnector(serverConnector);
 
@@ -318,22 +297,23 @@ public class ClusteredPerfTest implements Serializable, Closeable
 //        }
     }
 
-    private void runLoadGenerator(PerfTestParams.Protocol protocol, URI serverUri, int loaderRate, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
+    private void runLoadGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
         env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
+        URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(warmupDuration.plus(runDuration).toSeconds(), TimeUnit.SECONDS)
+            .runFor(perfTestParams.getWarmupDuration().plus(perfTestParams.getRunDuration()).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
-            .rateRampUpPeriod(warmupDuration.toSeconds() / 2)
-            .resourceRate(loaderRate)
+            .rateRampUpPeriod(perfTestParams.getWarmupDuration().toSeconds() / 2)
+            .resourceRate(perfTestParams.getLoaderRate())
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
@@ -341,7 +321,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .listener(responseStatusListener)
             ;
 
-        if (protocol.getVersion() == PerfTestParams.HttpVersion.HTTP2)
+        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
         {
             builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
         }
@@ -362,22 +342,22 @@ public class ClusteredPerfTest implements Serializable, Closeable
         env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams.Protocol protocol, URI serverUri, int probeRate, Duration warmupDuration, Duration runDuration, Map<String, Object> env) throws Exception
+    private void runProbeGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
         env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
+        URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
             .sslContextFactory(new SslContextFactory.Client(true))
-            .runFor(warmupDuration.plus(runDuration).toSeconds(), TimeUnit.SECONDS)
+            .runFor(perfTestParams.getWarmupDuration().plus(perfTestParams.getRunDuration()).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
-            .rateRampUpPeriod(warmupDuration.toSeconds() / 2)
-            .resourceRate(probeRate)
+            .resourceRate(perfTestParams.getProbeRate())
             .resource(new Resource(serverUri.getPath()))
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
@@ -385,7 +365,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .listener(responseStatusListener)
             ;
 
-        if (protocol.getVersion() == PerfTestParams.HttpVersion.HTTP2)
+        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
         {
             builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
         }

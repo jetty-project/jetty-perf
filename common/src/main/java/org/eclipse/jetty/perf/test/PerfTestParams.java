@@ -2,14 +2,17 @@ package org.eclipse.jetty.perf.test;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 
+import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
+import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
 import org.mortbay.jetty.orchestrator.configuration.Node;
@@ -27,15 +30,18 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
         ConfigurableMonitor.Item.CMDLINE_DISK,
+        ConfigurableMonitor.Item.PERF_STAT,
         ConfigurableMonitor.Item.JHICCUP
     );
 
+    // MONITORED_ITEMS is static because it is needed to build CLUSTER_CONFIGURATION.
     private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.copyOf(new HashSet<ConfigurableMonitor.Item>() // javac 11 needs HashSet to be typed
     {{
         addAll(DEFAULT_MONITORED_ITEMS);
         addAll(ConfigurableMonitor.parseConfigurableMonitorItems(OPTIONAL_MONITORED_ITEMS));
     }});
 
+    // CLUSTER_CONFIGURATION is static because PerfTestParams needs to be serializable and ClusterConfiguration is not.
     private static final ClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
         .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))
         .nodeArray(new SimpleNodeArrayConfiguration("server")
@@ -54,68 +60,34 @@ public class PerfTestParams implements Serializable
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
-    public enum Protocol
+    public PerfTestParams()
     {
-        http(false, HttpVersion.HTTP11),
-        https(true, HttpVersion.HTTP11),
-        h2c(false, HttpVersion.HTTP2),
-        h2(true, HttpVersion.HTTP2),
-        ;
-
-        private final boolean secure;
-        private final HttpVersion version;
-
-        Protocol(boolean secure, HttpVersion version)
-        {
-            this.secure = secure;
-            this.version = version;
-        }
-
-        public boolean isSecure()
-        {
-            return secure;
-        }
-
-        public HttpVersion getVersion()
-        {
-            return version;
-        }
     }
 
-    public enum HttpVersion
+    public Cluster buildCluster(String testName) throws Exception
     {
-        HTTP11, HTTP2
+        return new Cluster(testName, CLUSTER_CONFIGURATION);
     }
 
-    private final Protocol protocol;
-    private final int loaderRate;
-    private final long expectedP99ServerLatency;
-    private final long expectedP99ProbeLatency;
-    private final double expectedP99ErrorMargin;
-
-    public PerfTestParams(Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin)
+    public HttpVersion getHttpVersion()
     {
-        this.protocol = protocol;
-        this.loaderRate = loaderRate;
-        this.expectedP99ServerLatency = expectedP99ServerLatency;
-        this.expectedP99ProbeLatency = expectedP99ProbeLatency;
-        this.expectedP99ErrorMargin = expectedP99ErrorMargin;
+        return HttpVersion.HTTP_1_1;
     }
 
-    public Protocol getProtocol()
+    public int getParticipantCount()
     {
-        return protocol;
+        return CLUSTER_CONFIGURATION.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
     }
 
-    public ClusterConfiguration getClusterConfiguration()
+    public List<String> getNodeArrayIds()
     {
-        return CLUSTER_CONFIGURATION;
+        return CLUSTER_CONFIGURATION.nodeArrays().stream().map(NodeArrayConfiguration::id).toList();
     }
 
     public URI getServerUri()
     {
         String serverHostname = null;
-        for (NodeArrayConfiguration nodeArrayConfiguration : getClusterConfiguration().nodeArrays())
+        for (NodeArrayConfiguration nodeArrayConfiguration : CLUSTER_CONFIGURATION.nodeArrays())
         {
             if (!nodeArrayConfiguration.id().equals("server"))
                 continue;
@@ -128,12 +100,12 @@ public class PerfTestParams implements Serializable
         if (serverHostname == null)
             throw new IllegalStateException("cluster configuration must have a node array named 'server'");
 
-        return URI.create("http" + (getProtocol().isSecure() ? "s" : "") + "://" + serverHostname + ":" + getServerPort());
+        return URI.create("http" + (isTlsEnabled() ? "s" : "") + "://" + serverHostname + ":" + getServerPort());
     }
 
     public int getServerPort()
     {
-        return getProtocol().isSecure() ? 9443 : 9080;
+        return isTlsEnabled() ? 9443 : 9080;
     }
 
     public EnumSet<ConfigurableMonitor.Item> getMonitoredItems()
@@ -143,7 +115,7 @@ public class PerfTestParams implements Serializable
 
     public int getLoaderRate()
     {
-        return loaderRate;
+        return 60_000;
     }
 
     public int getProbeRate()
@@ -151,25 +123,19 @@ public class PerfTestParams implements Serializable
         return 1000;
     }
 
-    public long getExpectedP99ServerLatency()
+    public Duration getWarmupDuration()
     {
-        return expectedP99ServerLatency;
+        return Duration.ofSeconds(60);
     }
 
-    public long getExpectedP99ProbeLatency()
+    public Duration getRunDuration()
     {
-        return expectedP99ProbeLatency;
+        return Duration.ofSeconds(180);
     }
 
-    public double getExpectedP99ErrorMargin()
+    public boolean isTlsEnabled()
     {
-        return expectedP99ErrorMargin;
-    }
-
-    @Override
-    public String toString()
-    {
-        return protocol.name();
+        return false;
     }
 
     private static String[] defaultJvmOpts(String... extra)

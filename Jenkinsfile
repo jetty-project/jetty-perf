@@ -1,41 +1,194 @@
 #!groovy
+
 pipeline {
     agent any
-    triggers {
-      cron '@daily'
-    }
     options {
-      buildDiscarder logRotator( numToKeepStr: '100' )
+        buildDiscarder logRotator(numToKeepStr: '100')
     }
     parameters {
-      string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
-      string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
-      string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-      string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
-          ' You can choose from this list: GC_LOGS, PERF_STAT, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: 'OPTIONAL_MONITORED_ITEMS')
-      string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
-      string(defaultValue: 'main-12.0.x', description: 'Jetty perf branch', name: 'JETTY_PERF_BRANCH')
+        string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+        string(defaultValue: '', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
+        string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
+        string(defaultValue: '', description: 'JDK to use', name: 'JDK_TO_USE')
+        string(defaultValue: 'false', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
+        string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
+            ' You can choose from this list: GC_LOGS, PERF_STAT, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: 'OPTIONAL_MONITORED_ITEMS')
     }
-  stages {
-    stage('Jetty Perf Run') {
-      steps {
-        script {
-          def built = build(job: '/load_testing/jetty-perf-main', propagate: false,
-                  parameters: [string(name: 'JETTY_VERSION', value: "${JETTY_VERSION}"),
-                               string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
-                               string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
-                               string(name: 'JETTY_PERF_BRANCH', value: "${JETTY_PERF_BRANCH}"),
-                               string(name: 'TEST_TO_RUN', value: "${TEST_TO_RUN}"),
-                               string(name: 'OPTIONAL_MONITORED_ITEMS', value: "${OPTIONAL_MONITORED_ITEMS}"),
-                  ])
-          copyArtifacts(projectName: '/load_testing/jetty-perf-main', selector: specific("${built.number}"));
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
-        }
-      }
+    tools {
+        jdk "${JDK_TO_USE}"
     }
-  }
+    stages {
+        stage('generate-toolchains-file') {
+            agent any
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            steps {
+                jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample'],
+                    jdkNames: ["${JDK_TO_USE}"]
+                stash name: 'toolchains.xml', includes: '*toolchains.xml'
+            }
+        }
+        stage('Get Load nodes') {
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            parallel {
+                stage('install load-1') {
+                    agent { node { label 'load-1' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-1-toolchains.xml ~/load-1-toolchains.xml"
+                        sh "echo load-1"
+                    }
+                }
+                stage('install load-2') {
+                    agent { node { label 'load-2' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-2-toolchains.xml ~/load-2-toolchains.xml"
+                        sh "echo load-2"
+                    }
+                }
+                stage('install load-3') {
+                    agent { node { label 'load-3' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-3-toolchains.xml ~/load-3-toolchains.xml"
+                        sh "echo load-3"
+                    }
+                }
+                stage('install load-4') {
+                    agent { node { label 'load-4' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
+                        sh "echo load-4"
+                    }
+                }
+                stage('install load-5') {
+                    agent { node { label 'load-5' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-5-toolchains.xml ~/load-5-toolchains.xml"
+                        sh "echo load-5"
+                    }
+                }
+                stage('install load-6') {
+                    agent { node { label 'load-6' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
+                        sh "echo load-6"
+                    }
+                }
+                stage('install load-7') {
+                    agent { node { label 'load-7' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-7-toolchains.xml ~/load-7-toolchains.xml"
+                        sh "echo load-7"
+                    }
+                }
+                stage('install load-8') {
+                    agent { node { label 'load-8' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-8-toolchains.xml ~/load-8-toolchains.xml"
+                        sh "echo load-8"
+                    }
+                }
+                stage('install probe') {
+                    agent { node { label 'load-sample' } }
+                    steps {
+                        tool "${JDK_TO_USE}"
+                        unstash name: 'toolchains.xml'
+                        sh "cp load-sample-toolchains.xml  ~/load-sample-toolchains.xml "
+                        sh "cat load-sample-toolchains.xml"
+                        sh "echo load-sample"
+                    }
+                }
+            }
+        }
+        stage('Build Jetty') {
+            agent { node { label 'load-master' } }
+            when {
+                beforeAgent true
+                expression {
+                    return JETTY_VERSION.endsWith("SNAPSHOT");
+                }
+            }
+            steps {
+                lock('jetty-perf') {
+                    dir("jetty.build") {
+                        echo "building jetty ${JETTY_BRANCH}"
+                        sh "rm -rf *"
+                        checkout([$class           : 'GitSCM',
+                                  branches         : [[name: "*/$JETTY_BRANCH"]],
+                                  extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
+                                  userRemoteConfigs: [[url: 'https://github.com/eclipse/jetty.project.git']]])
+                        timeout(time: 30, unit: 'MINUTES') {
+                            withEnv(["JAVA_HOME=${tool "jdk17"}",
+                                     "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
+                                     "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                                configFileProvider(
+                                    [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                                    //sh "mvn -Pfast -ntp -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
+                                    sh "mvn -DskipTests -Dcheckstyle.skip=true -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -T7 -e" // -Dmaven.build.cache.enabled=false"
+                                    // cannot use remote cache as doesn't run in k8s so must use an external ipp
+                                    // sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -e -Dmaven.build.cache.remote.url=dav:http://nginx-cache-service.jenkins.svc.cluster.local:80 -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=remote-build-cache-server"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('jetty-profiler') {
+            agent { node { label 'load-master' } }
+            options {
+                timeout(time: 120, unit: 'MINUTES')
+            }
+            steps {
+                lock('jetty-perf') {
+                    // clean the directory before clone
+                    sh "rm -rf *"
+                    unstash name: 'toolchains.xml'
+                    sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+                    checkout([$class           : 'GitSCM',
+                              branches         : [[name: "*/profiler-12.0.x"]],
+                              extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
+                              userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-perf.git']]])
+                    withEnv(["JAVA_HOME=${tool "jdk17"}",
+                             "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
+                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                        configFileProvider(
+                            [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                            sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
+                                " -Dtest='${TEST_TO_RUN}'" +
+                                " -Djetty.version='${JETTY_VERSION}'" +
+                                " -Dtest.jdk.name='${JDK_TO_USE}'" +
+                                " -Dtest.jdk.useLoom='${USE_LOOM_IF_POSSIBLE}'" +
+                                " -Dtest.optional.monitored.items='${OPTIONAL_MONITORED_ITEMS}'" +
+                                ""
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: "**/target/reports/**/**", allowEmptyArchive: true, onlyIfSuccessful: false
+                }
+            }
+        }
+    }
 }
