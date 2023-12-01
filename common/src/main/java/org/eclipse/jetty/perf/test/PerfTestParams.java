@@ -60,7 +60,8 @@ public class PerfTestParams implements Serializable
         addAll(ConfigurableMonitor.parseConfigurableMonitorItems(OPTIONAL_MONITORED_ITEMS));
     }});
 
-    private ClusterConfiguration clusterConfiguration;
+    // Do not serialize this field, let it be reconstructed on each node.
+    private transient ClusterConfiguration clusterConfiguration;
 
     public PerfTestParams()
     {
