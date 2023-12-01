@@ -29,6 +29,8 @@ pipeline {
         string(defaultValue: '180', description: 'Duration of measured run in seconds', name: 'RUN_DURATION')
         string(defaultValue: '60000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
         string(defaultValue: '1000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
+        string(defaultValue: 'duplex', description: 'The loaders\' connection pool type. You can choose from this list: duplex, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
+        string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION')
     }
     tools {
         jdk "${JDK_TO_USE}"

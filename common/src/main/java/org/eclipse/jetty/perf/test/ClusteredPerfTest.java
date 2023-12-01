@@ -21,8 +21,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpClientTransport;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandler;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
@@ -44,6 +46,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
+import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
@@ -345,9 +348,33 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .listener(responseStatusListener)
             ;
 
-        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
+        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_1 ||
+            perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_0 ||
+            perfTestParams.getHttpVersion() == HttpVersion.HTTP_0_9)
         {
-            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
+            builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder()
+            {
+                @Override
+                protected HttpClientTransport newHttpClientTransport(ClientConnector connector)
+                {
+                    HttpClientTransport transport = super.newHttpClientTransport(connector);
+                    transport.setConnectionPoolFactory(perfTestParams.buildLoaderConnectionPoolFactory());
+                    return transport;
+                }
+            });
+        }
+        else if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
+        {
+            builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder()
+            {
+                @Override
+                protected HttpClientTransport newHttpClientTransport(ClientConnector connector)
+                {
+                    HttpClientTransport transport = super.newHttpClientTransport(connector);
+                    transport.setConnectionPoolFactory(perfTestParams.buildLoaderConnectionPoolFactory());
+                    return transport;
+                }
+            });
         }
 
         LoadGenerator loadGenerator = builder.build();
@@ -389,7 +416,13 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .listener(responseStatusListener)
             ;
 
-        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
+        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_1 ||
+            perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_0 ||
+            perfTestParams.getHttpVersion() == HttpVersion.HTTP_0_9)
+        {
+            builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder());
+        }
+        else if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
         {
             builder.httpClientTransportBuilder(new HTTP2ClientTransportBuilder());
         }

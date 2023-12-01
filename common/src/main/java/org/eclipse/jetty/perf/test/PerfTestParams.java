@@ -10,6 +10,10 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 
+import org.eclipse.jetty.client.ConnectionPool;
+import org.eclipse.jetty.client.DuplexConnectionPool;
+import org.eclipse.jetty.client.RandomConnectionPool;
+import org.eclipse.jetty.client.RoundRobinConnectionPool;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
@@ -30,6 +34,8 @@ public class PerfTestParams implements Serializable
     private final String SERVER_JVM_OPTS = readConfigSetting("SERVER_JVM_OPTS");
     private final String LOADER_NAMES = readConfigSetting("LOADER_NAMES");
     private final String LOADER_JVM_OPTS = readConfigSetting("LOADER_JVM_OPTS");
+    private final String LOADER_CONNECTION_POOL_FACTORY_TYPE = readConfigSetting("LOADER_CONNECTION_POOL_FACTORY_TYPE");
+    private final String LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION = readConfigSetting("LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION");
     private final String PROBE_NAME = readConfigSetting("PROBE_NAME");
     private final String PROBE_JVM_OPTS = readConfigSetting("PROBE_JVM_OPTS");
     private final String WARMUP_DURATION = readConfigSetting("WARMUP_DURATION");
@@ -65,6 +71,30 @@ public class PerfTestParams implements Serializable
 
     public PerfTestParams()
     {
+    }
+
+    public ConnectionPool.Factory buildLoaderConnectionPoolFactory()
+    {
+        int tmp;
+        try
+        {
+            tmp = Integer.parseInt(LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION);
+        }
+        catch (NumberFormatException e)
+        {
+            tmp = -1;
+        }
+        int maxConnectionPerDestination = tmp;
+
+        return switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
+        {
+            case "random" ->
+                destination -> new RandomConnectionPool(destination, maxConnectionPerDestination > 0 ? maxConnectionPerDestination : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+            case "round-robin" ->
+                destination -> new RoundRobinConnectionPool(destination, maxConnectionPerDestination > 0 ? maxConnectionPerDestination : destination.getHttpClient().getMaxConnectionsPerDestination());
+            default ->
+                destination -> new DuplexConnectionPool(destination, maxConnectionPerDestination > 0 ? maxConnectionPerDestination : destination.getHttpClient().getMaxConnectionsPerDestination());
+        };
     }
 
     private ClusterConfiguration getClusterConfiguration()
