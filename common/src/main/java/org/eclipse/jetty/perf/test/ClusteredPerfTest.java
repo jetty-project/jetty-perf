@@ -79,7 +79,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
     public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
-        Path reportRootPath = ReportUtil.createReportRootPath(testName, params.toString());
+        Path reportRootPath = ReportUtil.createReportRootPath(testName);
         try (OutputCapturer ignore = new OutputCapturer(reportRootPath))
         {
             try (ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, params, testedHandlerSupplier, reportRootPath))
