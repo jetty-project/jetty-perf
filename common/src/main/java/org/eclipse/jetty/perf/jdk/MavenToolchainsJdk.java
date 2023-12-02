@@ -5,7 +5,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -66,7 +65,10 @@ public class MavenToolchainsJdk implements FilenameSupplier
         String fileName = hostname + "-toolchains.xml";
         Path toolchainsPath = fileSystem.getPath(fileName);
         if (!Files.exists(toolchainsPath))
+        {
+            LOG.debug("cannot find generated toolchains file {}", toolchainsPath);
             toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "toolchains.xml");
+        }
 
         if (Files.exists(toolchainsPath))
         {
@@ -89,8 +91,7 @@ public class MavenToolchainsJdk implements FilenameSupplier
         }
         else
         {
-            LOG.debug("cannot find toolchain file {}", toolchainsPath);
-            LOG.debug("files in directory: {}", Files.list(Paths.get( ".")).collect(Collectors.toList()));
+            LOG.debug("cannot find configured toolchains file {}", toolchainsPath);
             return null;
         }
     }

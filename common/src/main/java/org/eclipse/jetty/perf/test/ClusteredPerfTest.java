@@ -78,14 +78,11 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
     public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
     {
-        PerfTestParams params = new PerfTestParams();
         Path reportRootPath = ReportUtil.createReportRootPath(testName);
-        try (OutputCapturer ignore = new OutputCapturer(reportRootPath))
+        try (OutputCapturer ignore = new OutputCapturer(reportRootPath);
+             ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, new PerfTestParams(), testedHandlerSupplier, reportRootPath))
         {
-            try (ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, params, testedHandlerSupplier, reportRootPath))
-            {
-                clusteredPerfTest.execute();
-            }
+            clusteredPerfTest.execute();
         }
     }
 
@@ -106,7 +103,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         NodeArray probeArray = cluster.nodeArray("probe");
 
         NodeJob logSysInfo = tools -> LOG.info("{} '{}/{}': running JVM version '{}'",
-            java.net.InetAddress.getLocalHost().getHostName(),
+            tools.getGlobalNodeId().getHostname(),
             System.getProperty("os.name"),
             System.getProperty("os.arch"),
             System.getProperty("java.vm.version"));
@@ -195,7 +192,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
                 LOG.info("Dumping threads of pending jobs before rethrowing...");
                 NodeJob dump = (tools) ->
                 {
-                    String nodeId = tools.getNodeId();
+                    String nodeId = tools.getGlobalNodeId().getNodeId();
                     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
                     System.err.println("----- " + nodeId + " -----");
                     for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true))

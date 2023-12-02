@@ -17,6 +17,7 @@ import org.eclipse.jetty.client.RoundRobinConnectionPool;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
+import org.eclipse.jetty.perf.util.JenkinsParameters;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
@@ -24,32 +25,28 @@ import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PerfTestParams implements Serializable
 {
-    // Must not be final as we want the test instance's read values.
-    private final String JDK_TO_USE = readConfigSetting("JDK_TO_USE");
-    private final String OPTIONAL_MONITORED_ITEMS = readConfigSetting("OPTIONAL_MONITORED_ITEMS");
-    private final String SERVER_NAME = readConfigSetting("SERVER_NAME");
-    private final String SERVER_JVM_OPTS = readConfigSetting("SERVER_JVM_OPTS");
-    private final String LOADER_NAMES = readConfigSetting("LOADER_NAMES");
-    private final String LOADER_JVM_OPTS = readConfigSetting("LOADER_JVM_OPTS");
-    private final String LOADER_CONNECTION_POOL_FACTORY_TYPE = readConfigSetting("LOADER_CONNECTION_POOL_FACTORY_TYPE");
-    private final String LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION = readConfigSetting("LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION");
-    private final String PROBE_NAME = readConfigSetting("PROBE_NAME");
-    private final String PROBE_JVM_OPTS = readConfigSetting("PROBE_JVM_OPTS");
-    private final String WARMUP_DURATION = readConfigSetting("WARMUP_DURATION");
-    private final String RUN_DURATION = readConfigSetting("RUN_DURATION");
-    private final String LOADER_RATE = readConfigSetting("LOADER_RATE");
-    private final String PROBE_RATE = readConfigSetting("PROBE_RATE");
+    private static final Logger LOG = LoggerFactory.getLogger(PerfTestParams.class);
 
-    private static String readConfigSetting(String name)
-    {
-        String env = System.getenv(name);
-        if (env == null)
-            return "";
-        return env.trim();
-    }
+    // Must not be final as we want the test instance's read values.
+    private final String JDK_TO_USE = JenkinsParameters.read("JDK_TO_USE", "load-jdk17");
+    private final String OPTIONAL_MONITORED_ITEMS = JenkinsParameters.read("OPTIONAL_MONITORED_ITEMS", "");
+    private final String SERVER_NAME = JenkinsParameters.read("SERVER_NAME", "localhost");
+    private final String SERVER_JVM_OPTS = JenkinsParameters.read("SERVER_JVM_OPTS", "");
+    private final String LOADER_NAMES = JenkinsParameters.read("LOADER_NAMES", "localhost");
+    private final String LOADER_JVM_OPTS = JenkinsParameters.read("LOADER_JVM_OPTS", "");
+    private final String PROBE_NAME = JenkinsParameters.read("PROBE_NAME", "localhost");
+    private final String PROBE_JVM_OPTS = JenkinsParameters.read("PROBE_JVM_OPTS", "");
+    private final String LOADER_CONNECTION_POOL_FACTORY_TYPE = JenkinsParameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "duplex");
+    private final int LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION = JenkinsParameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION", -1);
+    private final int WARMUP_DURATION = JenkinsParameters.readAsInt("WARMUP_DURATION", 10);
+    private final int RUN_DURATION = JenkinsParameters.readAsInt("RUN_DURATION", 20);
+    private final int LOADER_RATE = JenkinsParameters.readAsInt("LOADER_RATE", 60000);
+    private final int PROBE_RATE = JenkinsParameters.readAsInt("PROBE_RATE", 1000);
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
@@ -75,26 +72,17 @@ public class PerfTestParams implements Serializable
 
     public ConnectionPool.Factory buildLoaderConnectionPoolFactory()
     {
-        int tmp;
-        try
+        switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
         {
-            tmp = Integer.parseInt(LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION);
+            case "random":
+                return destination -> new RandomConnectionPool(destination, LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION > 0 ? LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+            case "round-robin":
+                return destination -> new RoundRobinConnectionPool(destination, LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION > 0 ? LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION : destination.getHttpClient().getMaxConnectionsPerDestination());
+            default:
+                LOG.warn("Unsupported LOADER_CONNECTION_POOL_FACTORY_TYPE '{}', defaulting to 'duplex'", LOADER_CONNECTION_POOL_FACTORY_TYPE);
+            case "duplex":
+                return destination -> new DuplexConnectionPool(destination, LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION > 0 ? LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION : destination.getHttpClient().getMaxConnectionsPerDestination());
         }
-        catch (NumberFormatException e)
-        {
-            tmp = -1;
-        }
-        int maxConnectionPerDestination = tmp;
-
-        return switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
-        {
-            case "random" ->
-                destination -> new RandomConnectionPool(destination, maxConnectionPerDestination > 0 ? maxConnectionPerDestination : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
-            case "round-robin" ->
-                destination -> new RoundRobinConnectionPool(destination, maxConnectionPerDestination > 0 ? maxConnectionPerDestination : destination.getHttpClient().getMaxConnectionsPerDestination());
-            default ->
-                destination -> new DuplexConnectionPool(destination, maxConnectionPerDestination > 0 ? maxConnectionPerDestination : destination.getHttpClient().getMaxConnectionsPerDestination());
-        };
     }
 
     private ClusterConfiguration getClusterConfiguration()
@@ -214,22 +202,22 @@ public class PerfTestParams implements Serializable
 
     public int getLoaderRate()
     {
-        return Integer.parseInt(LOADER_RATE);
+        return LOADER_RATE;
     }
 
     public int getProbeRate()
     {
-        return Integer.parseInt(PROBE_RATE);
+        return PROBE_RATE;
     }
 
     public Duration getWarmupDuration()
     {
-        return Duration.ofSeconds(Integer.parseInt(WARMUP_DURATION));
+        return Duration.ofSeconds(WARMUP_DURATION);
     }
 
     public Duration getRunDuration()
     {
-        return Duration.ofSeconds(Integer.parseInt(RUN_DURATION));
+        return Duration.ofSeconds(RUN_DURATION);
     }
 
     public HttpVersion getHttpVersion()
