@@ -32,7 +32,7 @@ public class PerfTestParams implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(PerfTestParams.class);
 
-    // Must not be final as we want the test instance's read values.
+    // Must not be static as we want the test instance's read values.
     private final String JDK_TO_USE = JenkinsParameters.read("JDK_TO_USE", "load-jdk17");
     private final String OPTIONAL_MONITORED_ITEMS = JenkinsParameters.read("OPTIONAL_MONITORED_ITEMS", "");
     private final String SERVER_NAME = JenkinsParameters.read("SERVER_NAME", "localhost");
