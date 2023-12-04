@@ -4,29 +4,17 @@ import java.nio.charset.StandardCharsets;
 
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.perf.test.ClusteredPerfTest;
+import org.eclipse.jetty.perf.test.ClusteredTestContext;
+import org.eclipse.jetty.perf.test.junit.ClusteredTest;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 
 public class EE10ServletPerfTest
 {
-    private String testName;
-
-    @BeforeEach
-    protected void beforeEach(TestInfo testInfo)
-    {
-        // Generate test name
-        String className = testInfo.getTestClass().orElseThrow().getName();
-        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        String methodName = testInfo.getTestMethod().orElseThrow().getName();
-        testName = simpleClassName + "_" + methodName;
-    }
-
     @Test
-    public void testNoGzipAsync() throws Exception
+    public void testNoGzipAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        ClusteredPerfTest.runTest(testName, () ->
+        ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -42,9 +30,9 @@ public class EE10ServletPerfTest
     }
 
     @Test
-    public void testNoGzipSync() throws Exception
+    public void testNoGzipSync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        ClusteredPerfTest.runTest(testName, () ->
+        ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();

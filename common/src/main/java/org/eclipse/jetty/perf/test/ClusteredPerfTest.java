@@ -31,9 +31,7 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
-import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.Recorder;
-import org.eclipse.jetty.perf.util.ReportUtil;
 import org.eclipse.jetty.perf.util.SerializableConsumer;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
 import org.eclipse.jetty.server.ConnectionFactory;
@@ -79,21 +77,19 @@ public class ClusteredPerfTest implements Serializable, Closeable
         this.cluster = perfTestParams.buildCluster(testName);
     }
 
-    public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
+    public static void runTest(ClusteredTestContext clusteredTestContext, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
     {
-        runTest(testName, new PerfTestParams(), testedHandlerSupplier, p -> {});
+        runTest(clusteredTestContext, new PerfTestParams(), testedHandlerSupplier, p -> {});
     }
 
-    public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
+    public static void runTest(ClusteredTestContext clusteredTestContext, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
-        runTest(testName, new PerfTestParams(), testedHandlerSupplier, perfTestParamsCustomizer);
+        runTest(clusteredTestContext, new PerfTestParams(), testedHandlerSupplier, perfTestParamsCustomizer);
     }
 
-    public static void runTest(String testName, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
+    public static void runTest(ClusteredTestContext clusteredTestContext, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
-        Path reportRootPath = ReportUtil.createReportRootPath(testName);
-        try (OutputCapturer ignore = new OutputCapturer(reportRootPath);
-             ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, reportRootPath, perfTestParams, testedHandlerSupplier, perfTestParamsCustomizer))
+        try (ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(clusteredTestContext.getTestName(), clusteredTestContext.getReportRootPath(), perfTestParams, testedHandlerSupplier, perfTestParamsCustomizer))
         {
             clusteredPerfTest.execute();
         }
