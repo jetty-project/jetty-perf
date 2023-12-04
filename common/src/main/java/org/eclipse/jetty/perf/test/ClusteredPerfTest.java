@@ -330,6 +330,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         {
             statisticsHandler.dump(printWriter);
         }
+
         MonitoredQueuedThreadPool qtp = (MonitoredQueuedThreadPool)env.get(MonitoredQueuedThreadPool.class.getName());
         try (PrintWriter printWriter = new PrintWriter("MonitoredQueuedThreadPool.txt"))
         {
@@ -341,7 +342,12 @@ public class ClusteredPerfTest implements Serializable, Closeable
             printWriter.println(String.format("Max busy threads=%d", qtp.getMaxBusyThreads()));
         }
 
-        ((Server)env.get(Server.class.getName())).stop();
+        Server server = (Server)env.get(Server.class.getName());
+        try (PrintWriter printWriter = new PrintWriter("ServerDump.txt"))
+        {
+            server.dump(printWriter);
+        }
+        server.stop();
     }
 
     private void runLoadGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
