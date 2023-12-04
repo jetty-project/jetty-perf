@@ -35,22 +35,22 @@ public class PerfTestParams implements Serializable
     // Must not be static as we want the test instance's values.
     private final JenkinsParameters parameters = new JenkinsParameters();
 
-    private final String JDK_TO_USE = parameters.read("JDK_TO_USE", "load-jdk17");
-    private final String OPTIONAL_MONITORED_ITEMS = parameters.read("OPTIONAL_MONITORED_ITEMS", "");
-    private final String SERVER_NAME = parameters.read("SERVER_NAME", "localhost");
-    private final String SERVER_JVM_OPTS = parameters.read("SERVER_JVM_OPTS", "");
-    private final String LOADER_NAMES = parameters.read("LOADER_NAMES", "localhost");
-    private final String LOADER_JVM_OPTS = parameters.read("LOADER_JVM_OPTS", "");
-    private final String PROBE_NAME = parameters.read("PROBE_NAME", "localhost");
-    private final String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
-    private final String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "duplex");
-    private final int LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION", -1);
-    private final int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
-    private final int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
-    private final int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 60000);
-    private final int PROBE_RATE = parameters.readAsInt("PROBE_RATE", 1000);
-    private final int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
-    private final int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
+    public String JDK_TO_USE = parameters.read("JDK_TO_USE", "load-jdk17");
+    public String OPTIONAL_MONITORED_ITEMS = parameters.read("OPTIONAL_MONITORED_ITEMS", "");
+    public String SERVER_NAME = parameters.read("SERVER_NAME", "localhost");
+    public String SERVER_JVM_OPTS = parameters.read("SERVER_JVM_OPTS", "");
+    public String LOADER_NAMES = parameters.read("LOADER_NAMES", "localhost");
+    public String LOADER_JVM_OPTS = parameters.read("LOADER_JVM_OPTS", "");
+    public String PROBE_NAME = parameters.read("PROBE_NAME", "localhost");
+    public String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
+    public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "duplex");
+    public int LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION", -1);
+    public int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
+    public int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
+    public int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 60000);
+    public int PROBE_RATE = parameters.readAsInt("PROBE_RATE", 1000);
+    public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
+    public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,

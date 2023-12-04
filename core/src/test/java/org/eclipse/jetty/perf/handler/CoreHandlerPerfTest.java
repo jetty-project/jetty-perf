@@ -52,6 +52,10 @@ public class CoreHandlerPerfTest
             AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(asyncHandler);
             return contextHandlerCollection;
+        }, p ->
+        {
+            if (p.SERVER_SELECTOR_COUNT == -1)
+                p.SERVER_SELECTOR_COUNT = Runtime.getRuntime().availableProcessors();
         });
     }
 }

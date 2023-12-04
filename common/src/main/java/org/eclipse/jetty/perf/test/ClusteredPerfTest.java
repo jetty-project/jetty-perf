@@ -34,6 +34,7 @@ import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.Recorder;
 import org.eclipse.jetty.perf.util.ReportUtil;
+import org.eclipse.jetty.perf.util.SerializableConsumer;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Handler;
@@ -66,21 +67,33 @@ public class ClusteredPerfTest implements Serializable, Closeable
     private final PerfTestParams perfTestParams;
     private final String reportRootPath; // java.nio.Path isn't serializable, so we must use a String.
     private final SerializableSupplier<Handler> testedHandlerSupplier;
+    private final SerializableConsumer<PerfTestParams> perfTestParamsCustomizer;
     private transient Cluster cluster; // not serializable, but there is no need to access this field from remote lambdas.
 
-    private ClusteredPerfTest(String testName, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, Path reportRootPath) throws Exception
+    private ClusteredPerfTest(String testName, Path reportRootPath, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
         this.perfTestParams = perfTestParams;
         this.testedHandlerSupplier = testedHandlerSupplier;
         this.reportRootPath = reportRootPath.toString();
+        this.perfTestParamsCustomizer = perfTestParamsCustomizer;
         this.cluster = perfTestParams.buildCluster(testName);
     }
 
     public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
     {
+        runTest(testName, new PerfTestParams(), testedHandlerSupplier, p -> {});
+    }
+
+    public static void runTest(String testName, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
+    {
+        runTest(testName, new PerfTestParams(), testedHandlerSupplier, perfTestParamsCustomizer);
+    }
+
+    public static void runTest(String testName, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
+    {
         Path reportRootPath = ReportUtil.createReportRootPath(testName);
         try (OutputCapturer ignore = new OutputCapturer(reportRootPath);
-             ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, new PerfTestParams(), testedHandlerSupplier, reportRootPath))
+             ClusteredPerfTest clusteredPerfTest = new ClusteredPerfTest(testName, reportRootPath, perfTestParams, testedHandlerSupplier, perfTestParamsCustomizer))
         {
             clusteredPerfTest.execute();
         }
@@ -243,13 +256,15 @@ public class ClusteredPerfTest implements Serializable, Closeable
             throw ex;
     }
 
-    private void startServer(PerfTestParams params, Map<String, Object> env) throws Exception
+    private void startServer(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
     {
+        perfTestParamsCustomizer.accept(perfTestParams);
+
         MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool();
         Server server = new Server(qtp);
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
-        if (params.isTlsEnabled())
+        if (perfTestParams.isTlsEnabled())
         {
             SecureRequestCustomizer customizer = new SecureRequestCustomizer();
             customizer.setSniHostCheck(false);
@@ -257,13 +272,13 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
 
         ConnectionFactory http;
-        if (params.getHttpVersion() == HttpVersion.HTTP_2)
+        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
             http = new HTTP2CServerConnectionFactory(httpConfiguration);
         else
             http = new HttpConnectionFactory(httpConfiguration);
 
         List<ConnectionFactory> connectionFactories = new ArrayList<>();
-        if (params.isTlsEnabled())
+        if (perfTestParams.isTlsEnabled())
         {
             SslContextFactory.Server serverSslContextFactory = new SslContextFactory.Server();
             // Copy keystore from classpath to temp file.
@@ -282,8 +297,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
         connectionFactories.add(http);
 
-        ServerConnector serverConnector = new ServerConnector(server, params.getServerAcceptorCount(), params.getServerSelectorCount(), connectionFactories.toArray(new ConnectionFactory[0]));
-        serverConnector.setPort(params.getServerPort());
+        ServerConnector serverConnector = new ServerConnector(server, perfTestParams.getServerAcceptorCount(), perfTestParams.getServerSelectorCount(), connectionFactories.toArray(new ConnectionFactory[0]));
+        serverConnector.setPort(perfTestParams.getServerPort());
 
         server.addConnector(serverConnector);
 
@@ -323,6 +338,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
     private void runLoadGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
     {
+        perfTestParamsCustomizer.accept(perfTestParams);
+
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
@@ -392,6 +409,8 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
     private void runProbeGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
     {
+        perfTestParamsCustomizer.accept(perfTestParams);
+
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
