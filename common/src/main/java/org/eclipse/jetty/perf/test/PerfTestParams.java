@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.eclipse.jetty.client.ConnectionPool;
 import org.eclipse.jetty.client.DuplexConnectionPool;
+import org.eclipse.jetty.client.MultiplexConnectionPool;
 import org.eclipse.jetty.client.RandomConnectionPool;
 import org.eclipse.jetty.client.RoundRobinConnectionPool;
 import org.eclipse.jetty.http.HttpVersion;
@@ -43,8 +44,8 @@ public class PerfTestParams implements Serializable
     public String LOADER_JVM_OPTS = parameters.read("LOADER_JVM_OPTS", "");
     public String PROBE_NAME = parameters.read("PROBE_NAME", "localhost");
     public String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
-    public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "duplex");
-    public int LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION", -1);
+    public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "first");
+    public int LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", -1);
     public int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
     public int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
     public int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 60000);
@@ -77,16 +78,20 @@ public class PerfTestParams implements Serializable
 
     public ConnectionPool.Factory buildLoaderConnectionPoolFactory()
     {
+        int connections = LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION;
         switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
         {
             case "random":
-                return destination -> new RandomConnectionPool(destination, LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION > 0 ? LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                return destination -> new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
             case "round-robin":
-                return destination -> new RoundRobinConnectionPool(destination, LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION > 0 ? LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION : destination.getHttpClient().getMaxConnectionsPerDestination());
+                return destination -> new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
             default:
-                LOG.warn("Unsupported LOADER_CONNECTION_POOL_FACTORY_TYPE '{}', defaulting to 'duplex'", LOADER_CONNECTION_POOL_FACTORY_TYPE);
-            case "duplex":
-                return destination -> new DuplexConnectionPool(destination, LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION > 0 ? LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION : destination.getHttpClient().getMaxConnectionsPerDestination());
+                LOG.warn("Unsupported LOADER_CONNECTION_POOL_FACTORY_TYPE '{}', defaulting to 'first'", LOADER_CONNECTION_POOL_FACTORY_TYPE);
+            case "first":
+                if (getHttpVersion().getVersion() <= 11)
+                    return destination -> new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
+                else
+                    return destination -> new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
         }
     }
 
