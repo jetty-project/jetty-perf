@@ -51,6 +51,7 @@ public class PerfTestParams implements Serializable
     public int PROBE_RATE = parameters.readAsInt("PROBE_RATE", 1000);
     public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
     public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
+    public boolean SERVER_USE_VIRTUAL_THREADS = parameters.readAsBoolean("SERVER_USE_VIRTUAL_THREADS", false);
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,

@@ -37,4 +37,12 @@ public class JenkinsParameters implements Serializable
             return defaultValue;
         }
     }
+
+    public boolean readAsBoolean(String name, boolean defaultValue)
+    {
+        String env = environment.get(name);
+        if (env == null)
+            return defaultValue;
+        return Boolean.parseBoolean(env.trim());
+    }
 }

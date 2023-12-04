@@ -33,6 +33,7 @@ pipeline {
         string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION')
         string(defaultValue: '', description: 'The number of acceptor threads to use', name: 'SERVER_ACCEPTOR_COUNT')
         string(defaultValue: '', description: 'The number of selector threads to use', name: 'SERVER_SELECTOR_COUNT')
+        string(defaultValue: '', description: 'Use virtual threads', name: 'SERVER_USE_VIRTUAL_THREADS')
     }
     tools {
         jdk "${JDK_TO_USE}"

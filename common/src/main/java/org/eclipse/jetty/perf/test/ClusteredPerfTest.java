@@ -43,6 +43,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
+import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
 import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
@@ -257,6 +258,10 @@ public class ClusteredPerfTest implements Serializable, Closeable
         perfTestParamsCustomizer.accept(perfTestParams);
 
         MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool();
+
+        if (perfTestParams.SERVER_USE_VIRTUAL_THREADS)
+            qtp.setVirtualThreadsExecutor(VirtualThreads.getDefaultVirtualThreadsExecutor());
+
         Server server = new Server(qtp);
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
