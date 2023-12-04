@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import org.eclipse.jetty.perf.histogram.HgrmReport;
 import org.eclipse.jetty.perf.histogram.JHiccupReport;
 import org.eclipse.jetty.perf.histogram.PerfReport;
+import org.eclipse.jetty.perf.histogram.PlatformMonitorReport;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.slf4j.Logger;
@@ -123,6 +124,7 @@ public class ReportUtil
             {
                 PerfReport.createHtmlHistogram(hlogFile.toFile(), os);
             }
+            PlatformMonitorReport.createSnapshotHistogram(reportFolder, hlogFile);
         }
     }
 

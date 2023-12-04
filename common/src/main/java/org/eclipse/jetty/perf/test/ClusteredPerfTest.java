@@ -32,6 +32,7 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
+import org.eclipse.jetty.perf.util.PlatformMonitorRecorder;
 import org.eclipse.jetty.perf.util.Recorder;
 import org.eclipse.jetty.perf.util.SerializableConsumer;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
@@ -323,36 +324,41 @@ public class ClusteredPerfTest implements Serializable, Closeable
             @Override
             public void stopRecording()
             {
+                try
+                {
+                    try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
+                    {
+                        statisticsHandler.dump(printWriter);
+                    }
+
+                    try (PrintWriter printWriter = new PrintWriter("MonitoredQueuedThreadPool.txt"))
+                    {
+                        printWriter.println(String.format("Average queue latency=%d", qtp.getAverageQueueLatency()));
+                        printWriter.println(String.format("Max queue latency=%d", qtp.getMaxQueueLatency()));
+                        printWriter.println(String.format("Max queue size=%d", qtp.getMaxQueueSize()));
+                        printWriter.println(String.format("Average task latency=%d", qtp.getAverageTaskLatency()));
+                        printWriter.println(String.format("Max task latency=%d", qtp.getMaxTaskLatency()));
+                        printWriter.println(String.format("Max busy threads=%d", qtp.getMaxBusyThreads()));
+                    }
+
+                    try (PrintWriter printWriter = new PrintWriter("ServerDump.txt"))
+                    {
+                        server.dump(printWriter);
+                    }
+                }
+                catch (IOException ioe)
+                {
+                    LOG.error("Error writing server reports", ioe);
+                }
             }
-        }, latencyRecorder));
+        }, new PlatformMonitorRecorder(), latencyRecorder));
         env.put(CompletableFuture.class.getName(), CompletableFuture.completedFuture(null));
         env.put(Server.class.getName(), server);
     }
 
     private void stopServer(Map<String, Object> env) throws Exception
     {
-        StatisticsHandler statisticsHandler = (StatisticsHandler)env.get(StatisticsHandler.class.getName());
-        try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
-        {
-            statisticsHandler.dump(printWriter);
-        }
-
-        MonitoredQueuedThreadPool qtp = (MonitoredQueuedThreadPool)env.get(MonitoredQueuedThreadPool.class.getName());
-        try (PrintWriter printWriter = new PrintWriter("MonitoredQueuedThreadPool.txt"))
-        {
-            printWriter.println(String.format("Average queue latency=%d", qtp.getAverageQueueLatency()));
-            printWriter.println(String.format("Max queue latency=%d", qtp.getMaxQueueLatency()));
-            printWriter.println(String.format("Max queue size=%d", qtp.getMaxQueueSize()));
-            printWriter.println(String.format("Average task latency=%d", qtp.getAverageTaskLatency()));
-            printWriter.println(String.format("Max task latency=%d", qtp.getMaxTaskLatency()));
-            printWriter.println(String.format("Max busy threads=%d", qtp.getMaxBusyThreads()));
-        }
-
         Server server = (Server)env.get(Server.class.getName());
-        try (PrintWriter printWriter = new PrintWriter("ServerDump.txt"))
-        {
-            server.dump(printWriter);
-        }
         server.stop();
     }
 
@@ -363,7 +369,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
-        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
+        env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
 
         URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
@@ -448,7 +454,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
-        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
+        env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
 
         URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
