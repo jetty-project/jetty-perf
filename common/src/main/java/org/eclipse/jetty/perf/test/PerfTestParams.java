@@ -51,7 +51,7 @@ public class PerfTestParams implements Serializable
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
             .node(new Node("load-sample"))
-            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
+            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xint", "-Xms8g", "-Xmx8g")))
         );
 
     public enum Protocol
@@ -148,7 +148,7 @@ public class PerfTestParams implements Serializable
 
     public int getProbeRate()
     {
-        return 1000;
+        return 100;
     }
 
     public long getExpectedP99ServerLatency()
