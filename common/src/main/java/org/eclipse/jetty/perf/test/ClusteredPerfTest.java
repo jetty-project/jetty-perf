@@ -306,7 +306,19 @@ public class ClusteredPerfTest implements Serializable, Closeable
 
         env.put(MonitoredQueuedThreadPool.class.getName(), qtp);
         env.put(StatisticsHandler.class.getName(), statisticsHandler);
-        env.put(Recorder.class.getName(), List.of(latencyRecorder));
+        env.put(Recorder.class.getName(), List.of(new Recorder() {
+            @Override
+            public void startRecording()
+            {
+                statisticsHandler.reset();
+                qtp.reset();
+            }
+
+            @Override
+            public void stopRecording()
+            {
+            }
+        }, latencyRecorder));
         env.put(CompletableFuture.class.getName(), CompletableFuture.completedFuture(null));
         env.put(Server.class.getName(), server);
     }
