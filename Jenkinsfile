@@ -31,6 +31,8 @@ pipeline {
         string(defaultValue: '1000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
         string(defaultValue: 'duplex', description: 'The loaders\' connection pool type. You can choose from this list: duplex, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
         string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTION_PER_DESTINATION')
+        string(defaultValue: '-1', description: 'The number of acceptor threads to use, or -1 for a default value', name: 'SERVER_ACCEPTOR_COUNT')
+        string(defaultValue: '-1', description: 'The number of selector threads to use, or -1 for a default value', name: 'SERVER_SELECTOR_COUNT')
     }
     tools {
         jdk "${JDK_TO_USE}"
