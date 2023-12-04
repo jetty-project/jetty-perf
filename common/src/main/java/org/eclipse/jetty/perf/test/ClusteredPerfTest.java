@@ -1,6 +1,7 @@
 package org.eclipse.jetty.perf.test;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -379,6 +380,20 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .listener(responseTimeListener)
             .resourceListener(responseStatusListener)
             .listener(responseStatusListener)
+            .listener((LoadGenerator.CompleteListener)generator ->
+            {
+                try
+                {
+                    try (PrintWriter printWriter = new PrintWriter("LoadGeneratorDump.txt"))
+                    {
+                        generator.dump(printWriter);
+                    }
+                }
+                catch (IOException ioe)
+                {
+                    LOG.error("Error dumping LoadGenerator", ioe);
+                }
+            })
             ;
 
         if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_1 ||
@@ -449,6 +464,20 @@ public class ClusteredPerfTest implements Serializable, Closeable
             .listener(responseTimeListener)
             .resourceListener(responseStatusListener)
             .listener(responseStatusListener)
+            .listener((LoadGenerator.CompleteListener)generator ->
+            {
+                try
+                {
+                    try (PrintWriter printWriter = new PrintWriter("LoadGeneratorDump.txt"))
+                    {
+                        generator.dump(printWriter);
+                    }
+                }
+                catch (IOException ioe)
+                {
+                    LOG.error("Error dumping LoadGenerator", ioe);
+                }
+            })
             ;
 
         if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_1 ||
