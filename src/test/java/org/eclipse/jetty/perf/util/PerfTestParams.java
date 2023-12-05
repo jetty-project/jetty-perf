@@ -34,7 +34,7 @@ public class PerfTestParams implements Serializable
     private static final SimpleClusterConfiguration CLUSTER_CONFIGURATION = new SimpleClusterConfiguration()
         .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))
         .nodeArray(new SimpleNodeArrayConfiguration("server")
-            .node(new Node("load-master"))
+            .node(new Node("load-master-2"))
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms32g", "-Xmx32g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("loaders")
