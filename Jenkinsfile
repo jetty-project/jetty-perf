@@ -24,7 +24,7 @@ pipeline {
           timeout(time: 30, unit: 'MINUTES')
       }      
       steps {
-        jdkpathfinder nodes: ['load-master', 'load-2', 'load-5', 'load-3', 'load-4', 'load-sample'],
+        jdkpathfinder nodes: ['load-master-2', 'load-2', 'load-5', 'load-3', 'load-4', 'load-sample'],
                 jdkNames: ["${JDK_TO_USE}"]
         stash name: 'toolchains.xml', includes: '*toolchains.xml'
       }
@@ -83,7 +83,7 @@ pipeline {
       }
     }
     stage('Build Jetty') {
-      agent { node { label 'load-master' } }      
+      agent { node { label 'load-master-2' } }      
       when {
         beforeAgent true
         expression {
@@ -117,7 +117,7 @@ pipeline {
       }
     }
     stage('jetty-perf') {
-      agent { node { label 'load-master' } }
+      agent { node { label 'load-master-2' } }
       options {
           timeout(time: 120, unit: 'MINUTES')
       }            
@@ -126,7 +126,7 @@ pipeline {
           // clean the directory before clone
           sh "rm -rf *"
           unstash name: 'toolchains.xml'
-          sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+          sh "cp load-master-2-toolchains.xml  ~/load-master-2-toolchains.xml "
           checkout([$class           : 'GitSCM',
                     branches         : [[name: "*/$JETTY_PERF_BRANCH"]],
                     extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
