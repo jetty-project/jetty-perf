@@ -20,7 +20,7 @@ pipeline {
     stage('Jetty Perf Run') {
       steps {
         script {
-          def built = build(job: '/load_testing/jetty-perf-main', propagate: false,
+          def built = build(job: '/load_testing/jetty-perf-main', propagate: true,
                   parameters: [string(name: 'JETTY_VERSION', value: "${JETTY_VERSION}"),
                                string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
                                string(name: 'JDK_TO_USE', value: "${JDK_TO_USE}"),
