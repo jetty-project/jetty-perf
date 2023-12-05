@@ -2,13 +2,14 @@ package org.eclipse.jetty.perf.monitoring.asyncprof;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
+import java.net.URI;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,13 +50,22 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
 
     private static void installAsyncProfilerIfNeeded() throws IOException
     {
-        File asyncProfilerHome = getAsyncProfilerHome();
-        if (!asyncProfilerHome.isDirectory())
+        Path asyncProfilerHome = getAsyncProfilerHome();
+        if (!Files.isDirectory(asyncProfilerHome))
         {
             LOG.debug("installing async profiler...");
-            File tarGzFile = new File(asyncProfilerHome.getParentFile(), "async-profiler-" + VERSION + "-linux-x64.tar.gz");
-            try (InputStream is = new URL("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v" + VERSION + "/async-profiler-" + VERSION + "-linux-x64.tar.gz").openStream();
-                 OutputStream os = new FileOutputStream(tarGzFile))
+            Path parentFolder = asyncProfilerHome.getParent();
+            try
+            {
+                Files.createDirectories(parentFolder);
+            }
+            catch (FileAlreadyExistsException e)
+            {
+                // this is fine
+            }
+            Path tarGzFile = parentFolder.resolve("async-profiler-" + VERSION + "-linux-x64.tar.gz");
+            try (InputStream is = URI.create("https://github.com/jvm-profiling-tools/async-profiler/releases/download/v" + VERSION + "/async-profiler-" + VERSION + "-linux-x64.tar.gz").toURL().openStream();
+                 OutputStream os = Files.newOutputStream(tarGzFile))
             {
                 IOUtil.copy(is, os);
             }
@@ -63,9 +73,9 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
         }
     }
 
-    private static void unTarGz(File targetFolder, File tarGzFile) throws IOException
+    private static void unTarGz(Path targetFolder, Path tarGzFile) throws IOException
     {
-        try (TarInputStream tis = new TarInputStream(new GZIPInputStream(new BufferedInputStream(new FileInputStream(tarGzFile)))))
+        try (TarInputStream tis = new TarInputStream(new GZIPInputStream(new BufferedInputStream(Files.newInputStream(tarGzFile)))))
         {
             byte[] buffer = new byte[2048];
             while (true)
@@ -76,14 +86,13 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
 
                 if (entry.isDirectory())
                 {
-                    File folder = new File(targetFolder.getParentFile(), entry.getName());
-                    if (!folder.mkdirs())
-                        throw new IOException("Cannot create folder: " + folder);
+                    Path folder = targetFolder.getParent().resolve(entry.getName());
+                    Files.createDirectories(folder);
                     continue;
                 }
 
-                File file = new File(targetFolder.getParentFile(), entry.getName());
-                try (BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(file)))
+                Path file = targetFolder.getParent().resolve(entry.getName());
+                try (BufferedOutputStream dest = new BufferedOutputStream(Files.newOutputStream(file)))
                 {
                     while (true)
                     {
@@ -94,29 +103,29 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
                     }
                 }
                 boolean executable = (entry.getHeader().mode & 0_111 /* Yes, octal. */) != 0;
-                if (!file.setExecutable(executable))
+                if (!file.toFile().setExecutable(executable))
                     throw new IOException("Cannot set executable: " + file);
             }
         }
     }
 
-    private static File getAsyncProfilerHome()
+    private static Path getAsyncProfilerHome()
     {
         String home = System.getProperty("user.home") + "/downloads/async-profiler-" + VERSION + "-linux-x64";
-        return new File(home);
+        return Paths.get(home);
     }
 
     private void startAsyncProfiler(long pid) throws IOException, InterruptedException
     {
         LOG.debug("starting async profiler...");
-        File asyncProfilerHome = getAsyncProfilerHome();
+        Path asyncProfilerHome = getAsyncProfilerHome();
 
         List<String> cmdLine = new ArrayList<>(Arrays.asList("./profiler.sh", "start"));
         cmdLine.addAll(extraStartCmdLineArgs());
         cmdLine.add(Long.toString(pid));
 
         int rc = new ProcessBuilder(cmdLine.toArray(new String[0]))
-            .directory(asyncProfilerHome)
+            .directory(asyncProfilerHome.toFile())
             .redirectErrorStream(true)
             .start()
             .waitFor();
@@ -131,14 +140,14 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
     private void stopAsyncProfiler(long pid) throws IOException, InterruptedException
     {
         LOG.debug("stopping async profiler...");
-        File asyncProfilerHome = getAsyncProfilerHome();
+        Path asyncProfilerHome = getAsyncProfilerHome();
 
         List<String> cmdLine = new ArrayList<>(Arrays.asList("./profiler.sh", "stop"));
         cmdLine.addAll(extraStopCmdLineArgs());
         cmdLine.add(Long.toString(pid));
 
         int rc = new ProcessBuilder(cmdLine.toArray(new String[0]))
-            .directory(asyncProfilerHome)
+            .directory(asyncProfilerHome.toFile())
             .redirectErrorStream(true)
             .start()
             .waitFor();
