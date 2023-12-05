@@ -18,7 +18,7 @@ pipeline {
         string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
             ' You can choose from this list: GC_LOGS, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: 'OPTIONAL_MONITORED_ITEMS')
 
-        string(defaultValue: 'load-master', description: 'Name of the server machine', name: 'SERVER_NAME')
+        string(defaultValue: 'load-master-2', description: 'Name of the server machine', name: 'SERVER_NAME')
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
         string(defaultValue: 'load-2,load-3,load-4,load-5', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the loader JVMs', name: 'LOADER_JVM_OPTS')
@@ -34,8 +34,8 @@ pipeline {
         string(defaultValue: '', description: 'Should the loaders\' pre-create the connections on setup? Defaults to false, which means they\'re created on demand', name: 'LOADER_PRECREATE_CONNECTIONS')
         string(defaultValue: '', description: 'The number of acceptor threads to use', name: 'SERVER_ACCEPTOR_COUNT')
         string(defaultValue: '', description: 'The number of selector threads to use', name: 'SERVER_SELECTOR_COUNT')
-        string(defaultValue: '', description: 'Use virtual threads', name: 'SERVER_USE_VIRTUAL_THREADS')
-        string(defaultValue: '', description: 'The HTTP version to use. You can choose from this list: h1, h2', name: 'HTTP_VERSION')
+        string(defaultValue: '', description: 'Use virtual threads. Defaults to false', name: 'SERVER_USE_VIRTUAL_THREADS')
+        string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, h2c', name: 'HTTP_PROTOCOL')
     }
     tools {
         jdk "${JDK_TO_USE}"

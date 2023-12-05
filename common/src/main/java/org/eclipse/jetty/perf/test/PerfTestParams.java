@@ -54,7 +54,7 @@ public class PerfTestParams implements Serializable
     public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
     public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
     public boolean SERVER_USE_VIRTUAL_THREADS = parameters.readAsBoolean("SERVER_USE_VIRTUAL_THREADS", false);
-    public String HTTP_VERSION = parameters.read("HTTP_VERSION", "h1");
+    public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
@@ -259,19 +259,23 @@ public class PerfTestParams implements Serializable
 
     public HttpVersion getHttpVersion()
     {
-        switch (HTTP_VERSION)
+        switch (HTTP_PROTOCOL)
         {
-            case "h2":
+            case "h2c":
                 return HttpVersion.HTTP_2;
             default:
-                LOG.warn("Unsupported HTTP_VERSION '{}', defaulting to 'h1'", HTTP_VERSION);
-            case "h1":
+                LOG.warn("Unsupported HTTP_PROTOCOL '{}', defaulting to 'http'", HTTP_PROTOCOL);
+            case "http":
                 return HttpVersion.HTTP_1_1;
         }
     }
 
     public boolean isTlsEnabled()
     {
-        return false;
+        return switch (HTTP_PROTOCOL)
+        {
+            case "https", "h2" -> true;
+            default -> false;
+        };
     }
 }
