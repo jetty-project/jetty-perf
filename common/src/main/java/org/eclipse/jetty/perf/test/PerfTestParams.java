@@ -46,6 +46,7 @@ public class PerfTestParams implements Serializable
     public String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
     public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "first");
     public int LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", -1);
+    public boolean LOADER_PRECREATE_CONNECTIONS = parameters.readAsBoolean("LOADER_PRECREATE_CONNECTIONS", false);
     public int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
     public int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
     public int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 60000);
@@ -53,6 +54,7 @@ public class PerfTestParams implements Serializable
     public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
     public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
     public boolean SERVER_USE_VIRTUAL_THREADS = parameters.readAsBoolean("SERVER_USE_VIRTUAL_THREADS", false);
+    public String HTTP_VERSION = parameters.read("HTTP_VERSION", "h1");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.CMDLINE_CPU,
@@ -78,20 +80,45 @@ public class PerfTestParams implements Serializable
 
     public ConnectionPool.Factory buildLoaderConnectionPoolFactory()
     {
+        boolean preCreate = LOADER_PRECREATE_CONNECTIONS;
         int connections = LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION;
         switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
         {
             case "random":
-                return destination -> new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                return destination ->
+                {
+                    RandomConnectionPool pool = new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                    if (preCreate)
+                        pool.preCreateConnections(connections);
+                    return pool;
+                };
             case "round-robin":
-                return destination -> new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                return destination ->
+                {
+                    RoundRobinConnectionPool pool = new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                    if (preCreate)
+                        pool.preCreateConnections(connections);
+                    return pool;
+                };
             default:
                 LOG.warn("Unsupported LOADER_CONNECTION_POOL_FACTORY_TYPE '{}', defaulting to 'first'", LOADER_CONNECTION_POOL_FACTORY_TYPE);
             case "first":
                 if (getHttpVersion().getVersion() <= 11)
-                    return destination -> new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
+                    return destination ->
+                    {
+                        DuplexConnectionPool pool = new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
+                        if (preCreate)
+                            pool.preCreateConnections(connections);
+                        return pool;
+                    };
                 else
-                    return destination -> new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                    return destination ->
+                    {
+                        MultiplexConnectionPool pool = new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                        if (preCreate)
+                            pool.preCreateConnections(connections);
+                        return pool;
+                    };
         }
     }
 
@@ -232,7 +259,15 @@ public class PerfTestParams implements Serializable
 
     public HttpVersion getHttpVersion()
     {
-        return HttpVersion.HTTP_1_1;
+        switch (HTTP_VERSION)
+        {
+            case "h2":
+                return HttpVersion.HTTP_2;
+            default:
+                LOG.warn("Unsupported HTTP_VERSION '{}', defaulting to 'h1'", HTTP_VERSION);
+            case "h1":
+                return HttpVersion.HTTP_1_1;
+        }
     }
 
     public boolean isTlsEnabled()

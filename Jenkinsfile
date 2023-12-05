@@ -31,9 +31,11 @@ pipeline {
         string(defaultValue: '1000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
         string(defaultValue: '', description: 'The loaders\' connection pool type. You can choose from this list: first, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
         string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION')
+        string(defaultValue: '', description: 'Should the loaders\' pre-create the connections on setup? Defaults to false, which means they\'re created on demand', name: 'LOADER_PRECREATE_CONNECTIONS')
         string(defaultValue: '', description: 'The number of acceptor threads to use', name: 'SERVER_ACCEPTOR_COUNT')
         string(defaultValue: '', description: 'The number of selector threads to use', name: 'SERVER_SELECTOR_COUNT')
         string(defaultValue: '', description: 'Use virtual threads', name: 'SERVER_USE_VIRTUAL_THREADS')
+        string(defaultValue: '', description: 'The HTTP version to use. You can choose from this list: h1, h2', name: 'HTTP_VERSION')
     }
     tools {
         jdk "${JDK_TO_USE}"
