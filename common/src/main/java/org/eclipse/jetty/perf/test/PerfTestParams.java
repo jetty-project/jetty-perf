@@ -50,7 +50,7 @@ public class PerfTestParams implements Serializable
     public int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
     public int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
     public int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 60000);
-    public int PROBE_RATE = parameters.readAsInt("PROBE_RATE", 1000);
+    public int PROBE_RATE = parameters.readAsInt("PROBE_RATE", 6000);
     public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
     public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
     public boolean SERVER_USE_VIRTUAL_THREADS = parameters.readAsBoolean("SERVER_USE_VIRTUAL_THREADS", false);
