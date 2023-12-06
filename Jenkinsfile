@@ -8,7 +8,7 @@ pipeline {
       buildDiscarder logRotator( numToKeepStr: '100' )
     }
     parameters {
-      string(defaultValue: '12.0.4-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
+      string(defaultValue: '12.0.5-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
       string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
