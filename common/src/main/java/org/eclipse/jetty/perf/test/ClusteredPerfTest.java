@@ -1,7 +1,6 @@
 package org.eclipse.jetty.perf.test;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -53,6 +52,7 @@ import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
 import org.mortbay.jetty.load.generator.Resource;
 import org.mortbay.jetty.orchestrator.Cluster;
+import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.mortbay.jetty.orchestrator.NodeArrayFuture;
 import org.mortbay.jetty.orchestrator.NodeJob;
@@ -130,11 +130,11 @@ public class ClusteredPerfTest implements Serializable, Closeable
         }
 
         LOG.info("Starting the server...");
-        serverArray.executeOnAll(tools -> startServer(perfTestParams, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        serverArray.executeOnAll(tools -> startServer(perfTestParams, tools)).get(30, TimeUnit.SECONDS);
         LOG.info("Starting the loaders...");
-        loadersArray.executeOnAll(tools -> runLoadGenerator(perfTestParams, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        loadersArray.executeOnAll(tools -> runLoadGenerator(perfTestParams, tools)).get(30, TimeUnit.SECONDS);
         LOG.info("Starting the probe...");
-        probeArray.executeOnAll(tools -> runProbeGenerator(perfTestParams, tools.nodeEnvironment())).get(30, TimeUnit.SECONDS);
+        probeArray.executeOnAll(tools -> runProbeGenerator(perfTestParams, tools)).get(30, TimeUnit.SECONDS);
 
         LOG.info("Warming up {}s ...", perfTestParams.getWarmupDuration().toSeconds());
         Thread.sleep(perfTestParams.getWarmupDuration().toMillis());
@@ -255,7 +255,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
             throw ex;
     }
 
-    private void startServer(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
+    private void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         perfTestParamsCustomizer.accept(perfTestParams);
 
@@ -311,6 +311,7 @@ public class ClusteredPerfTest implements Serializable, Closeable
         server.setHandler(statisticsHandler);
         server.start();
 
+        Map<String, Object> env = clusterTools.nodeEnvironment();
         env.put(MonitoredQueuedThreadPool.class.getName(), qtp);
         env.put(StatisticsHandler.class.getName(), statisticsHandler);
         env.put(Recorder.class.getName(), List.of(new Recorder() {
@@ -345,10 +346,13 @@ public class ClusteredPerfTest implements Serializable, Closeable
                     {
                         server.dump(printWriter);
                     }
+
+                    // The server dump has been taken with the clients still connected, they can now be freed to complete their shutdown.
+                    clusterTools.barrier("clients-end-barrier", perfTestParams.getParticipantCount() - 1).await(30, TimeUnit.SECONDS);
                 }
-                catch (IOException ioe)
+                catch (Exception e)
                 {
-                    LOG.error("Error writing server reports", ioe);
+                    LOG.error("Error writing server reports", e);
                 }
             }
         }, new PlatformMonitorRecorder(), latencyRecorder));
@@ -362,13 +366,14 @@ public class ClusteredPerfTest implements Serializable, Closeable
         server.stop();
     }
 
-    private void runLoadGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
+    private void runLoadGenerator(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         perfTestParamsCustomizer.accept(perfTestParams);
 
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
+        Map<String, Object> env = clusterTools.nodeEnvironment();
         env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
 
         URI serverUri = perfTestParams.getServerUri();
@@ -394,17 +399,17 @@ public class ClusteredPerfTest implements Serializable, Closeable
                     {
                         generator.dump(printWriter);
                     }
+                    // Keep the clients connected to the server until the latter has dumped its state.
+                    clusterTools.barrier("clients-end-barrier", perfTestParams.getParticipantCount() - 1).await(30, TimeUnit.SECONDS);
                 }
-                catch (IOException ioe)
+                catch (Exception e)
                 {
-                    LOG.error("Error dumping LoadGenerator", ioe);
+                    LOG.error("Error stopping LoadGenerator", e);
                 }
             })
             ;
 
-        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_1 ||
-            perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_0 ||
-            perfTestParams.getHttpVersion() == HttpVersion.HTTP_0_9)
+        if (perfTestParams.getHttpVersion().getVersion() <= 11)
         {
             builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder()
             {
@@ -447,13 +452,14 @@ public class ClusteredPerfTest implements Serializable, Closeable
         env.put(CompletableFuture.class.getName(), cf);
     }
 
-    private void runProbeGenerator(PerfTestParams perfTestParams, Map<String, Object> env) throws Exception
+    private void runProbeGenerator(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         perfTestParamsCustomizer.accept(perfTestParams);
 
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
+        Map<String, Object> env = clusterTools.nodeEnvironment();
         env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
 
         URI serverUri = perfTestParams.getServerUri();
@@ -478,17 +484,18 @@ public class ClusteredPerfTest implements Serializable, Closeable
                     {
                         generator.dump(printWriter);
                     }
+
+                    // Keep the clients connected to the server until the latter has dumped its state.
+                    clusterTools.barrier("clients-end-barrier", perfTestParams.getParticipantCount() - 1).await(30, TimeUnit.SECONDS);
                 }
-                catch (IOException ioe)
+                catch (Exception e)
                 {
-                    LOG.error("Error dumping LoadGenerator", ioe);
+                    LOG.error("Error stopping LoadGenerator", e);
                 }
             })
             ;
 
-        if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_1 ||
-            perfTestParams.getHttpVersion() == HttpVersion.HTTP_1_0 ||
-            perfTestParams.getHttpVersion() == HttpVersion.HTTP_0_9)
+        if (perfTestParams.getHttpVersion().getVersion() <= 11)
         {
             builder.httpClientTransportBuilder(new HTTP1ClientTransportBuilder());
         }
