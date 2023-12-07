@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import org.HdrHistogram.AbstractHistogram;
 import org.HdrHistogram.EncodableHistogram;
@@ -26,7 +27,7 @@ public class PlatformMonitorReport
             return;
 
         Histogram histogram = loadHistogram(hlogFile);
-        source = source.replace(PlatformMonitorRecorder.PLACEHOLDER, new HistogramSnapshot(histogram, 32, "Requests", "us", null).toString());
+        source = source.replace(PlatformMonitorRecorder.PLACEHOLDER, new HistogramSnapshot(histogram, 32, "Requests", "us", TimeUnit.NANOSECONDS::toMicros).toString());
 
         try (OutputStream out = Files.newOutputStream(platformMonitorRecorderPath))
         {
