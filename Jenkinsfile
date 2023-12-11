@@ -48,7 +48,8 @@ pipeline {
                 timeout(time: 30, unit: 'MINUTES')
             }
             steps {
-                jdkpathfinder nodes: ['load-master', 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', 'load-sample'],
+                // TODO get loaders from LOADER_NAMES
+                jdkpathfinder nodes: ["${SERVER_NAME}", 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', "${PROBE_NAME}"],
                     jdkNames: ["${JDK_TO_USE}"]
                 stash name: 'toolchains.xml', includes: '*toolchains.xml'
             }
@@ -58,6 +59,7 @@ pipeline {
                 timeout(time: 30, unit: 'MINUTES')
             }
             parallel {
+                // TODO prepare loaders in LOADER_NAMES
                 stage('install load-1') {
                     agent { node { label 'load-1' } }
                     steps {
@@ -131,19 +133,19 @@ pipeline {
                     }
                 }
                 stage('install probe') {
-                    agent { node { label 'load-sample' } }
+                    agent { node { label "${PROBE_NAME}" } }
                     steps {
                         tool "${JDK_TO_USE}"
                         unstash name: 'toolchains.xml'
-                        sh "cp load-sample-toolchains.xml  ~/load-sample-toolchains.xml "
-                        sh "cat load-sample-toolchains.xml"
-                        sh "echo load-sample"
+                        sh "cp ${PROBE_NAME}-toolchains.xml  ~/${PROBE_NAME}-toolchains.xml "
+                        sh "cat ${PROBE_NAME}-toolchains.xml"
+                        sh "echo ${PROBE_NAME}"
                     }
                 }
             }
         }
         stage('Build Jetty') {
-            agent { node { label 'load-master' } }
+            agent { node { label "${SERVER_NAME}" } }
             when {
                 beforeAgent true
                 expression {
@@ -177,7 +179,7 @@ pipeline {
             }
         }
         stage('jetty-profiler') {
-            agent { node { label 'load-master' } }
+            agent { node { label "${SERVER_NAME}" } }
             options {
                 timeout(time: 120, unit: 'MINUTES')
             }
@@ -186,7 +188,7 @@ pipeline {
                     // clean the directory before clone
                     sh "rm -rf *"
                     unstash name: 'toolchains.xml'
-                    sh "cp load-master-toolchains.xml  ~/load-master-toolchains.xml "
+                    sh "cp "${SERVER_NAME}"-toolchains.xml  ~/"${SERVER_NAME}"-toolchains.xml "
                     checkout([$class           : 'GitSCM',
                               branches         : [[name: "*/profiler-12.0.x"]],
                               extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
