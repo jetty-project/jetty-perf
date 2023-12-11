@@ -188,7 +188,7 @@ pipeline {
                     // clean the directory before clone
                     sh "rm -rf *"
                     unstash name: 'toolchains.xml'
-                    sh "cp "${SERVER_NAME}"-toolchains.xml  ~/"${SERVER_NAME}"-toolchains.xml "
+                    sh "cp ${SERVER_NAME}-toolchains.xml  ~/${SERVER_NAME}-toolchains.xml "
                     checkout([$class           : 'GitSCM',
                               branches         : [[name: "*/profiler-12.0.x"]],
                               extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
