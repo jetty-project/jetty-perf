@@ -50,6 +50,7 @@ public class PerfTestParams implements Serializable
     public int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
     public int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
     public int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 60000);
+    public int LOADER_THREADS = parameters.readAsInt("LOADER_THREADS", 1);
     public int PROBE_RATE = parameters.readAsInt("PROBE_RATE", 6000);
     public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
     public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
@@ -76,6 +77,31 @@ public class PerfTestParams implements Serializable
 
     public PerfTestParams()
     {
+    }
+
+    public String asPropertiesString()
+    {
+        return "JDK_TO_USE" + " = " + JDK_TO_USE + "\n" +
+            "OPTIONAL_MONITORED_ITEMS" + " = " + OPTIONAL_MONITORED_ITEMS + "\n" +
+            "SERVER_NAME" + " = " + SERVER_NAME + "\n" +
+            "SERVER_JVM_OPTS" + " = " + SERVER_JVM_OPTS + "\n" +
+            "LOADER_NAMES" + " = " + LOADER_NAMES + "\n" +
+            "LOADER_JVM_OPTS" + " = " + LOADER_JVM_OPTS + "\n" +
+            "PROBE_NAME" + " = " + PROBE_NAME + "\n" +
+            "PROBE_JVM_OPTS" + " = " + PROBE_JVM_OPTS + "\n" +
+            "LOADER_CONNECTION_POOL_FACTORY_TYPE" + " = " + LOADER_CONNECTION_POOL_FACTORY_TYPE + "\n" +
+            "LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION" + " = " + LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION + "\n" +
+            "LOADER_PRECREATE_CONNECTIONS" + " = " + LOADER_PRECREATE_CONNECTIONS + "\n" +
+            "WARMUP_DURATION" + " = " + WARMUP_DURATION + "\n" +
+            "RUN_DURATION" + " = " + RUN_DURATION + "\n" +
+            "LOADER_RATE" + " = " + LOADER_RATE + "\n" +
+            "LOADER_THREADS" + " = " + LOADER_THREADS + "\n" +
+            "PROBE_RATE" + " = " + PROBE_RATE + "\n" +
+            "SERVER_ACCEPTOR_COUNT" + " = " + SERVER_ACCEPTOR_COUNT + "\n" +
+            "SERVER_SELECTOR_COUNT" + " = " + SERVER_SELECTOR_COUNT + "\n" +
+            "SERVER_USE_VIRTUAL_THREADS" + " = " + SERVER_USE_VIRTUAL_THREADS + "\n" +
+            "HTTP_PROTOCOL" + " = " + HTTP_PROTOCOL + "\n" +
+            "";
     }
 
     public ConnectionPool.Factory buildLoaderConnectionPoolFactory()
@@ -240,6 +266,11 @@ public class PerfTestParams implements Serializable
     public int getLoaderRate()
     {
         return LOADER_RATE;
+    }
+
+    public int getLoaderThreads()
+    {
+        return LOADER_THREADS;
     }
 
     public int getProbeRate()
