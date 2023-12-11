@@ -27,7 +27,7 @@ pipeline {
 
         string(defaultValue: '60', description: 'Duration of warmup in seconds', name: 'WARMUP_DURATION')
         string(defaultValue: '180', description: 'Duration of measured run in seconds', name: 'RUN_DURATION')
-        string(defaultValue: '60000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
+        string(defaultValue: '120000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
         string(defaultValue: '', description: 'Number of threads used by the loaders', name: 'LOADER_THREADS')
         string(defaultValue: '6000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
         string(defaultValue: '', description: 'The loaders\' connection pool type. You can choose from this list: first, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
@@ -48,8 +48,7 @@ pipeline {
                 timeout(time: 30, unit: 'MINUTES')
             }
             steps {
-                // TODO get loaders from LOADER_NAMES
-                jdkpathfinder nodes: ["${SERVER_NAME}", 'load-1', 'load-2', 'load-3', 'load-4', 'load-5', 'load-6', 'load-7', 'load-8', "${PROBE_NAME}"],
+                jdkpathfinder nodes: ["${SERVER_NAME}", "${PROBE_NAME}"].addAll(csvToList("${LOADER_NAMES}")),
                     jdkNames: ["${JDK_TO_USE}"]
                 stash name: 'toolchains.xml', includes: '*toolchains.xml'
             }
@@ -214,4 +213,13 @@ pipeline {
             }
         }
     }
+}
+
+static def csvToList(csvString) {
+    def arrayList = [];
+    def vals = csvString.split(",");
+    for (val in vals) {
+        arrayList.add(val.trim());
+    }
+    return arrayList;
 }
