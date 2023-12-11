@@ -48,7 +48,7 @@ pipeline {
                 timeout(time: 30, unit: 'MINUTES')
             }
             steps {
-                jdkpathfinder nodes: csvToList("${SERVER_NAME},${PROBE_NAME},${LOADER_NAMES}")),
+                jdkpathfinder nodes: csvToList("${SERVER_NAME},${PROBE_NAME},${LOADER_NAMES}"),
                     jdkNames: ["${JDK_TO_USE}"]
                 stash name: 'toolchains.xml', includes: '*toolchains.xml'
             }
