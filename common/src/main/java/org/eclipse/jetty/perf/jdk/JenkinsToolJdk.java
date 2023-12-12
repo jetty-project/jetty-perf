@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.stream.Stream;
 
+import org.eclipse.jetty.perf.util.JvmUtil;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,19 +31,13 @@ public class JenkinsToolJdk implements FilenameSupplier
             jdkFolderFile = fileSystem.getPath("tools", "hudson.model.JDK", toolName);
         if (!Files.isDirectory(jdkFolderFile))
             throw new RuntimeException("Jenkins tool '" + toolName + "' not found in " + jdkFolderFile.toAbsolutePath());
-        try
+        try (Stream<Path> pathStream = Files.walk(jdkFolderFile, 2))
         {
-            String executable = Files.walk(jdkFolderFile, 2)
-                .filter(path ->
-                    Files.isExecutable(path.resolve("bin").resolve("java")) || Files.isExecutable(path.resolve("bin").resolve("java.exe")))
-                .map(path ->
-                {
-                    Path resolved = path.resolve("bin").resolve("java");
-                    if (!Files.isExecutable(resolved))
-                        resolved = path.resolve("bin").resolve("java.exe");
-                    return resolved.toAbsolutePath().toString();
-                })
-                .findAny()
+            String executable = pathStream
+                .map(path -> JvmUtil.findJavaExecutable(path.toString()))
+                .filter(Objects::nonNull)
+                .map(path -> path.toAbsolutePath().toString())
+                .findFirst()
                 .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
             if (LOG.isDebugEnabled())
                 LOG.debug("Found java executable in Jenkins Tools '{}' of machine '{}' at {}", toolName, hostname, executable);

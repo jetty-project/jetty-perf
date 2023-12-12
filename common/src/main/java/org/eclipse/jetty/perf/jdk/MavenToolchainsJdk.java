@@ -4,13 +4,13 @@ import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.eclipse.jetty.perf.util.JvmUtil;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,12 +38,8 @@ public class MavenToolchainsJdk implements FilenameSupplier
             if (jdkHome != null)
             {
                 LOG.debug("host '{}' found jdkHome '{}' from toolchain", hostname, jdkHome);
-                Path javaExec = Paths.get(jdkHome).resolve("bin").resolve("java"); // *nix
-                if (!Files.isExecutable(javaExec))
-                    javaExec = Paths.get(jdkHome).resolve("Contents").resolve("Home").resolve("bin").resolve("java"); // OSX
-                if (!Files.isExecutable(javaExec))
-                    javaExec = Paths.get(jdkHome).resolve("bin").resolve("java.exe"); // Windows
-                if (Files.isExecutable(javaExec))
+                Path javaExec = JvmUtil.findJavaExecutable(jdkHome);
+                if (javaExec != null)
                 {
                     // it's coming from toolchains so we trust the result
                     String absolutePath = javaExec.toAbsolutePath().toString();

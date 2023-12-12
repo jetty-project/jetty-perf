@@ -22,6 +22,7 @@ import org.eclipse.jetty.perf.monitoring.os.LinuxPerfStatMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsNetworkMonitor;
+import org.eclipse.jetty.perf.monitoring.sjk.SjkTtopMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,8 @@ public class ConfigurableMonitor implements Closeable
         ASYNC_PROF_CACHE_MISSES,
 
         PERF_STAT,
+
+        SJK_TTOP,
 
         JHICCUP,
         GC_LOGS,
@@ -141,6 +144,8 @@ public class ConfigurableMonitor implements Closeable
                 if (osName.contains("linux"))
                     return new LinuxPerfStatMonitor();
                 return null;
+            case SJK_TTOP:
+                return new SjkTtopMonitor();
             case JHICCUP:
                 return new JHiccupMonitor();
             case GC_LOGS:
