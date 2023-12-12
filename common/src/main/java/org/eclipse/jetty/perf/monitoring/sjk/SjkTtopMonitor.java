@@ -2,7 +2,7 @@ package org.eclipse.jetty.perf.monitoring.sjk;
 
 public class SjkTtopMonitor extends AbstractSjkMonitor
 {
-    public static final String DEFAULT_FILENAME = "jvm/ttop.log";
+    public static final String DEFAULT_FILENAME = "sjk/ttop.log";
 
     public SjkTtopMonitor()
     {
