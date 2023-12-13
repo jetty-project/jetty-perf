@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.client.HttpClient;
@@ -89,7 +90,12 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool();
 
         if (perfTestParams.SERVER_USE_VIRTUAL_THREADS)
-            qtp.setVirtualThreadsExecutor(VirtualThreads.getDefaultVirtualThreadsExecutor());
+        {
+            Executor defaultVirtualThreadsExecutor = VirtualThreads.getDefaultVirtualThreadsExecutor();
+            if (defaultVirtualThreadsExecutor == null)
+                LOG.warn("Virtual threads are not supported by this JVM, ignoring that parameter");
+            qtp.setVirtualThreadsExecutor(defaultVirtualThreadsExecutor);
+        }
 
         Server server = new Server(qtp);
 
