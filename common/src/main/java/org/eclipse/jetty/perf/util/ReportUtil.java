@@ -27,26 +27,6 @@ public class ReportUtil
 {
     private static final Logger LOG = LoggerFactory.getLogger(ReportUtil.class);
 
-    public static Path createReportRootPath(String testName, String... testParameterNames) throws IOException
-    {
-        Path reportsRoot = FileSystems.getDefault().getPath("target", "reports");
-        Path reportRootPath = reportsRoot.resolve(testName);
-        for (String subPath : testParameterNames)
-            reportRootPath = reportRootPath.resolve(subPath);
-
-        // if report folder already exists, rename it out of the way
-        if (Files.isDirectory(reportRootPath))
-        {
-            Path parentFolder = reportsRoot.resolve(testName);
-            String timestamp = Long.toString(Files.getLastModifiedTime(parentFolder).toMillis());
-            Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
-            Files.move(parentFolder, newFolder);
-        }
-
-        Files.createDirectories(reportRootPath);
-        return reportRootPath;
-    }
-
     public static void generateReport(Path reportPath, Collection<String> nodeArrayIds, Cluster cluster) throws IOException
     {
         for (String nodeArrayId : nodeArrayIds)
