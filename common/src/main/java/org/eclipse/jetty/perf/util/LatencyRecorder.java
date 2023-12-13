@@ -8,8 +8,6 @@ import java.util.TimerTask;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.Recorder;
-import org.eclipse.jetty.util.component.AbstractLifeCycle;
-import org.eclipse.jetty.util.component.LifeCycle;
 
 public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 {
@@ -30,17 +28,6 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
     public void stopRecording()
     {
         recorder.close();
-    }
-
-    public LifeCycle asLifeCycle()
-    {
-        return new AbstractLifeCycle() {
-            @Override
-            protected void doStop()
-            {
-                stopRecording();
-            }
-        };
     }
 
     public void recordValue(long value)
