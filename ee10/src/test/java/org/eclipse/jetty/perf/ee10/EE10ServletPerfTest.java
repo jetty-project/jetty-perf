@@ -3,7 +3,7 @@ package org.eclipse.jetty.perf.ee10;
 import java.nio.charset.StandardCharsets;
 
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
-import org.eclipse.jetty.perf.test.ClusteredPerfTest;
+import org.eclipse.jetty.perf.test.Jetty12ClusteredPerfTest;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
 import org.eclipse.jetty.perf.test.junit.ClusteredTest;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -14,7 +14,7 @@ public class EE10ServletPerfTest
     @Test
     public void testNoGzipAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        ClusteredPerfTest.runTest(clusteredTestContext, () ->
+        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -32,7 +32,7 @@ public class EE10ServletPerfTest
     @Test
     public void testNoGzipSync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        ClusteredPerfTest.runTest(clusteredTestContext, () ->
+        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();

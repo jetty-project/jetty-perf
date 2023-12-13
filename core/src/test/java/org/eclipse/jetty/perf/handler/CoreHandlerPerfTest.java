@@ -1,6 +1,6 @@
 package org.eclipse.jetty.perf.handler;
 
-import org.eclipse.jetty.perf.test.ClusteredPerfTest;
+import org.eclipse.jetty.perf.test.Jetty12ClusteredPerfTest;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
 import org.eclipse.jetty.perf.test.junit.ClusteredTest;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -14,7 +14,7 @@ public class CoreHandlerPerfTest
     @Test
     public void testNoGzipAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        ClusteredPerfTest.runTest(clusteredTestContext, () ->
+        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ContextHandler targetContextHandler = new ContextHandler("/");
@@ -30,7 +30,7 @@ public class CoreHandlerPerfTest
     @Test
     public void testNoGzipFullyAsyncHandlerTree(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        ClusteredPerfTest.runTest(clusteredTestContext, () ->
+        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection(false);
             ContextHandler targetContextHandler = new ContextHandler("/");
