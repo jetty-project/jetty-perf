@@ -24,7 +24,7 @@ pipeline {
           timeout(time: 30, unit: 'MINUTES')
       }      
       steps {
-        jdkpathfinder nodes: ['load-master-2', 'load-2', 'load-5', 'load-3', 'load-4', 'load-sample'],
+        jdkpathfinder nodes: ['load-master-2', 'load-2', 'load-5', 'load-3', 'load-6', 'load-sample'],
                 jdkNames: ["${JDK_TO_USE}"]
         stash name: 'toolchains.xml', includes: '*toolchains.xml'
       }
@@ -52,13 +52,13 @@ pipeline {
             sh "echo load-3"
           }
         }
-        stage('install load-4') {
-          agent { node { label 'load-4' } }
+        stage('install load-6') {
+          agent { node { label 'load-6' } }
           steps {
             tool "${JDK_TO_USE}"
             unstash name: 'toolchains.xml'
-            sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
-            sh "echo load-4"
+            sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
+            sh "echo load-6"
           }
         }
         stage('install load-5') {
