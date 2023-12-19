@@ -20,7 +20,7 @@ pipeline {
 
         string(defaultValue: 'load-master-2', description: 'Name of the server machine', name: 'SERVER_NAME')
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
-        string(defaultValue: 'load-2,load-3,load-4,load-5', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
+        string(defaultValue: 'load-2,load-3,load-5,load-6', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the loader JVMs', name: 'LOADER_JVM_OPTS')
         string(defaultValue: 'load-sample', description: 'Name of the probe machine', name: 'PROBE_NAME')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the probe JVM', name: 'PROBE_JVM_OPTS')
@@ -86,15 +86,15 @@ pipeline {
                         sh "echo load-3"
                     }
                 }
-                stage('install load-4') {
-                    agent { node { label 'load-4' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
-                        sh "echo load-4"
-                    }
-                }
+//                 stage('install load-4') {
+//                     agent { node { label 'load-4' } }
+//                     steps {
+//                         tool "${JDK_TO_USE}"
+//                         unstash name: 'toolchains.xml'
+//                         sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
+//                         sh "echo load-4"
+//                     }
+//                 }
                 stage('install load-5') {
                     agent { node { label 'load-5' } }
                     steps {
