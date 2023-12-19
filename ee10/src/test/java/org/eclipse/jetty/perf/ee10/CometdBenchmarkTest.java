@@ -72,8 +72,8 @@ public class CometdBenchmarkTest implements Serializable
         .nodeArray(new SimpleNodeArrayConfiguration("clients")
             .node(new Node("load-2"))
             .node(new Node("load-3"))
-            .node(new Node("load-4"))
             .node(new Node("load-5"))
+            .node(new Node("load-6"))
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
