@@ -6,36 +6,26 @@ import java.util.List;
 
 public class AsyncProfilerCpuMonitor extends AbstractAsyncProfilerMonitor
 {
-    public static final String DEFAULT_FILENAME = "async-profiler-cpu.html";
-
-    private final String outputFilename;
+    public static final String DEFAULT_FILENAME = "async-profiler/cpu.html";
 
     public AsyncProfilerCpuMonitor() throws Exception
     {
-        this.outputFilename = DEFAULT_FILENAME;
+        this(DEFAULT_FILENAME);
     }
 
     public AsyncProfilerCpuMonitor(String outputFilename) throws Exception
     {
-        this.outputFilename = outputFilename;
+        super(outputFilename);
     }
 
     public AsyncProfilerCpuMonitor(String outputFilename, long pid) throws Exception
     {
-        super(pid);
-        this.outputFilename = outputFilename;
+        super(pid, outputFilename);
     }
 
     @Override
     protected Collection<String> extraStartCmdLineArgs()
     {
-        return List.of();
-    }
-
-    @Override
-    protected Collection<String> extraStopCmdLineArgs()
-    {
-        File file = new File(outputFilename);
-        return List.of("-f", file.getAbsolutePath());
+        return List.of("-e", "cpu");
     }
 }

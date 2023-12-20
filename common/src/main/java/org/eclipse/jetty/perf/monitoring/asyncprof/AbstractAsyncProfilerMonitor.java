@@ -29,15 +29,25 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
     private static final String VERSION = "2.9";
 
     private final long pid;
+    private final Path outputPath;
 
-    protected AbstractAsyncProfilerMonitor() throws Exception
+    protected AbstractAsyncProfilerMonitor(String outputFilename) throws Exception
     {
-        this(ProcessHandle.current().pid());
+        this(ProcessHandle.current().pid(), outputFilename);
     }
 
-    protected AbstractAsyncProfilerMonitor(long pid) throws Exception
+    protected AbstractAsyncProfilerMonitor(long pid, String outputFilename) throws Exception
     {
         this.pid = pid;
+        this.outputPath = Path.of(outputFilename);
+        try
+        {
+            Files.createDirectories(outputPath.getParent());
+        }
+        catch (FileAlreadyExistsException e)
+        {
+            // this is fine
+        }
         installAsyncProfilerIfNeeded();
         startAsyncProfiler(pid);
     }
@@ -128,7 +138,6 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
     }
 
     protected abstract Collection<String> extraStartCmdLineArgs();
-    protected abstract Collection<String> extraStopCmdLineArgs();
 
     private void stopAsyncProfiler(long pid) throws IOException, InterruptedException
     {
@@ -136,7 +145,8 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
         Path asyncProfilerHome = getAsyncProfilerHome();
 
         List<String> cmdLine = new ArrayList<>(Arrays.asList("./profiler.sh", "stop"));
-        cmdLine.addAll(extraStopCmdLineArgs());
+        cmdLine.add("-f");
+        cmdLine.add(outputPath.toAbsolutePath().toString());
         cmdLine.add(Long.toString(pid));
 
         int rc = new ProcessBuilder(cmdLine.toArray(new String[0]))
