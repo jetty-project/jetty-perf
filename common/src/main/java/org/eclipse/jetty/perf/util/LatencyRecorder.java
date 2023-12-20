@@ -89,8 +89,9 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 
         public void recordValue(long value)
         {
-            if (state == State.RECORDING)
-                recorder.recordValue(value);
+            // Always record values even if state != State.RECORDING, the timer won't write the
+            // histogram data on disk, but the histogram code will be jit'ed.
+            recorder.recordValue(value);
         }
     }
 }
