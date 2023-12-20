@@ -14,6 +14,7 @@ import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCacheMissesMonit
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerLockMonitor;
 import org.eclipse.jetty.perf.monitoring.jhiccup.JHiccupMonitor;
+import org.eclipse.jetty.perf.monitoring.jmx.JitCompilationMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxDiskMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
@@ -33,10 +34,14 @@ public class ConfigurableMonitor implements Closeable
 
     public enum Item
     {
-        CMDLINE_CPU,
-        CMDLINE_MEMORY,
-        CMDLINE_NETWORK,
-        CMDLINE_DISK,
+        OS_CPU,
+        OS_MEMORY,
+        OS_NETWORK,
+        OS_DISK,
+        OS_PERF_STAT,
+
+        JHICCUP,
+        JIT_COMPILATION_TIME,
 
         // Only one kind of async profiling can be enabled at a time.
         ASYNC_PROF_CPU,
@@ -44,11 +49,8 @@ public class ConfigurableMonitor implements Closeable
         ASYNC_PROF_LOCK,
         ASYNC_PROF_CACHE_MISSES,
 
-        PERF_STAT,
-
         SJK_TTOP,
 
-        JHICCUP,
         GC_LOGS,
     }
 
@@ -102,25 +104,25 @@ public class ConfigurableMonitor implements Closeable
         String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         switch (item)
         {
-            case CMDLINE_CPU:
+            case OS_CPU:
                 if (osName.contains("linux"))
                     return new LinuxCpuMonitor();
                 if (osName.contains("windows"))
                     return new WindowsCpuMonitor();
                 return null;
-            case CMDLINE_MEMORY:
+            case OS_MEMORY:
                 if (osName.contains("linux"))
                     return new LinuxMemoryMonitor();
                 if (osName.contains("windows"))
                     return new WindowsMemoryMonitor();
                 return null;
-            case CMDLINE_NETWORK:
+            case OS_NETWORK:
                 if (osName.contains("linux"))
                     return new LinuxNetworkMonitor();
                 if (osName.contains("windows"))
                     return new WindowsNetworkMonitor();
                 return null;
-            case CMDLINE_DISK:
+            case OS_DISK:
                 if (osName.contains("linux"))
                     return new LinuxDiskMonitor();
                 return null;
@@ -140,12 +142,14 @@ public class ConfigurableMonitor implements Closeable
                 if (osName.contains("linux"))
                     return new AsyncProfilerCacheMissesMonitor();
                 return null;
-            case PERF_STAT:
+            case OS_PERF_STAT:
                 if (osName.contains("linux"))
                     return new LinuxPerfStatMonitor();
                 return null;
             case SJK_TTOP:
                 return new SjkTtopMonitor();
+            case JIT_COMPILATION_TIME:
+                return new JitCompilationMonitor();
             case JHICCUP:
                 return new JHiccupMonitor();
             case GC_LOGS:

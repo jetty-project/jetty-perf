@@ -58,12 +58,13 @@ public class PerfTestParams implements Serializable
     public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
-        ConfigurableMonitor.Item.CMDLINE_CPU,
-        ConfigurableMonitor.Item.CMDLINE_MEMORY,
-        ConfigurableMonitor.Item.CMDLINE_NETWORK,
-        ConfigurableMonitor.Item.CMDLINE_DISK,
-        ConfigurableMonitor.Item.PERF_STAT,
-        ConfigurableMonitor.Item.JHICCUP
+        ConfigurableMonitor.Item.OS_CPU,
+        ConfigurableMonitor.Item.OS_MEMORY,
+        ConfigurableMonitor.Item.OS_NETWORK,
+        ConfigurableMonitor.Item.OS_DISK,
+        ConfigurableMonitor.Item.OS_PERF_STAT,
+        ConfigurableMonitor.Item.JHICCUP,
+        ConfigurableMonitor.Item.JIT_COMPILATION_TIME
     );
 
     private final EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.copyOf(new HashSet<ConfigurableMonitor.Item>() // javac 11 needs HashSet to be typed
