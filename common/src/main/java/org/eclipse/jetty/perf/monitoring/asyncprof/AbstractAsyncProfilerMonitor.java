@@ -77,7 +77,6 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
     {
         try (TarInputStream tis = new TarInputStream(new GZIPInputStream(new BufferedInputStream(Files.newInputStream(tarGzFile)))))
         {
-            byte[] buffer = new byte[2048];
             while (true)
             {
                 TarEntry entry = tis.getNextEntry();
@@ -94,13 +93,7 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
                 Path file = targetFolder.getParent().resolve(entry.getName());
                 try (BufferedOutputStream dest = new BufferedOutputStream(Files.newOutputStream(file)))
                 {
-                    while (true)
-                    {
-                        int count = tis.read(buffer);
-                        if (count == -1)
-                            break;
-                        dest.write(buffer, 0, count);
-                    }
+                    IOUtil.copy(tis, dest);
                 }
                 boolean executable = (entry.getHeader().mode & 0_111 /* Yes, octal. */) != 0;
                 if (!file.toFile().setExecutable(executable))
