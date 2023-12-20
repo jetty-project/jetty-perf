@@ -59,9 +59,7 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
                 {
                     intervalHistogram = recorder.getIntervalHistogram(intervalHistogram);
                     if (state == State.RECORDING)
-                    {
                         writer.outputIntervalHistogram(intervalHistogram);
-                    }
                 }
             }, intervalInMs, intervalInMs);
         }
@@ -91,7 +89,8 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 
         public void recordValue(long value)
         {
-            recorder.recordValue(value);
+            if (state == State.RECORDING)
+                recorder.recordValue(value);
         }
     }
 }
