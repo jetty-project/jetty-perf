@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +39,7 @@ public class PerfTestParams implements Serializable
     private final JenkinsParameters parameters = new JenkinsParameters();
 
     public String JDK_TO_USE = parameters.read("JDK_TO_USE", "load-jdk17");
-    public String OPTIONAL_MONITORED_ITEMS = parameters.read("OPTIONAL_MONITORED_ITEMS", "ASYNC_PROF_CPU");
+    public String OPTIONAL_MONITORED_ITEMS = parameters.read("OPTIONAL_MONITORED_ITEMS", "");
     public String SERVER_NAME = parameters.read("SERVER_NAME", "localhost");
     public String SERVER_JVM_OPTS = parameters.read("SERVER_JVM_OPTS", "");
     public String LOADER_NAMES = parameters.read("LOADER_NAMES", "localhost");
@@ -84,7 +84,7 @@ public class PerfTestParams implements Serializable
 
     public Map<String, Object> asMap()
     {
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("JDK_TO_USE", JDK_TO_USE);
         result.put("OPTIONAL_MONITORED_ITEMS", OPTIONAL_MONITORED_ITEMS);
