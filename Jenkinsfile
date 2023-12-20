@@ -28,7 +28,7 @@ pipeline {
         string(defaultValue: '60', description: 'Duration of warmup in seconds', name: 'WARMUP_DURATION')
         string(defaultValue: '180', description: 'Duration of measured run in seconds', name: 'RUN_DURATION')
         string(defaultValue: '120000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
-        string(defaultValue: '4', description: 'Number of threads used by the loaders', name: 'LOADER_THREADS')
+        string(defaultValue: '', description: 'Number of threads used by the loaders, no value or a value < 1 indicates to use the number of cores', name: 'LOADER_THREADS')
         string(defaultValue: '6000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
         string(defaultValue: '', description: 'The loaders\' connection pool type. You can choose from this list: first, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
         string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION')
