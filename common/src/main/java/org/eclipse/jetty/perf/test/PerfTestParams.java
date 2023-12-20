@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jetty.client.ConnectionPool;
 import org.eclipse.jetty.client.DuplexConnectionPool;
@@ -80,29 +82,32 @@ public class PerfTestParams implements Serializable
     {
     }
 
-    public String asPropertiesString()
+    public Map<String, Object> asMap()
     {
-        return "JDK_TO_USE" + " = " + JDK_TO_USE + "\n" +
-            "OPTIONAL_MONITORED_ITEMS" + " = " + OPTIONAL_MONITORED_ITEMS + "\n" +
-            "SERVER_NAME" + " = " + SERVER_NAME + "\n" +
-            "SERVER_JVM_OPTS" + " = " + SERVER_JVM_OPTS + "\n" +
-            "LOADER_NAMES" + " = " + LOADER_NAMES + "\n" +
-            "LOADER_JVM_OPTS" + " = " + LOADER_JVM_OPTS + "\n" +
-            "PROBE_NAME" + " = " + PROBE_NAME + "\n" +
-            "PROBE_JVM_OPTS" + " = " + PROBE_JVM_OPTS + "\n" +
-            "LOADER_CONNECTION_POOL_FACTORY_TYPE" + " = " + LOADER_CONNECTION_POOL_FACTORY_TYPE + "\n" +
-            "LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION" + " = " + LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION + "\n" +
-            "LOADER_PRECREATE_CONNECTIONS" + " = " + LOADER_PRECREATE_CONNECTIONS + "\n" +
-            "WARMUP_DURATION" + " = " + WARMUP_DURATION + "\n" +
-            "RUN_DURATION" + " = " + RUN_DURATION + "\n" +
-            "LOADER_RATE" + " = " + LOADER_RATE + "\n" +
-            "LOADER_THREADS" + " = " + LOADER_THREADS + "\n" +
-            "PROBE_RATE" + " = " + PROBE_RATE + "\n" +
-            "SERVER_ACCEPTOR_COUNT" + " = " + SERVER_ACCEPTOR_COUNT + "\n" +
-            "SERVER_SELECTOR_COUNT" + " = " + SERVER_SELECTOR_COUNT + "\n" +
-            "SERVER_USE_VIRTUAL_THREADS" + " = " + SERVER_USE_VIRTUAL_THREADS + "\n" +
-            "HTTP_PROTOCOL" + " = " + HTTP_PROTOCOL + "\n" +
-            "";
+        Map<String, Object> result = new HashMap<>();
+
+        result.put("JDK_TO_USE", JDK_TO_USE);
+        result.put("OPTIONAL_MONITORED_ITEMS", OPTIONAL_MONITORED_ITEMS);
+        result.put("SERVER_NAME", SERVER_NAME);
+        result.put("SERVER_JVM_OPTS", SERVER_JVM_OPTS);
+        result.put("LOADER_NAMES", LOADER_NAMES);
+        result.put("LOADER_JVM_OPTS", LOADER_JVM_OPTS);
+        result.put("PROBE_NAME", PROBE_NAME);
+        result.put("PROBE_JVM_OPTS", PROBE_JVM_OPTS);
+        result.put("LOADER_CONNECTION_POOL_FACTORY_TYPE", LOADER_CONNECTION_POOL_FACTORY_TYPE);
+        result.put("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION);
+        result.put("LOADER_PRECREATE_CONNECTIONS", LOADER_PRECREATE_CONNECTIONS);
+        result.put("WARMUP_DURATION", WARMUP_DURATION);
+        result.put("RUN_DURATION", RUN_DURATION);
+        result.put("LOADER_RATE", LOADER_RATE);
+        result.put("LOADER_THREADS", LOADER_THREADS);
+        result.put("PROBE_RATE", PROBE_RATE);
+        result.put("SERVER_ACCEPTOR_COUNT", SERVER_ACCEPTOR_COUNT);
+        result.put("SERVER_SELECTOR_COUNT", SERVER_SELECTOR_COUNT);
+        result.put("SERVER_USE_VIRTUAL_THREADS", SERVER_USE_VIRTUAL_THREADS);
+        result.put("HTTP_PROTOCOL", HTTP_PROTOCOL);
+
+        return result;
     }
 
     public ConnectionPool.Factory buildLoaderConnectionPoolFactory()

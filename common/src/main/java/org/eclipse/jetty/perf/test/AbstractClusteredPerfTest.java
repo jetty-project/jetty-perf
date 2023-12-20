@@ -52,6 +52,9 @@ public abstract class AbstractClusteredPerfTest implements Serializable, Closeab
 
     public void execute() throws Exception
     {
+        LOG.info("Parameters:");
+        perfTestParams.asMap().forEach((k, v) -> System.out.println("  " + k + " = '" + v + "'"));
+
         NodeArray serverArray = cluster.nodeArray("server");
         NodeArray loadersArray = cluster.nodeArray("loaders");
         NodeArray probeArray = cluster.nodeArray("probe");
