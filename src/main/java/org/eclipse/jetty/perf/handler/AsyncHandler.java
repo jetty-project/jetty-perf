@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 
-public class AsyncHandler extends ModernLatencyRecordingHandlerChannelListener
+public class AsyncHandler extends LegacyLatencyRecordingHandlerChannelListener
 {
     private final byte[] answer;
     private final ThreadLocal<byte[]> bufferTl = ThreadLocal.withInitial(() -> new byte[16]);

@@ -23,7 +23,7 @@ import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.io.MappedByteBufferPool;
 import org.eclipse.jetty.perf.handler.AsyncHandler;
-import org.eclipse.jetty.perf.handler.ModernLatencyRecordingHandlerChannelListener;
+import org.eclipse.jetty.perf.handler.LegacyLatencyRecordingHandlerChannelListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
@@ -108,7 +108,7 @@ public class HttpPerfTest implements Serializable
             {
                 try (ConfigurableMonitor ignore = new ConfigurableMonitor(params.getMonitoredItems()))
                 {
-                    ModernLatencyRecordingHandlerChannelListener listener = (ModernLatencyRecordingHandlerChannelListener)tools.nodeEnvironment().get(ModernLatencyRecordingHandlerChannelListener.class.getName());
+                    LegacyLatencyRecordingHandlerChannelListener listener = (LegacyLatencyRecordingHandlerChannelListener)tools.nodeEnvironment().get(LegacyLatencyRecordingHandlerChannelListener.class.getName());
                     listener.startRecording();
                     tools.barrier("run-start-barrier", participantCount).await();
                     tools.barrier("run-end-barrier", participantCount).await();
@@ -289,7 +289,7 @@ public class HttpPerfTest implements Serializable
         server.setHandler(handler);
         server.start();
 
-        env.put(ModernLatencyRecordingHandlerChannelListener.class.getName(), handler);
+        env.put(LegacyLatencyRecordingHandlerChannelListener.class.getName(), handler);
         env.put(Server.class.getName(), server);
     }
 
