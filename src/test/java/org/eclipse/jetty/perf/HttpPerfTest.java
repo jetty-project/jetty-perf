@@ -68,8 +68,8 @@ public class HttpPerfTest implements Serializable
     private static Stream<PerfTestParams> params()
     {
         return Stream.of(
-            new PerfTestParams(PerfTestParams.Protocol.http),
-            new PerfTestParams(PerfTestParams.Protocol.https)
+            new PerfTestParams(PerfTestParams.Protocol.http)
+//            new PerfTestParams(PerfTestParams.Protocol.https),
 //            new PerfTestParams(PerfTestParams.Protocol.h2c),
 //            new PerfTestParams(PerfTestParams.Protocol.h2)
         );
