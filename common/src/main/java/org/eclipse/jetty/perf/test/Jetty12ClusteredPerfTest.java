@@ -36,11 +36,13 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.HttpStream;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
@@ -365,7 +367,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         }
 
         @Override
-        public Request.Processor handle(Request request) throws Exception
+        public boolean process(Request request, Response response, Callback callback) throws Exception
         {
             request.addHttpStreamWrapper(httpStream -> new HttpStream.Wrapper(httpStream)
             {
@@ -385,7 +387,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
                     recorder.recordValue(System.nanoTime() - before);
                 }
             });
-            return super.handle(request);
+            return super.process(request, response, callback);
         }
     }
 }
