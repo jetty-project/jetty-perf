@@ -26,24 +26,4 @@ public class CoreHandlerPerfTest
             return contextHandlerCollection;
         });
     }
-
-    @Test
-    public void testNoGzipFullyAsyncHandlerTree(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
-    {
-        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
-        {
-            ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection(false);
-            ContextHandler targetContextHandler = new ContextHandler("/");
-            contextHandlerCollection.addHandler(targetContextHandler);
-            ContextHandler uselessContextHandler = new ContextHandler("/useless");
-            contextHandlerCollection.addHandler(uselessContextHandler);
-            AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(US_ASCII));
-            targetContextHandler.setHandler(asyncHandler);
-            return contextHandlerCollection;
-        }, p ->
-        {
-            if (p.SERVER_SELECTOR_COUNT == -1)
-                p.SERVER_SELECTOR_COUNT = Runtime.getRuntime().availableProcessors();
-        });
-    }
 }

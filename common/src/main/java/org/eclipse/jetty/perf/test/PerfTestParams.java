@@ -119,7 +119,7 @@ public class PerfTestParams implements Serializable
             case "random":
                 return destination ->
                 {
-                    RandomConnectionPool pool = new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                    RandomConnectionPool pool = new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), destination, 1);
                     if (preCreate)
                         pool.preCreateConnections(connections);
                     return pool;
@@ -127,7 +127,7 @@ public class PerfTestParams implements Serializable
             case "round-robin":
                 return destination ->
                 {
-                    RoundRobinConnectionPool pool = new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                    RoundRobinConnectionPool pool = new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), destination, 1);
                     if (preCreate)
                         pool.preCreateConnections(connections);
                     return pool;
@@ -138,7 +138,7 @@ public class PerfTestParams implements Serializable
                 if (getHttpVersion().getVersion() <= 11)
                     return destination ->
                     {
-                        DuplexConnectionPool pool = new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
+                        DuplexConnectionPool pool = new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), destination);
                         if (preCreate)
                             pool.preCreateConnections(connections);
                         return pool;
@@ -146,7 +146,7 @@ public class PerfTestParams implements Serializable
                 else
                     return destination ->
                     {
-                        MultiplexConnectionPool pool = new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+                        MultiplexConnectionPool pool = new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), destination, 1);
                         if (preCreate)
                             pool.preCreateConnections(connections);
                         return pool;

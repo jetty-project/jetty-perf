@@ -36,13 +36,11 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.HttpStream;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
-import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
@@ -140,8 +138,9 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         server.addConnector(serverConnector);
 
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
-        Handler latencyRecordingHandler = new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder);
-        StatisticsHandler statisticsHandler = new StatisticsHandler(latencyRecordingHandler);
+        Handler latencyRecordingHandler = new LegacyLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder);
+        StatisticsHandler statisticsHandler = new StatisticsHandler();
+        statisticsHandler.setHandler(latencyRecordingHandler);
         server.setHandler(statisticsHandler);
         server.start();
 
@@ -353,42 +352,6 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
     }
 
     /**
-     * Identical to what 11.0.x does
-     */
-    static class ModernLatencyRecordingHandler extends Handler.Wrapper
-    {
-        private final LatencyRecorder recorder;
-
-        public ModernLatencyRecordingHandler(Handler handler, LatencyRecorder recorder)
-        {
-            super(handler);
-            this.recorder = recorder;
-        }
-
-        @Override
-        public boolean handle(Request request, Response response, Callback callback) throws Exception
-        {
-            request.addHttpStreamWrapper(httpStream -> new HttpStream.Wrapper(httpStream)
-            {
-                @Override
-                public void succeeded()
-                {
-                    super.succeeded();
-                    recorder.recordValue(System.nanoTime() - request.getBeginNanoTime());
-                }
-
-                @Override
-                public void failed(Throwable x)
-                {
-                    super.failed(x);
-                    recorder.recordValue(System.nanoTime() - request.getBeginNanoTime());
-                }
-            });
-            return super.handle(request, response, callback);
-        }
-    }
-
-    /**
      * Comparable to what 11.0.x does
      */
     static class LegacyLatencyRecordingHandler extends Handler.Wrapper
@@ -402,7 +365,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         }
 
         @Override
-        public boolean handle(Request request, Response response, Callback callback) throws Exception
+        public Request.Processor handle(Request request) throws Exception
         {
             request.addHttpStreamWrapper(httpStream -> new HttpStream.Wrapper(httpStream)
             {
@@ -422,7 +385,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
                     recorder.recordValue(System.nanoTime() - before);
                 }
             });
-            return super.handle(request, response, callback);
+            return super.handle(request);
         }
     }
 }
