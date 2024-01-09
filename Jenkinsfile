@@ -9,6 +9,7 @@ pipeline {
         // These settings are only used in this script.
         string(defaultValue: 'jetty-12.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
         string(defaultValue: '12.0.6-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+        string(defaultValue: 'profiler-12.0.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
         string(defaultValue: '*', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
 
         // These settings are used both by the test JVM and by this script too.
@@ -189,7 +190,7 @@ pipeline {
                     unstash name: 'toolchains.xml'
                     sh "cp ${SERVER_NAME}-toolchains.xml  ~/${SERVER_NAME}-toolchains.xml "
                     checkout([$class           : 'GitSCM',
-                              branches         : [[name: "*/profiler-12.0.x"]],
+                              branches         : [[name: "*/$PROFILER_BRANCH"]],
                               extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
                               userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-perf.git']]])
                     withEnv(["JAVA_HOME=${tool "jdk17"}",
