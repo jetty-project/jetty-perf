@@ -21,6 +21,8 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpClientTransport;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.io.ArrayByteBufferPool;
+import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
@@ -97,7 +99,13 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
             qtp.setVirtualThreadsExecutor(defaultVirtualThreadsExecutor);
         }
 
-        Server server = new Server(qtp);
+        ByteBufferPool bufferPool;
+        if (perfTestParams.SERVER_USE_BYTE_BUFFER_POOLING)
+            bufferPool = new ArrayByteBufferPool();
+        else
+            bufferPool = new ByteBufferPool.NonPooling();
+
+        Server server = new Server(qtp, null, bufferPool);
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
         if (perfTestParams.isTlsEnabled())

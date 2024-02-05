@@ -57,6 +57,7 @@ public class PerfTestParams implements Serializable
     public int SERVER_ACCEPTOR_COUNT = parameters.readAsInt("SERVER_ACCEPTOR_COUNT", -1);
     public int SERVER_SELECTOR_COUNT = parameters.readAsInt("SERVER_SELECTOR_COUNT", -1);
     public boolean SERVER_USE_VIRTUAL_THREADS = parameters.readAsBoolean("SERVER_USE_VIRTUAL_THREADS", false);
+    public boolean SERVER_USE_BYTE_BUFFER_POOLING = parameters.readAsBoolean("SERVER_USE_BYTE_BUFFER_POOLING", true);
     public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(

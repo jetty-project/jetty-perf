@@ -37,6 +37,7 @@ pipeline {
         string(defaultValue: '', description: 'The number of acceptor threads to use', name: 'SERVER_ACCEPTOR_COUNT')
         string(defaultValue: '', description: 'The number of selector threads to use', name: 'SERVER_SELECTOR_COUNT')
         string(defaultValue: '', description: 'Use virtual threads. Defaults to false', name: 'SERVER_USE_VIRTUAL_THREADS')
+        string(defaultValue: '', description: 'Pool byte buffers. Defaults to true', name: 'SERVER_USE_BYTE_BUFFER_POOLING')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, h2c', name: 'HTTP_PROTOCOL')
     }
     tools {
