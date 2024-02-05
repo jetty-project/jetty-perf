@@ -28,6 +28,7 @@
     <module>core</module>
     <module>ee9</module>
     <module>ee10</module>
+    <module>spring-boot</module>
   </modules>
 
   <dependencyManagement>

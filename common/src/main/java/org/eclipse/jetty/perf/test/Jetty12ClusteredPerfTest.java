@@ -62,7 +62,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
 
     private final SerializableSupplier<Handler> testedHandlerSupplier;
 
-    private Jetty12ClusteredPerfTest(String testName, Path reportRootPath, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
+    protected Jetty12ClusteredPerfTest(String testName, Path reportRootPath, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
         super(testName, reportRootPath, perfTestParams, perfTestParamsCustomizer);
         this.testedHandlerSupplier = testedHandlerSupplier;
