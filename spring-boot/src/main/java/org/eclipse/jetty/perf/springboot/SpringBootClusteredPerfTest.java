@@ -49,6 +49,7 @@ public class SpringBootClusteredPerfTest extends Jetty12ClusteredPerfTest
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         // TODO how to pass PerfTestParams to Spring?
+        JettyPerfSpringBootApplication.perfTestParams = perfTestParams;
         ConfigurableApplicationContext applicationContext = SpringApplication.run(JettyPerfSpringBootApplication.class);
         JettyCustomizer jettyCustomizer = applicationContext.getBean("jettyCustomizer", JettyCustomizer.class);
 

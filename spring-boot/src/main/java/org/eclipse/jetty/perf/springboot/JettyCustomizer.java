@@ -2,6 +2,7 @@ package org.eclipse.jetty.perf.springboot;
 
 import java.io.FileNotFoundException;
 
+import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpStream;
@@ -17,11 +18,13 @@ import org.springframework.stereotype.Component;
 public class JettyCustomizer implements WebServerFactoryCustomizer<JettyServletWebServerFactory>
 {
     private final LatencyRecorder latencyRecorder;
+    private final PerfTestParams perfTestParams;
     private Server server;
 
-    public JettyCustomizer() throws FileNotFoundException
+    public JettyCustomizer(PerfTestParams perfTestParams) throws FileNotFoundException
     {
-        latencyRecorder = new LatencyRecorder("perf.hlog");
+        this.perfTestParams = perfTestParams;
+        this.latencyRecorder = new LatencyRecorder("perf.hlog");
     }
 
     public LatencyRecorder getLatencyRecorder()
@@ -37,8 +40,8 @@ public class JettyCustomizer implements WebServerFactoryCustomizer<JettyServletW
     @Override
     public void customize(JettyServletWebServerFactory factory)
     {
-        // Add any additional Jetty configurations if needed
-        // TODO need access to PerfTestParams instance to be able to customize connector port and such
+        // TODO add additional Jetty configuration
+        factory.setPort(perfTestParams.getServerPort());
         factory.addServerCustomizers(server ->
         {
             this.server = server;
