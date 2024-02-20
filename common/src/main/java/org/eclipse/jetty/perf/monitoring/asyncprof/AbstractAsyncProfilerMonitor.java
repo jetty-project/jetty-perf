@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -26,7 +25,7 @@ import org.slf4j.LoggerFactory;
 abstract class AbstractAsyncProfilerMonitor implements Monitor
 {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAsyncProfilerMonitor.class);
-    private static final String VERSION = "2.9";
+    private static final String VERSION = "3.0";
 
     private final long pid;
     private final Path outputPath;
@@ -123,7 +122,9 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
         LOG.debug("starting async profiler...");
         Path asyncProfilerHome = getAsyncProfilerHome();
 
-        List<String> cmdLine = new ArrayList<>(Arrays.asList("./profiler.sh", "start"));
+        List<String> cmdLine = new ArrayList<>();
+        cmdLine.add(getProfilerCmd(asyncProfilerHome));
+        cmdLine.add("start");
         cmdLine.addAll(extraStartCmdLineArgs());
         cmdLine.add(Long.toString(pid));
 
@@ -137,6 +138,11 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
         LOG.debug("started async profiler...");
     }
 
+    private static String getProfilerCmd(Path asyncProfilerHome)
+    {
+        return Files.isExecutable(asyncProfilerHome.resolve("bin").resolve("asprof")) ? "./bin/asprof" : "./profiler.sh";
+    }
+
     protected abstract Collection<String> extraStartCmdLineArgs();
 
     private void stopAsyncProfiler(long pid) throws IOException, InterruptedException
@@ -144,7 +150,9 @@ abstract class AbstractAsyncProfilerMonitor implements Monitor
         LOG.debug("stopping async profiler...");
         Path asyncProfilerHome = getAsyncProfilerHome();
 
-        List<String> cmdLine = new ArrayList<>(Arrays.asList("./profiler.sh", "stop"));
+        List<String> cmdLine = new ArrayList<>();
+        cmdLine.add(getProfilerCmd(asyncProfilerHome));
+        cmdLine.add("stop");
         cmdLine.add("-f");
         cmdLine.add(outputPath.toAbsolutePath().toString());
         cmdLine.add(Long.toString(pid));
