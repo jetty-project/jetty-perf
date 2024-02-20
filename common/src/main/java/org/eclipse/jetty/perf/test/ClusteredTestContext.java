@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.junit.jupiter.api.TestInfo;
@@ -72,7 +74,7 @@ public class ClusteredTestContext implements Closeable
         if (Files.isDirectory(reportRootPath))
         {
             Path parentFolder = reportsRoot.resolve(testName);
-            String timestamp = Long.toString(Files.getLastModifiedTime(parentFolder).toMillis());
+            String timestamp = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date(Files.getLastModifiedTime(parentFolder).toMillis()));
             Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
             Files.move(parentFolder, newFolder);
         }
