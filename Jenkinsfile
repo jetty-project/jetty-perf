@@ -44,107 +44,6 @@ pipeline {
         jdk "${JDK_TO_USE}"
     }
     stages {
-        stage('generate-toolchains-file') {
-            agent any
-            options {
-                timeout(time: 30, unit: 'MINUTES')
-            }
-            steps {
-                jdkpathfinder nodes: csvToList("${SERVER_NAME},${PROBE_NAME},${LOADER_NAMES}"),
-                    jdkNames: ["${JDK_TO_USE}"]
-                stash name: 'toolchains.xml', includes: '*toolchains.xml'
-            }
-        }
-        stage('Get Load nodes') {
-            options {
-                timeout(time: 30, unit: 'MINUTES')
-            }
-            parallel {
-                // TODO prepare loaders in LOADER_NAMES
-                stage('install load-1') {
-                    agent { node { label 'load-1' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-1-toolchains.xml ~/load-1-toolchains.xml"
-                        sh "echo load-1"
-                    }
-                }
-                stage('install load-2') {
-                    agent { node { label 'load-2' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-2-toolchains.xml ~/load-2-toolchains.xml"
-                        sh "echo load-2"
-                    }
-                }
-//                 stage('install load-3') {
-//                     agent { node { label 'load-3' } }
-//                     steps {
-//                         tool "${JDK_TO_USE}"
-//                         unstash name: 'toolchains.xml'
-//                         sh "cp load-3-toolchains.xml ~/load-3-toolchains.xml"
-//                         sh "echo load-3"
-//                     }
-//                 }
-//                 stage('install load-4') {
-//                     agent { node { label 'load-4' } }
-//                     steps {
-//                         tool "${JDK_TO_USE}"
-//                         unstash name: 'toolchains.xml'
-//                         sh "cp load-4-toolchains.xml ~/load-4-toolchains.xml"
-//                         sh "echo load-4"
-//                     }
-//                 }
-                stage('install load-5') {
-                    agent { node { label 'load-5' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-5-toolchains.xml ~/load-5-toolchains.xml"
-                        sh "echo load-5"
-                    }
-                }
-                stage('install load-6') {
-                    agent { node { label 'load-6' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
-                        sh "echo load-6"
-                    }
-                }
-                stage('install load-7') {
-                    agent { node { label 'load-7' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-7-toolchains.xml ~/load-7-toolchains.xml"
-                        sh "echo load-7"
-                    }
-                }
-                stage('install load-8') {
-                    agent { node { label 'load-8' } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp load-8-toolchains.xml ~/load-8-toolchains.xml"
-                        sh "echo load-8"
-                    }
-                }
-                stage('install probe') {
-                    agent { node { label "${PROBE_NAME}" } }
-                    steps {
-                        tool "${JDK_TO_USE}"
-                        unstash name: 'toolchains.xml'
-                        sh "cp ${PROBE_NAME}-toolchains.xml  ~/${PROBE_NAME}-toolchains.xml "
-                        sh "cat ${PROBE_NAME}-toolchains.xml"
-                        sh "echo ${PROBE_NAME}"
-                    }
-                }
-            }
-        }
         stage('Build Jetty') {
             agent { node { label "${SERVER_NAME}" } }
             when {
@@ -188,15 +87,13 @@ pipeline {
                 lock('jetty-perf') {
                     // clean the directory before clone
                     sh "rm -rf *"
-                    unstash name: 'toolchains.xml'
-                    sh "cp ${SERVER_NAME}-toolchains.xml  ~/${SERVER_NAME}-toolchains.xml "
                     checkout([$class           : 'GitSCM',
                               branches         : [[name: "*/$PROFILER_BRANCH"]],
                               extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
                               userRemoteConfigs: [[url: 'https://github.com/jetty-project/jetty-perf.git']]])
                     withEnv(["JAVA_HOME=${tool "jdk17"}",
                              "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
-                             "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                             "MAVEN_OPTS=-Xmx4G -Djava.awt.headless=true"]) {
                         configFileProvider(
                             [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
                             sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
@@ -215,13 +112,4 @@ pipeline {
             }
         }
     }
-}
-
-static def csvToList(csvString) {
-    def arrayList = [];
-    def vals = csvString.split(",");
-    for (val in vals) {
-        arrayList.add(val.trim());
-    }
-    return arrayList;
 }
