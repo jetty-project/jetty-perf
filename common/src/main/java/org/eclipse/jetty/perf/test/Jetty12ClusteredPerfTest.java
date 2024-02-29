@@ -26,6 +26,7 @@ import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.perf.histogram.loader.ResponseStatusListener;
 import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
+import org.eclipse.jetty.perf.httpclient.StatisticalSyncSocketAddressResolver;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.perf.util.PlatformMonitorRecorder;
@@ -220,6 +221,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
 
         URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
+            .socketAddressResolver(new StatisticalSyncSocketAddressResolver())
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
