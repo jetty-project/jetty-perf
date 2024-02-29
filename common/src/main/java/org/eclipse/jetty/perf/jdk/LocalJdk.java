@@ -1,6 +1,7 @@
 package org.eclipse.jetty.perf.jdk;
 
 import java.nio.file.FileSystem;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class LocalJdk implements FilenameSupplier
     @Override
     public String get(FileSystem fileSystem, String hostname)
     {
+        List<Exception> exceptions = new ArrayList<>();
         for (FilenameSupplier supplier : suppliers)
         {
             try
@@ -28,9 +30,11 @@ public class LocalJdk implements FilenameSupplier
             }
             catch (Exception e)
             {
-                // ignore
+                exceptions.add(e);
             }
         }
-        throw new RuntimeException("JDK '" + jdkName + "' not found for host " + hostname);
+        RuntimeException runtimeException = new RuntimeException("JDK '" + jdkName + "' not found for host " + hostname);
+        exceptions.forEach(runtimeException::addSuppressed);
+        throw runtimeException;
     }
 }

@@ -41,12 +41,11 @@ public class JenkinsToolJdk implements FilenameSupplier
                 .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
             if (LOG.isDebugEnabled())
                 LOG.debug("Found java executable in Jenkins Tools '{}' of machine '{}' at {}", toolName, hostname, executable);
-            LOG.debug("host {} will use java executable {}", hostname, executable);
             return executable;
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Jenkins tool '" + toolName + "' not found", e);
+            throw new RuntimeException("Jenkins tool '" + toolName + "' not found under " + fileSystem.getPath(".").toAbsolutePath(), e);
         }
     }
 }
