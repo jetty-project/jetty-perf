@@ -48,7 +48,6 @@ public class PerfTestParams implements Serializable
     public String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
     public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "first");
     public int LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", -1);
-    public boolean LOADER_PRECREATE_CONNECTIONS = parameters.readAsBoolean("LOADER_PRECREATE_CONNECTIONS", false);
     public int WARMUP_DURATION = parameters.readAsInt("WARMUP_DURATION", 10);
     public int RUN_DURATION = parameters.readAsInt("RUN_DURATION", 20);
     public int LOADER_RATE = parameters.readAsInt("LOADER_RATE", 30000);
@@ -97,7 +96,6 @@ public class PerfTestParams implements Serializable
         result.put("PROBE_JVM_OPTS", PROBE_JVM_OPTS);
         result.put("LOADER_CONNECTION_POOL_FACTORY_TYPE", LOADER_CONNECTION_POOL_FACTORY_TYPE);
         result.put("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION);
-        result.put("LOADER_PRECREATE_CONNECTIONS", LOADER_PRECREATE_CONNECTIONS);
         result.put("WARMUP_DURATION", WARMUP_DURATION);
         result.put("RUN_DURATION", RUN_DURATION);
         result.put("LOADER_RATE", LOADER_RATE);
@@ -113,45 +111,20 @@ public class PerfTestParams implements Serializable
 
     public ConnectionPool.Factory buildLoaderConnectionPoolFactory()
     {
-        boolean preCreate = LOADER_PRECREATE_CONNECTIONS;
         int connections = LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION;
         switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
         {
             case "random":
-                return destination ->
-                {
-                    RandomConnectionPool pool = new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
-                    if (preCreate)
-                        pool.preCreateConnections(connections);
-                    return pool;
-                };
+                return destination -> new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
             case "round-robin":
-                return destination ->
-                {
-                    RoundRobinConnectionPool pool = new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
-                    if (preCreate)
-                        pool.preCreateConnections(connections);
-                    return pool;
-                };
+                return destination -> new RoundRobinConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
             default:
                 LOG.warn("Unsupported LOADER_CONNECTION_POOL_FACTORY_TYPE '{}', defaulting to 'first'", LOADER_CONNECTION_POOL_FACTORY_TYPE);
             case "first":
                 if (getHttpVersion().getVersion() <= 11)
-                    return destination ->
-                    {
-                        DuplexConnectionPool pool = new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
-                        if (preCreate)
-                            pool.preCreateConnections(connections);
-                        return pool;
-                    };
+                    return destination -> new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
                 else
-                    return destination ->
-                    {
-                        MultiplexConnectionPool pool = new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
-                        if (preCreate)
-                            pool.preCreateConnections(connections);
-                        return pool;
-                    };
+                    return destination -> new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
         }
     }
 
