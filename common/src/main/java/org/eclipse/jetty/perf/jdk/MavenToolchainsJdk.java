@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -38,7 +39,7 @@ public class MavenToolchainsJdk implements FilenameSupplier
             if (jdkHome != null)
             {
                 LOG.debug("host '{}' found jdkHome '{}' from toolchain", hostname, jdkHome);
-                Path javaExec = JvmUtil.findJavaExecutable(jdkHome);
+                Path javaExec = JvmUtil.findJavaExecutable(Paths.get(jdkHome));
                 if (javaExec != null)
                 {
                     // it's coming from toolchains so we trust the result
