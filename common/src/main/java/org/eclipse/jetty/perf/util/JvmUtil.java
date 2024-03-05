@@ -9,12 +9,12 @@ public class JvmUtil
     public static Path findCurrentJavaExecutable()
     {
         String javaHome = System.getProperty("java.home");
-        return findJavaExecutable(javaHome);
+        Path javaHomePath = Paths.get(javaHome);
+        return findJavaExecutable(javaHomePath);
     }
 
-    public static Path findJavaExecutable(String javaHome)
+    public static Path findJavaExecutable(Path javaHomePath)
     {
-        Path javaHomePath = Paths.get(javaHome);
         Path javaExec = javaHomePath.resolve("bin").resolve("java"); // *nix
         if (!Files.isExecutable(javaExec))
             javaExec = javaHomePath.resolve("Contents").resolve("Home").resolve("bin").resolve("java"); // OSX
