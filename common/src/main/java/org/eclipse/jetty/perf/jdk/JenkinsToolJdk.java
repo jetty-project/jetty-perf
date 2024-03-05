@@ -33,12 +33,13 @@ public class JenkinsToolJdk implements FilenameSupplier
             throw new RuntimeException("Jenkins tool '" + toolName + "' not found in " + jdkFolderFile.toAbsolutePath());
         try (Stream<Path> pathStream = Files.walk(jdkFolderFile, 2))
         {
+            Path finalJdkFolderFile = jdkFolderFile;
             String executable = pathStream
                 .map(path -> JvmUtil.findJavaExecutable(path.toString()))
                 .filter(Objects::nonNull)
                 .map(path -> path.toAbsolutePath().toString())
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found"));
+                .orElseThrow(() -> new RuntimeException("Jenkins tool '" + toolName + "' not found in " + finalJdkFolderFile.toAbsolutePath()));
             if (LOG.isDebugEnabled())
                 LOG.debug("Found java executable in Jenkins Tools '{}' of machine '{}' at {}", toolName, hostname, executable);
             return executable;
