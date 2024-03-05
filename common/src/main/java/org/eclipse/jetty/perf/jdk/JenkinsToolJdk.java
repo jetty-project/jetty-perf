@@ -35,7 +35,17 @@ public class JenkinsToolJdk implements FilenameSupplier
         {
             Path finalJdkFolderFile = jdkFolderFile;
             String executable = pathStream
-                .map(path -> JvmUtil.findJavaExecutable(path.toString()))
+                .map(path ->
+                {
+                    Path javaExecutableFromUtil = JvmUtil.findJavaExecutable(path.toString());
+                    Path javaExecutable = path.resolve("bin").resolve("java"); // *nix
+                    boolean exec = Files.isExecutable(javaExecutable);
+                    boolean exists = Files.exists(javaExecutable);
+                    System.out.println("Path: " + path + " javaExecutable: " + javaExecutable + " javaExecutableFromUtil: " + javaExecutableFromUtil + " exec? " + exec + " exists? " + exists);
+                    if (!exec)
+                        return null;
+                    return javaExecutable;
+                })
                 .filter(Objects::nonNull)
                 .map(path -> path.toAbsolutePath().toString())
                 .findFirst()
