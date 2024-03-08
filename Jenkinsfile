@@ -8,12 +8,12 @@ pipeline {
     parameters {
         // These settings are only used in this script.
         string(defaultValue: 'jetty-12.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
-        string(defaultValue: '12.0.7-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+        string(defaultValue: '12.0.8-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
         string(defaultValue: 'profiler-12.0.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
-        string(defaultValue: '*', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
+        string(defaultValue: 'CoreHandlerPerfTest#testNoGzipAsync', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
 
         // These settings are used both by the test JVM and by this script too.
-        string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
+        string(defaultValue: 'load-jdk21', description: 'JDK to use', name: 'JDK_TO_USE')
 
         // These settings are only used by the test JVM.
         string(defaultValue: 'ASYNC_PROF_CPU', description: 'Extra monitored items, as a CSV string.' +
@@ -23,13 +23,13 @@ pipeline {
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
         string(defaultValue: 'load-1,load-2,load-5,load-6', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the loader JVMs', name: 'LOADER_JVM_OPTS')
-        string(defaultValue: 'load-sample', description: 'Name of the probe machine', name: 'PROBE_NAME')
+        string(defaultValue: 'load-7', description: 'Name of the probe machine', name: 'PROBE_NAME')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the probe JVM', name: 'PROBE_JVM_OPTS')
 
         string(defaultValue: '60', description: 'Duration of warmup in seconds', name: 'WARMUP_DURATION')
         string(defaultValue: '180', description: 'Duration of measured run in seconds', name: 'RUN_DURATION')
-        string(defaultValue: '120000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
-        string(defaultValue: '', description: 'Number of threads used by the loaders, no value or a value < 1 indicates to use the number of cores', name: 'LOADER_THREADS')
+        string(defaultValue: '90000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
+        string(defaultValue: '2', description: 'Number of threads used by the loaders, no value or a value < 1 indicates to use the number of cores', name: 'LOADER_THREADS')
         string(defaultValue: '6000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
         string(defaultValue: '', description: 'The loaders\' connection pool type. You can choose from this list: first, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
         string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION')
