@@ -58,6 +58,7 @@ public class PerfTestParams implements Serializable
     public boolean SERVER_USE_VIRTUAL_THREADS = parameters.readAsBoolean("SERVER_USE_VIRTUAL_THREADS", false);
     public boolean SERVER_USE_BYTE_BUFFER_POOLING = parameters.readAsBoolean("SERVER_USE_BYTE_BUFFER_POOLING", true);
     public int SERVER_THREAD_POOL_SIZE = parameters.readAsInt("SERVER_THREAD_POOL_SIZE", 200);
+    public int SERVER_RESERVED_THREADS = parameters.readAsInt("SERVER_RESERVED_THREADS", -1);
     public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
