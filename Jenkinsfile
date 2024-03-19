@@ -21,7 +21,7 @@ pipeline {
 
         string(defaultValue: 'load-master-2', description: 'Name of the server machine', name: 'SERVER_NAME')
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
-        string(defaultValue: 'load-1,load-2,load-5,load-6', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
+        string(defaultValue: 'load-1,load-2,load-4,load-5,load-6,load-8', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the loader JVMs', name: 'LOADER_JVM_OPTS')
         string(defaultValue: 'load-7', description: 'Name of the probe machine', name: 'PROBE_NAME')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the probe JVM', name: 'PROBE_JVM_OPTS')
@@ -37,6 +37,7 @@ pipeline {
         string(defaultValue: '', description: 'The number of selector threads to use', name: 'SERVER_SELECTOR_COUNT')
         string(defaultValue: '', description: 'Use virtual threads. Defaults to false', name: 'SERVER_USE_VIRTUAL_THREADS')
         string(defaultValue: '', description: 'Pool byte buffers. Defaults to true', name: 'SERVER_USE_BYTE_BUFFER_POOLING')
+        string(defaultValue: '', description: 'The server\'s thread pool size. Defaults to 200', name: 'SERVER_THREAD_POOL_SIZE')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, h2c', name: 'HTTP_PROTOCOL')
     }
     tools {

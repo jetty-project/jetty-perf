@@ -90,7 +90,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
 
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
-        MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool();
+        MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE);
 
         if (perfTestParams.SERVER_USE_VIRTUAL_THREADS)
         {
