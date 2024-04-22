@@ -29,7 +29,7 @@ def doCreateTask(node, jdkToUse)
   }*/  
   return {
     node("${node}"){
-      stage("install ${node}") {
+      //stage("install ${node}") {
         
         echo "running for ${node}, ${jdkToUse}"  
         //steps {
@@ -38,7 +38,7 @@ def doCreateTask(node, jdkToUse)
           //sh "cp ${node}-toolchains.xml ~/${node}-toolchains.xml"
           //sh "echo ${node}"
         //}
-      }        
+      //}        
     }  
   }
 }
