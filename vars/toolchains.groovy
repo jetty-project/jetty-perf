@@ -23,7 +23,7 @@ def call(Map params = [:]) {
 
 def doCreateTask(tasks, node, jdkToUse)
 {  
-  echo "stash doCreateTask " + node + "," + jdkToUse
+  echo "doCreateTask ${node}, ${jdkToUse}"
   tasks[node] = {
     node("${node}"){
       stage("install $node}") {
@@ -35,5 +35,6 @@ def doCreateTask(tasks, node, jdkToUse)
         //}
       }        
     }  
-  }  
+  }
+  echo "done doCreateTask ${node}, ${jdkToUse}"
 }
