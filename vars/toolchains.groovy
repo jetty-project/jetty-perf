@@ -25,7 +25,7 @@ def doCreateTask(tasks, node, jdkToUse)
 {  
   echo "stash doCreateTask " + node + "," + jdkToUse
   tasks[node] = {
-    node(node){
+    node($node){
       stage("install $node}") {
         steps {
           tool "${jdkToUse}"
