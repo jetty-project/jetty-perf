@@ -30,6 +30,7 @@ def doCreateTask(node, jdkToUse)
           echo "running for ${node}, ${jdkToUse}"  
           tool "${jdkToUse}"
           unstash name: "toolchains.xml"
+          sh "ls -lrt"
           sh "cp ${node}-toolchains.xml ~/${node}-toolchains.xml"  
       }        
     //}  
