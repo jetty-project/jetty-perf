@@ -21,9 +21,9 @@ pipeline {
 
         string(defaultValue: 'load-master-2', description: 'Name of the server machine', name: 'SERVER_NAME')
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
-        string(defaultValue: 'load-1,load-2,load-4,load-5,load-6,load-8', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
+        string(defaultValue: 'load-1,load-2,load-3,load-4', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the loader JVMs', name: 'LOADER_JVM_OPTS')
-        string(defaultValue: 'load-7', description: 'Name of the probe machine', name: 'PROBE_NAME')
+        string(defaultValue: 'load-sample', description: 'Name of the probe machine', name: 'PROBE_NAME')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the probe JVM', name: 'PROBE_JVM_OPTS')
 
         string(defaultValue: '60', description: 'Duration of warmup in seconds', name: 'WARMUP_DURATION')
@@ -55,7 +55,7 @@ pipeline {
             }
             steps {
                 echo "before toolchains"
-                toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$LOADER_NAMES")
+                toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$LOADER_NAMES,$PROBE_NAME")
                 lock('jetty-perf') {
                     dir("jetty.build") {
                         echo "building jetty ${JETTY_BRANCH}"
