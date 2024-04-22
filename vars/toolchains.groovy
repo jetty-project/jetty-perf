@@ -6,7 +6,7 @@ def call(Map params = [:]) {
   def nodesToUse = params.containsKey("nodes") ? params.nodes.split(",") : [''] // exception if empty?
   def failFast = true;
   
-  jdkpathfinder nodes: ['load-master-2', 'load-2', 'load-5', 'load-3', 'load-6', 'load-sample'],
+  jdkpathfinder nodes: nodesToUse,
                 jdkNames: [jdkToUse]
   stash name: 'toolchains.xml', includes: '*toolchains.xml'
 
