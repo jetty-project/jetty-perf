@@ -12,19 +12,19 @@ def call(Map params = [:]) {
 
   echo "stash done"
   
-  Map tasks = [failFast: failFast]
+  def buildStages = [:]
   
   for(node in nodesToUse) {
-    doCreateTask(tasks, node, jdkToUse)  
+    buildStages.put(node,tasksdoCreateTask(node, jdkToUse)  
   }  
 
-  parallel(tasks)  
+  parallel(buildStages)  
 }
 
-def doCreateTask(tasks, node, jdkToUse)
+def doCreateTask(node, jdkToUse)
 {  
   echo "doCreateTask ${node}, ${jdkToUse}"
-  tasks[node] = {
+  return {
     node("${node}"){
       stage("install $node}") {
         //steps {
@@ -36,5 +36,4 @@ def doCreateTask(tasks, node, jdkToUse)
       }        
     }  
   }
-  echo "done doCreateTask ${node}, ${jdkToUse}"
 }
