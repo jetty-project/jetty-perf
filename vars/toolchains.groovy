@@ -24,19 +24,19 @@ def call(Map params = [:]) {
 def doCreateTask(node, jdkToUse)
 {  
   echo "doCreateTask ${node}, ${jdkToUse}"
-  return {
-    echo "running for ${node}, ${jdkToUse}"  
-  }  
   /*return {
+    echo "running for ${node}, ${jdkToUse}"  
+  }*/  
+  return {
     node("${node}"){
-      stage("install $node}") {
+      stage("install ${node}") {
         //steps {
           tool "${jdkToUse}"
-          unstash name: 'toolchains.xml'
+          unstash name: "toolchains.xml"
           sh "cp ${node}-toolchains.xml ~/${node}-toolchains.xml"
           sh "echo ${node}"
         //}
       }        
     }  
-  }*/
+  }
 }
