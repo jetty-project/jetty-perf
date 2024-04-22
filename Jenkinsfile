@@ -6,84 +6,23 @@ pipeline {
     buildDiscarder logRotator(numToKeepStr: '20')
   }
   parameters {
+    string(defaultValue: 'load-master-2', description: 'server node', name: 'SERVER_NAME')
+    string(defaultValue: 'load-1,load-2,load-3,load-4', description: 'loader nodes', name: 'LOADER_NAMES')
+    string(defaultValue: 'load-sample', description: 'probe node', name: 'PROBE_NAME')
+
     string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
     string(defaultValue: '', description: 'Test Pattern to use', name: 'TEST_TO_RUN')
     string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: '', description: 'JDK to use', name: 'JDK_TO_USE')
-    string(defaultValue: '', description: 'Use Loom if possible', name: 'USE_LOOM_IF_POSSIBLE')
     string(defaultValue: '', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
   }
   tools {
     jdk "${JDK_TO_USE}"
   }
   stages {
-    stage('generate-toolchains-file') {
-      agent any
-      options {
-          timeout(time: 30, unit: 'MINUTES')
-      }      
-      steps {
-        jdkpathfinder nodes: ['load-master-2', 'load-2', 'load-5', 'load-3', 'load-6', 'load-sample'],
-                jdkNames: ["${JDK_TO_USE}"]
-        stash name: 'toolchains.xml', includes: '*toolchains.xml'
-      }
-    }
-    stage('Get Load nodes') {
-      options {
-          timeout(time: 30, unit: 'MINUTES')
-      }          
-      parallel {
-        stage('install load-2') {
-          agent { node { label 'load-2' } }
-          steps {
-            tool "${JDK_TO_USE}"
-            unstash name: 'toolchains.xml'
-            sh "cp load-2-toolchains.xml ~/load-2-toolchains.xml"
-            sh "echo load-2"
-          }
-        }
-        stage('install load-3') {
-          agent { node { label 'load-3' } }
-          steps {
-            tool "${JDK_TO_USE}"
-            unstash name: 'toolchains.xml'
-            sh "cp load-3-toolchains.xml ~/load-3-toolchains.xml"
-            sh "echo load-3"
-          }
-        }
-        stage('install load-6') {
-          agent { node { label 'load-6' } }
-          steps {
-            tool "${JDK_TO_USE}"
-            unstash name: 'toolchains.xml'
-            sh "cp load-6-toolchains.xml ~/load-6-toolchains.xml"
-            sh "echo load-6"
-          }
-        }
-        stage('install load-5') {
-          agent { node { label 'load-5' } }
-          steps {
-            tool "${JDK_TO_USE}"
-            unstash name: 'toolchains.xml'
-            sh "cp load-5-toolchains.xml ~/load-5-toolchains.xml"
-            sh "echo load-5"
-          }
-        }
-        stage('install probe') {
-          agent { node { label 'load-sample' } }
-          steps {
-            tool "${JDK_TO_USE}"
-            unstash name: 'toolchains.xml'
-            sh "cp load-sample-toolchains.xml  ~/load-sample-toolchains.xml "
-            sh "cat load-sample-toolchains.xml"
-            sh "echo load-sample"
-          }
-        }
-      }
-    }
     stage('Build Jetty') {
-      agent { node { label 'load-master-2' } }      
+      agent { node { label "${SERVER_NAME}" } }
       when {
         beforeAgent true
         expression {
@@ -91,6 +30,7 @@ pipeline {
         }
       }
       steps {
+        toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$SERVER_NAME,$LOADER_NAMES,$PROBE_NAME")
         lock('jetty-perf') {
           dir("jetty.build") {
             echo "building jetty ${JETTY_BRANCH}"
@@ -117,7 +57,7 @@ pipeline {
       }
     }
     stage('jetty-perf') {
-      agent { node { label 'load-master-2' } }
+      agent { node { label "${SERVER_NAME}" } }
       options {
           timeout(time: 120, unit: 'MINUTES')
       }            
@@ -125,8 +65,6 @@ pipeline {
         lock('jetty-perf') {
           // clean the directory before clone
           sh "rm -rf *"
-          unstash name: 'toolchains.xml'
-          sh "cp load-master-2-toolchains.xml  ~/load-master-2-toolchains.xml "
           checkout([$class           : 'GitSCM',
                     branches         : [[name: "*/$JETTY_PERF_BRANCH"]],
                     extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
@@ -140,7 +78,6 @@ pipeline {
                   " -Dtest='${TEST_TO_RUN}'" +
                   " -Djetty.version='${JETTY_VERSION}'" +
                   " -Dtest.jdk.name='${JDK_TO_USE}'" +
-                  " -Dtest.jdk.useLoom='${USE_LOOM_IF_POSSIBLE}'" +
                   " -Dtest.optional.monitored.items='${OPTIONAL_MONITORED_ITEMS}'" +
                   ""
             }
