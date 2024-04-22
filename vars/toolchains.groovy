@@ -30,11 +30,13 @@ def doCreateTask(node, jdkToUse)
   return {
     node("${node}"){
       stage("install ${node}") {
+        
+        echo "running for ${node}, ${jdkToUse}"  
         //steps {
-          tool "${jdkToUse}"
-          unstash name: "toolchains.xml"
-          sh "cp ${node}-toolchains.xml ~/${node}-toolchains.xml"
-          sh "echo ${node}"
+          //tool "${jdkToUse}"
+          //unstash name: "toolchains.xml"
+          //sh "cp ${node}-toolchains.xml ~/${node}-toolchains.xml"
+          //sh "echo ${node}"
         //}
       }        
     }  
