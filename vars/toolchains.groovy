@@ -25,8 +25,9 @@ def doCreateTask(tasks, node, jdkToUse)
 {  
   echo "stash doCreateTask " + node + "," + jdkToUse
   tasks[node] = {
-    node($node){
+    //node(node){
       stage("install $node}") {
+        agent { node { label '$node' } }
         steps {
           tool "${jdkToUse}"
           unstash name: 'toolchains.xml'
@@ -34,6 +35,6 @@ def doCreateTask(tasks, node, jdkToUse)
           sh "echo ${node}"
         }
       }        
-    }  
+    //}  
   }  
 }
