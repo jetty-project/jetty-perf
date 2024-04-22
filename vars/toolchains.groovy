@@ -10,6 +10,8 @@ def call(Map params = [:]) {
                 jdkNames: [jdkToUse]
   stash name: 'toolchains.xml', includes: '*toolchains.xml'
 
+  echo "stash done"
+  
   Map tasks = [failFast: failFast]
   
   for(node in nodesToUse) {
@@ -19,18 +21,18 @@ def call(Map params = [:]) {
   parallel(tasks)  
 }
 
-  def doCreateTask(tasks, node, jdkToUse)
-  {  
-    tasks[node] = {
-      node(node){
-        stage('install ' + node) {
-          steps {
-            tool "${jdkToUse}"
-            unstash name: 'toolchains.xml'
-            sh "cp " + node +"-toolchains.xml ~/" + node + "-toolchains.xml"
-            sh "echo " + node
-          }
-        }        
-      }  
+def doCreateTask(tasks, node, jdkToUse)
+{  
+  tasks[node] = {
+    node(node){
+      stage('install ' + node) {
+        steps {
+          tool "${jdkToUse}"
+          unstash name: 'toolchains.xml'
+          sh "cp " + node +"-toolchains.xml ~/" + node + "-toolchains.xml"
+          sh "echo " + node
+        }
+      }        
     }  
-  }
+  }  
+}
