@@ -8,11 +8,9 @@ pipeline {
       buildDiscarder logRotator( numToKeepStr: '100' )
     }
     parameters {
-      string(defaultValue: '12.0.7-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
+      string(defaultValue: '12.0.9-SNAPSHOT', description: 'Jetty version', name: 'JETTY_VERSION')
       string(defaultValue: 'jetty-12.0.x', description: 'Jetty branch', name: 'JETTY_BRANCH')
       string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
-      string(defaultValue: '', description: 'Extra monitored items, as a CSV string.' +
-          ' You can choose from this list: GC_LOGS, PERF_STAT, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: 'OPTIONAL_MONITORED_ITEMS')
       string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
       string(defaultValue: 'main-12.0.x', description: 'Jetty perf branch', name: 'JETTY_PERF_BRANCH')
     }
