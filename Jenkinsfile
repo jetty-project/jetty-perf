@@ -54,6 +54,7 @@ pipeline {
                 }
             }
             steps {
+                toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$LOADER_NAMES")
                 lock('jetty-perf') {
                     dir("jetty.build") {
                         echo "building jetty ${JETTY_BRANCH}"
