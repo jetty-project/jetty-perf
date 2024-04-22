@@ -16,7 +16,8 @@ def call(Map params = [:]) {
     doCreateTask(tasks, node, jdkToUse)  
   }  
 
-  parallel(tasks)
+  parallel(tasks)  
+}
 
   def doCreateTask(tasks, node, jdkToUse)
   {  
@@ -33,5 +34,3 @@ def call(Map params = [:]) {
       }  
     }  
   }
-  
-}
