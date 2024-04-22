@@ -15,7 +15,7 @@ def call(Map params = [:]) {
   def buildStages = [:]
   
   for(node in nodesToUse) {
-    buildStages.put(node,tasksdoCreateTask(node, jdkToUse)  
+    buildStages.put(node,tasksdoCreateTask(node, jdkToUse))
   }  
 
   parallel(buildStages)  
