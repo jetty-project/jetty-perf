@@ -2,7 +2,7 @@
 
 def call(Map params = [:]) {
 
-  def jdkToUse = params.containsKey("jdkToUse") ? params.branchesToNotify : '' // exception if empty?
+  def jdkToUse = params.containsKey("jdkToUse") ? params.jdkToUse : '' // exception if empty?
   def nodesToUse = params.containsKey("nodes") ? params.nodes.split(",") : [''] // exception if empty?
   def failFast = true;
   
