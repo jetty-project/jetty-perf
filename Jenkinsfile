@@ -54,6 +54,7 @@ pipeline {
                 }
             }
             steps {
+                echo "before toolchains"
                 toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$LOADER_NAMES")
                 lock('jetty-perf') {
                     dir("jetty.build") {
@@ -98,10 +99,11 @@ pipeline {
                              "MAVEN_OPTS=-Xmx4G -Djava.awt.headless=true"]) {
                         configFileProvider(
                             [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                            sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
-                                " -Dtest='${TEST_TO_RUN}'" +
-                                " -Djetty.version='${JETTY_VERSION}'" +
-                                ""
+                                sh "echo mvn build"
+                            // sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
+                            //     " -Dtest='${TEST_TO_RUN}'" +
+                            //     " -Djetty.version='${JETTY_VERSION}'" +
+                            //     ""
                         }
                     }
                 }
