@@ -25,6 +25,9 @@ def doCreateTask(node, jdkToUse)
 {  
   echo "doCreateTask ${node}, ${jdkToUse}"
   return {
+    echo "running for ${node}, ${jdkToUse}"  
+  }  
+  /*return {
     node("${node}"){
       stage("install $node}") {
         //steps {
@@ -35,5 +38,5 @@ def doCreateTask(node, jdkToUse)
         //}
       }        
     }  
-  }
+  }*/
 }
