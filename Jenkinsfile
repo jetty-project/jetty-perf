@@ -2,9 +2,9 @@
 
 pipeline {
   agent any
-  triggers {
-    cron '@daily'
-  }
+//   triggers {
+//     cron '@daily'
+//   }
   options {
     buildDiscarder logRotator(numToKeepStr: '100')
   }
