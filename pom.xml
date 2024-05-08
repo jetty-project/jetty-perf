@@ -19,8 +19,8 @@
     <!-- Do not fail the build if a test name that only exists in a single module was specified. -->
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
-    <jetty.version>12.0.7-SNAPSHOT</jetty.version>
-    <jetty-load-generator.version>4.0.6</jetty-load-generator.version>
+    <jetty.version>12.0.10-SNAPSHOT</jetty.version>
+    <jetty-load-generator.version>4.0.9</jetty-load-generator.version>
   </properties>
 
   <modules>
