@@ -156,11 +156,11 @@ public class PerfTestParams implements Serializable
         switch (protocol)
         {
             case http:
-                return 5_500;
+                return 5_000;
             case https:
                 return 6_500;
             case h2c:
-                return 21_000;
+                return 36_000;
             case h2:
                 return 75_000;
             default:
