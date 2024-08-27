@@ -251,7 +251,7 @@ public class AsyncPerfTest implements Serializable
     {
         Server server = new Server();
 
-        server.setDumpBeforeStop(true);
+//        server.setDumpBeforeStop(true);
 
         ByteBufferPool bufferPool = new ArrayByteBufferPool(-1, -1, -1, -1, -1, -1);
         server.addBean(bufferPool);
