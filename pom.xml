@@ -4,7 +4,7 @@
 
   <groupId>org.mortbay.jetty.perf</groupId>
   <artifactId>jetty-perf-profiling</artifactId>
-  <version>12.0.0-SNAPSHOT</version>
+  <version>12.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Jetty :: Performance profiling test suite</name>
   <url>https://github.com/jetty-project/jetty-perf</url>
@@ -19,7 +19,7 @@
     <!-- Do not fail the build if a test name that only exists in a single module was specified. -->
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
-    <jetty.version>12.0.10-SNAPSHOT</jetty.version>
+    <jetty.version>12.1.0-SNAPSHOT</jetty.version>
     <jetty-load-generator.version>4.0.9</jetty-load-generator.version>
   </properties>
 

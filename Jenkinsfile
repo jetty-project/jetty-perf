@@ -7,9 +7,9 @@ pipeline {
     }
     parameters {
         // These settings are only used in this script.
-        string(defaultValue: 'jetty-12.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
-        string(defaultValue: '12.0.10-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-        string(defaultValue: 'profiler-12.0.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
+        string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+        string(defaultValue: '12.1.0-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+        string(defaultValue: 'profiler-12.1.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
         string(defaultValue: 'CoreHandlerPerfTest#testNoGzipAsync', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
 
         // These settings are used both by the test JVM and by this script too.
@@ -28,8 +28,8 @@ pipeline {
 
         string(defaultValue: '60', description: 'Duration of warmup in seconds', name: 'WARMUP_DURATION')
         string(defaultValue: '180', description: 'Duration of measured run in seconds', name: 'RUN_DURATION')
-        string(defaultValue: '90000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
-        string(defaultValue: '2', description: 'Number of threads used by the loaders, no value or a value < 1 indicates to use the number of cores', name: 'LOADER_THREADS')
+        string(defaultValue: '60000', description: 'Rate of requests/s of each individual loader', name: 'LOADER_RATE')
+        string(defaultValue: '1', description: 'Number of threads used by the loaders, no value or a value < 1 indicates to use the number of cores', name: 'LOADER_THREADS')
         string(defaultValue: '6000', description: 'Rate of requests/s of the probe', name: 'PROBE_RATE')
         string(defaultValue: '', description: 'The loaders\' connection pool type. You can choose from this list: first, round-robin, random', name: 'LOADER_CONNECTION_POOL_FACTORY_TYPE')
         string(defaultValue: '', description: 'The loaders\' max connection per destination', name: 'LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION')
