@@ -9,9 +9,9 @@ pipeline {
     buildDiscarder logRotator(numToKeepStr: '100')
   }
   parameters {
-    string(defaultValue: '12.0.13-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-    string(defaultValue: 'jetty-12.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
-    string(defaultValue: 'main-12.0.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
+    string(defaultValue: '12.1.0-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+    string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+    string(defaultValue: 'main-12.1.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
   }
