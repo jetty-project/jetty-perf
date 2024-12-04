@@ -67,6 +67,8 @@ public class MavenToolchainsJdk implements FilenameSupplier
         Path toolchainsPath = fileSystem.getPath(fileName);
         if (!Files.exists(toolchainsPath))
             toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "toolchains.xml");
+        if (!Files.exists(toolchainsPath))
+            toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "discovered-jdk-toolchains-cache.xml");
 
         if (Files.exists(toolchainsPath))
         {
@@ -89,8 +91,11 @@ public class MavenToolchainsJdk implements FilenameSupplier
         }
         else
         {
-            LOG.debug("cannot find toolchain file {}", toolchainsPath);
-            LOG.debug("files in directory: {}", Files.list(Paths.get( ".")).collect(Collectors.toList()));
+            if (LOG.isDebugEnabled())
+            {
+                LOG.debug("cannot find toolchain file {}", toolchainsPath);
+                LOG.debug("files in directory: {}", Files.list(Paths.get(".")).collect(Collectors.toList()));
+            }
             return null;
         }
     }
