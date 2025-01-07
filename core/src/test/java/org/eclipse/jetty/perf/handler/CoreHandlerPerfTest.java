@@ -36,7 +36,7 @@ public class CoreHandlerPerfTest
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000,  3_600, 600_000, 15.0",
-        "h2c,  60_000, 27_000, 650_000, 15.0"
+        "h2c,  60_000, 18_000, 650_000, 15.0"
     })
     public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -102,8 +102,8 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000,  2_500, 600_000, 15.0",
-        "h2c,  60_000, 16_000, 650_000, 15.0"
+        "http, 60_000, 2_500, 600_000, 15.0",
+        "h2c,  60_000, 8_000, 650_000, 15.0"
     })
     public void testNoGzipFullyAsyncHandlerTree(PerfTestParams.Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
