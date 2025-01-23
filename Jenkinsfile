@@ -6,8 +6,8 @@ pipeline {
     buildDiscarder logRotator(numToKeepStr: '20')
   }
   parameters {
-    string(defaultValue: 'load-master-2', description: 'server node', name: 'SERVER_NAME')
-    string(defaultValue: 'load-1,load-2,load-3,load-4', description: 'loader nodes', name: 'LOADER_NAMES')
+    string(defaultValue: 'load-master', description: 'server node', name: 'SERVER_NAME')
+    string(defaultValue: 'load-client-1,load-client-2,load-client-3,load-client-4', description: 'loader nodes', name: 'LOADER_NAMES')
     string(defaultValue: 'load-sample', description: 'probe node', name: 'PROBE_NAME')
 
     string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
