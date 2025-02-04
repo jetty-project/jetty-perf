@@ -177,7 +177,7 @@ public class PerfTestParams implements Serializable
             case https:
                 return 1_000_000;
             case h2c:
-                return 700_000;
+                return 850_000;
             case h2:
                 return 1_000_000;
             default:
