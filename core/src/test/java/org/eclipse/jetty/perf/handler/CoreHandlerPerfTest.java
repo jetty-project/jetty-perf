@@ -35,7 +35,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  3_600, 800_000, 15.0",
+        "http, 60_000, 1,  4_300,  30_000, 10.0",
         "h2c,  60_000, 2, 18_000, 850_000, 15.0"
     })
     public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
@@ -57,7 +57,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  3_600, 800_000, 15.0",
+        "http, 60_000, 1,  4_300,  30_000, 10.0",
         "h2c,  60_000, 2, 27_000, 850_000, 15.0"
     })
     public void testNoGzipSyncUsingBlocker(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
@@ -77,10 +77,9 @@ public class CoreHandlerPerfTest
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
-    @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  3_600, 800_000, 15.0",
+        "http, 60_000, 1,  3_600,  30_000, 10.0",
         "h2c,  60_000, 2, 27_000, 850_000, 15.0"
     })
     public void testNoGzipSyncUsingOutputStream(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
@@ -102,7 +101,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1, 3_000, 800_000, 15.0",
+        "http, 60_000, 1, 3_200,  30_000, 10.0",
         "h2c,  60_000, 2, 8_000, 850_000, 15.0"
     })
     public void testNoGzipFullyAsyncHandlerTree(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
