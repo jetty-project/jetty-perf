@@ -157,7 +157,7 @@ public class PerfTestParams implements Serializable
     {
         // A fairly large number is required to make sure the JIT does its magic,
         // otherwise a native version of the probe would be needed.
-        return 30000;
+        return 10_000;
     }
 
     public long getExpectedP99ServerLatency()
