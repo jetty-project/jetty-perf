@@ -24,6 +24,7 @@ import org.w3c.dom.NodeList;
 public class MavenToolchainsJdk implements FilenameSupplier
 {
     private static final Logger LOG = LoggerFactory.getLogger(MavenToolchainsJdk.class);
+    private static final String REGEX_PREFIX = "regex:";
 
     private final String version;
 
@@ -82,8 +83,20 @@ public class MavenToolchainsJdk implements FilenameSupplier
                 {
                     Node node = nodeList.item(i);
                     String version = (String)xPath.compile("provides/version").evaluate(node, XPathConstants.STRING);
-                    if (version.equals(this.version))
-                        return (String)xPath.compile("configuration/jdkHome").evaluate(node, XPathConstants.STRING);
+
+                    boolean matches = false;
+                    if (this.version.startsWith(REGEX_PREFIX) && version.matches(this.version.substring(REGEX_PREFIX.length())))
+                        matches = true;
+                    else if (version.equals(this.version))
+                        matches = true;
+
+                    if (matches)
+                    {
+                        String jdkHome = (String)xPath.compile("configuration/jdkHome").evaluate(node, XPathConstants.STRING);
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("Found matching JDK: version {} at {}", version, jdkHome);
+                        return jdkHome;
+                    }
                 }
                 return null;
             }
