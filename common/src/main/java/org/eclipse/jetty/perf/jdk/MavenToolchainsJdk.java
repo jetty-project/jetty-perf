@@ -1,16 +1,18 @@
 package org.eclipse.jetty.perf.jdk;
 
-import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.eclipse.jetty.perf.util.JvmUtil;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;
@@ -62,10 +64,10 @@ public class MavenToolchainsJdk implements FilenameSupplier
         String fileName = hostname + "-toolchains.xml";
         Path toolchainsPath = fileSystem.getPath(fileName);
         if (!Files.exists(toolchainsPath))
-        {
-            LOG.debug("cannot find generated toolchains file {}", toolchainsPath);
             toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "toolchains.xml");
-        }
+        // This file is generated from sdkman installations by: mvn org.apache.maven.plugins:maven-toolchains-plugin:3.2.0:generate-jdk-toolchains-xml
+        if (!Files.exists(toolchainsPath))
+            toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "discovered-jdk-toolchains-cache.xml");
 
         if (Files.exists(toolchainsPath))
         {
@@ -88,7 +90,14 @@ public class MavenToolchainsJdk implements FilenameSupplier
         }
         else
         {
-            LOG.debug("cannot find configured toolchains file {}", toolchainsPath);
+            if (LOG.isDebugEnabled())
+            {
+                LOG.debug("cannot find toolchain file {}", toolchainsPath);
+                try (Stream<Path> stream = Files.list(Paths.get(".")))
+                {
+                    LOG.debug("files in directory: {}", stream.collect(Collectors.toList()));
+                }
+            }
             return null;
         }
     }
