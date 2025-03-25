@@ -51,7 +51,7 @@ public class PerfTestParams implements Serializable
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
             .node(new Node("load-sample"))
-            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xint", "-Xms8g", "-Xmx8g")))
+            .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
     public enum Protocol
@@ -89,14 +89,16 @@ public class PerfTestParams implements Serializable
 
     private final Protocol protocol;
     private final int loaderRate;
+    private final int loaderThreads;
     private final long expectedP99ServerLatency;
     private final long expectedP99ProbeLatency;
     private final double expectedP99ErrorMargin;
 
-    public PerfTestParams(Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin)
+    public PerfTestParams(Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin)
     {
         this.protocol = protocol;
         this.loaderRate = loaderRate;
+        this.loaderThreads = loaderThreads;
         this.expectedP99ServerLatency = expectedP99ServerLatency;
         this.expectedP99ProbeLatency = expectedP99ProbeLatency;
         this.expectedP99ErrorMargin = expectedP99ErrorMargin;
@@ -146,9 +148,16 @@ public class PerfTestParams implements Serializable
         return loaderRate;
     }
 
+    public int getLoaderThreads()
+    {
+        return loaderThreads;
+    }
+
     public int getProbeRate()
     {
-        return 100;
+        // A fairly large number is required to make sure the JIT does its magic,
+        // otherwise a native version of the probe would be needed.
+        return 30000;
     }
 
     public long getExpectedP99ServerLatency()
