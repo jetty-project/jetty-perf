@@ -30,7 +30,7 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.JHICCUP
     );
 
-    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.copyOf(new HashSet<ConfigurableMonitor.Item>() // javac 11 needs HashSet to be typed
+    private static final EnumSet<ConfigurableMonitor.Item> MONITORED_ITEMS = EnumSet.copyOf(new HashSet<>()
     {{
         addAll(DEFAULT_MONITORED_ITEMS);
         addAll(ConfigurableMonitor.parseConfigurableMonitorItems(OPTIONAL_MONITORED_ITEMS));
@@ -50,7 +50,7 @@ public class PerfTestParams implements Serializable
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         )
         .nodeArray(new SimpleNodeArrayConfiguration("probe")
-            .node(new Node("load-sample"))
+            .node(new Node("load-client-5"))
             .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts("-Xms8g", "-Xmx8g")))
         );
 
@@ -157,7 +157,7 @@ public class PerfTestParams implements Serializable
     {
         // A fairly large number is required to make sure the JIT does its magic,
         // otherwise a native version of the probe would be needed.
-        return 10_000;
+        return 15_000;
     }
 
     public long getExpectedP99ServerLatency()
