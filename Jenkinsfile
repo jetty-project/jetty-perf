@@ -7,9 +7,8 @@ pipeline {
   }
   parameters {
     string(defaultValue: 'load-master', description: 'server node', name: 'SERVER_NAME')
-    string(defaultValue: 'load-client-1,load-client-2,load-client-3,load-client-4', description: 'loader nodes', name: 'LOADER_NAMES')
+    string(defaultValue: 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5', description: 'loader nodes', name: 'LOADER_NAMES')
     string(defaultValue: 'load-sample', description: 'probe node', name: 'PROBE_NAME')
-    string(defaultValue: 'load-client-5', description: 'extra nodes', name: 'EXTRA_NAMES')
 
     string(defaultValue: '', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: '', description: 'Jetty perf branch name to use', name: 'JETTY_PERF_BRANCH')
@@ -31,7 +30,7 @@ pipeline {
         }
       }
       steps {
-        toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$SERVER_NAME,$LOADER_NAMES,$PROBE_NAME,$EXTRA_NAMES")
+        toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$SERVER_NAME,$LOADER_NAMES,$PROBE_NAME")
         lock('jetty-perf') {
           dir("jetty.build") {
             echo "building jetty ${JETTY_BRANCH}"
