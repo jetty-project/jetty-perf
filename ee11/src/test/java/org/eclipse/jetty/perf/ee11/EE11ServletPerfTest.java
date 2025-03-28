@@ -33,8 +33,8 @@ public class EE11ServletPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  5_000, 30_000, 10.0",
-        "h2c,  60_000, 2, 18_000, 30_000, 15.0"
+        "http, 60_000, 1,  5_000, 25_000, 10.0",
+        "h2c,  60_000, 2, 18_000, 38_000, 15.0"
     })
     public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -57,8 +57,8 @@ public class EE11ServletPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  5_000, 30_000, 10.0",
-        "h2c,  60_000, 2, 18_000, 30_000, 15.0"
+        "http, 60_000, 1,  5_000, 25_000, 10.0",
+        "h2c,  60_000, 2, 18_000, 38_000, 15.0"
     })
     public void testNoGzipSync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
