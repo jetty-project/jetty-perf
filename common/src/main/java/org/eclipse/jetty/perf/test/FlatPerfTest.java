@@ -50,7 +50,7 @@ public class FlatPerfTest
 
             System.out.println(" Asserting server");
             // assert server had a given throughput
-            succeeded &= assertThroughput(reportRootPath, serverCfg, totalLoadersRequestCount, 1);
+            succeeded &= assertThroughput(reportRootPath, serverCfg, totalLoadersRequestCount + totalProbeRequestCount, 1);
             // assert server had a given max latency
             succeeded &= assertP99Latency(reportRootPath, serverCfg, params.getExpectedP99ServerLatency(), params.getExpectedP99ErrorMargin(), 2);
 

@@ -25,8 +25,8 @@ public class SyncHandlerUsingOutputStream extends Handler.Abstract
             Content.Source.consumeAll(request);
             response.setStatus(200);
             outputStream.write(answer);
-            callback.succeeded();
-            return true;
         }
+        callback.succeeded();
+        return true;
     }
 }

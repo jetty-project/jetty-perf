@@ -21,7 +21,7 @@
 
     <cometd.version>8.0.0-SNAPSHOT</cometd.version>
     <jetty.version>12.1.0-SNAPSHOT</jetty.version>
-    <jetty-load-generator.version>4.0.9</jetty-load-generator.version>
+    <jetty-load-generator.version>4.0.18</jetty-load-generator.version>
   </properties>
 
   <modules>

@@ -34,12 +34,12 @@ public class EE10ServletPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000,  5_500, 625_000, 15.0",
-        "h2c,  60_000, 21_000, 650_000, 15.0"
+        "http, 60_000, 1,  5_000, 30_000, 10.0",
+        "h2c,  60_000, 2, 18_000, 30_000, 15.0"
     })
-    public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
+    public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
-        PerfTestParams params = new PerfTestParams(protocol, loaderRate, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
+        PerfTestParams params = new PerfTestParams(protocol, loaderRate, loaderThreads, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
@@ -58,12 +58,12 @@ public class EE10ServletPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000,  5_500, 625_000, 15.0",
-        "h2c,  60_000, 21_000, 650_000, 15.0"
+        "http, 60_000, 1,  5_000, 30_000, 10.0",
+        "h2c,  60_000, 2, 18_000, 30_000, 15.0"
     })
-    public void testNoGzipSync(PerfTestParams.Protocol protocol, int loaderRate, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
+    public void testNoGzipSync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
-        PerfTestParams params = new PerfTestParams(protocol, loaderRate, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
+        PerfTestParams params = new PerfTestParams(protocol, loaderRate, loaderThreads, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
