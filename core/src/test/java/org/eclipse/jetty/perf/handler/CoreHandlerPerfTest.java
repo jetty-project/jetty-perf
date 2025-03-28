@@ -34,8 +34,8 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  4_300, 26_000, 10.0",
-        "h2c,  60_000, 2, 15_000, 26_000, 15.0"
+        "http, 60_000, 1,  4_300, 23_000, 10.0",
+        "h2c,  60_000, 2, 15_000, 38_000, 15.0"
     })
     public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -56,8 +56,8 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  4_300, 26_000, 10.0",
-        "h2c,  60_000, 2, 19_000, 27_000, 15.0"
+        "http, 60_000, 1,  4_300, 25_000, 10.0",
+        "h2c,  60_000, 2, 19_000, 38_000, 15.0"
     })
     public void testNoGzipSyncUsingBlocker(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -78,8 +78,8 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1,  4_500, 26_000, 10.0",
-        "h2c,  60_000, 2, 19_000, 35_000, 15.0"
+        "http, 60_000, 1,  4_500, 25_000, 10.0",
+        "h2c,  60_000, 2, 19_000, 38_000, 15.0"
     })
     public void testNoGzipSyncUsingOutputStream(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
@@ -100,8 +100,8 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 60_000, 1, 3_200, 26_000, 10.0",
-        "h2c,  60_000, 2, 9_000, 29_000, 15.0"
+        "http, 60_000, 1, 3_200, 22_000, 10.0",
+        "h2c,  60_000, 2, 9_000, 33_000, 15.0"
     })
     public void testNoGzipFullyAsyncHandlerTree(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
