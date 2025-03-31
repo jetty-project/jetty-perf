@@ -2,7 +2,6 @@ package org.eclipse.jetty.perf.ee10;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
@@ -35,7 +34,7 @@ public class EE10ServletPerfTest
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000, 1,  5_000, 25_000, 10.0",
-        "h2c,  60_000, 2, 18_000, 38_000, 15.0"
+        "h2c,  60_000, 2, 15_000, 38_000, 15.0"
     })
     public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {

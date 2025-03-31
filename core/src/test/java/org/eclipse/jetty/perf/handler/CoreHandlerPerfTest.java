@@ -1,7 +1,6 @@
 package org.eclipse.jetty.perf.handler;
 
 import java.time.Duration;
-
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -57,7 +56,7 @@ public class CoreHandlerPerfTest
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 60_000, 1,  4_300, 25_000, 10.0",
-        "h2c,  60_000, 2, 19_000, 38_000, 15.0"
+        "h2c,  60_000, 2, 16_000, 38_000, 15.0"
     })
     public void testNoGzipSyncUsingBlocker(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
     {
