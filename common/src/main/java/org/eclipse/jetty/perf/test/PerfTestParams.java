@@ -2,6 +2,7 @@ package org.eclipse.jetty.perf.test;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.security.Security;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +13,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.conscrypt.OpenSSLProvider;
 import org.eclipse.jetty.client.ConnectionPool;
 import org.eclipse.jetty.client.DuplexConnectionPool;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
@@ -60,6 +64,7 @@ public class PerfTestParams implements Serializable
     public int SERVER_THREAD_POOL_SIZE = parameters.readAsInt("SERVER_THREAD_POOL_SIZE", 200);
     public int SERVER_RESERVED_THREADS = parameters.readAsInt("SERVER_RESERVED_THREADS", -1);
     public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
+    public String JSSE_PROVIDER = parameters.read("JSSE_PROVIDER", "");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.OS_CPU,
@@ -107,6 +112,7 @@ public class PerfTestParams implements Serializable
         result.put("SERVER_SELECTOR_COUNT", SERVER_SELECTOR_COUNT);
         result.put("SERVER_USE_VIRTUAL_THREADS", SERVER_USE_VIRTUAL_THREADS);
         result.put("HTTP_PROTOCOL", HTTP_PROTOCOL);
+        result.put("JSSE_PROVIDER", JSSE_PROVIDER);
 
         return result;
     }
@@ -292,5 +298,21 @@ public class PerfTestParams implements Serializable
             case "https", "h2" -> true;
             default -> false;
         };
+    }
+
+    public String getJsseProvider()
+    {
+        switch (JSSE_PROVIDER)
+        {
+            case "Conscrypt" ->
+                Security.addProvider(new OpenSSLProvider());
+            case "BCJSSE" ->
+            {
+                Security.addProvider(new BouncyCastleProvider());
+                Security.addProvider(new BouncyCastleJsseProvider());
+            }
+            default -> {}
+        }
+        return JSSE_PROVIDER;
     }
 }

@@ -40,6 +40,7 @@ pipeline {
         string(defaultValue: '', description: 'The server\'s thread pool size. Defaults to 200', name: 'SERVER_THREAD_POOL_SIZE')
         string(defaultValue: '', description: 'The server\'s reserved threads. Defaults to -1', name: 'SERVER_RESERVED_THREADS')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, h2c', name: 'HTTP_PROTOCOL')
+        string(defaultValue: '', description: 'The JSSE provider to use, defaults to the JVM''s internal one. You can choose from this list: -empty string-, Conscrypt, BCJSSE', name: 'JSSE_PROVIDER')
     }
     tools {
         jdk "${JDK_TO_USE}"

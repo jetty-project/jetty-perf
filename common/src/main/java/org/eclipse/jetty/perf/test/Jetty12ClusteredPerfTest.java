@@ -139,6 +139,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
             }
             serverSslContextFactory.setKeyStorePath(targetKeystore.toString());
             serverSslContextFactory.setKeyStorePassword("storepwd");
+            serverSslContextFactory.setProvider(perfTestParams.getJsseProvider());
             SslConnectionFactory ssl = new SslConnectionFactory(serverSslContextFactory, http.getProtocol());
             connectionFactories.add(ssl);
         }
@@ -220,13 +221,17 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         Map<String, Object> env = clusterTools.nodeEnvironment();
         env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
 
+        SslContextFactory.Client sslContextFactory = new SslContextFactory.Client(true);
+        if (perfTestParams.isTlsEnabled())
+            sslContextFactory.setProvider(perfTestParams.getJsseProvider());
+
         URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .socketAddressResolver(new StatisticalSyncSocketAddressResolver())
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
-            .sslContextFactory(new SslContextFactory.Client(true))
+            .sslContextFactory(sslContextFactory)
             .runFor(perfTestParams.getWarmupDuration().plus(perfTestParams.getRunDuration()).toSeconds(), TimeUnit.SECONDS)
             .threads(perfTestParams.getLoaderThreads())
             .rateRampUpPeriod(perfTestParams.getWarmupDuration().toSeconds() / 2)
@@ -305,12 +310,16 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         Map<String, Object> env = clusterTools.nodeEnvironment();
         env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
 
+        SslContextFactory.Client sslContextFactory = new SslContextFactory.Client(true);
+        if (perfTestParams.isTlsEnabled())
+            sslContextFactory.setProvider(perfTestParams.getJsseProvider());
+
         URI serverUri = perfTestParams.getServerUri();
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
             .port(serverUri.getPort())
-            .sslContextFactory(new SslContextFactory.Client(true))
+            .sslContextFactory(sslContextFactory)
             .runFor(perfTestParams.getWarmupDuration().plus(perfTestParams.getRunDuration()).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
             .resourceRate(perfTestParams.getProbeRate())
