@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-    agent { node { label 'load-master' } }
+    agent none // { node { label 'load-master' } }
     options {
         buildDiscarder logRotator(numToKeepStr: '100')
     }
@@ -42,9 +42,9 @@ pipeline {
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, h2c', name: 'HTTP_PROTOCOL')
         string(defaultValue: '', description: 'The JSSE provider to use, defaults to the JVM internal one. You can choose from this list: -empty string-, Conscrypt, BCJSSE', name: 'JSSE_PROVIDER')
     }
-    tools {
-        jdk "${JDK_TO_USE}"
-    }
+    //tools {
+    //    jdk "${JDK_TO_USE}"
+    //}
     stages {
         stage('Build Jetty') {
             agent { node { label "${SERVER_NAME}" } }
