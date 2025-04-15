@@ -19,7 +19,7 @@ pipeline {
         string(defaultValue: 'ASYNC_PROF_CPU', description: 'Extra monitored items, as a CSV string.' +
             ' You can choose from this list: GC_LOGS, SJK_TTOP, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES', name: 'OPTIONAL_MONITORED_ITEMS')
 
-        string(defaultValue: 'load-master-2', description: 'Name of the server machine', name: 'SERVER_NAME')
+        string(defaultValue: 'load-master', description: 'Name of the server machine', name: 'SERVER_NAME')
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
         string(defaultValue: 'load-1,load-2,load-3,load-4', description: 'CSV list of names of the loader machines', name: 'LOADER_NAMES')
         string(defaultValue: '-Xms8G -Xmx8G', description: 'Arguments of the loader JVMs', name: 'LOADER_JVM_OPTS')
