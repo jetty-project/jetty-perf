@@ -280,15 +280,16 @@ public class PerfTestParams implements Serializable
 
     public HttpVersion getHttpVersion()
     {
-        switch (HTTP_PROTOCOL)
+        return switch (HTTP_PROTOCOL)
         {
-            case "h2c":
-                return HttpVersion.HTTP_2;
-            default:
+            case "http", "https" -> HttpVersion.HTTP_1_1;
+            case "h2c", "h2" -> HttpVersion.HTTP_2;
+            default ->
+            {
                 LOG.warn("Unsupported HTTP_PROTOCOL '{}', defaulting to 'http'", HTTP_PROTOCOL);
-            case "http":
-                return HttpVersion.HTTP_1_1;
-        }
+                yield HttpVersion.HTTP_1_1;
+            }
+        };
     }
 
     public boolean isTlsEnabled()
