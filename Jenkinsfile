@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-    agent { node { label 'load-master-2' } }
+    agent none
     options {
         buildDiscarder logRotator(numToKeepStr: '100')
     }
@@ -40,9 +40,6 @@ pipeline {
         string(defaultValue: '', description: 'The server\'s thread pool size. Defaults to 200', name: 'SERVER_THREAD_POOL_SIZE')
         string(defaultValue: '', description: 'The server\'s reserved threads. Defaults to -1', name: 'SERVER_RESERVED_THREADS')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, h2c', name: 'HTTP_PROTOCOL')
-    }
-    tools {
-        jdk "${JDK_TO_USE}"
     }
     stages {
         stage('Build Jetty') {
