@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-  agent any
+  agent none
   options {
     buildDiscarder logRotator(numToKeepStr: '20')
   }
@@ -16,9 +16,6 @@ pipeline {
     string(defaultValue: '', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: '', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: '', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
-  }
-  tools {
-    jdk "${JDK_TO_USE}"
   }
   stages {
     stage('Build Jetty') {
