@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-  agent 'linux-light'
+  agent any
   triggers {
     cron '@daily'
   }
