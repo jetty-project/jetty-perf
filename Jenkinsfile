@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-  agent any
+  agent { node { label 'linux-light' } }
   triggers {
     cron '@daily'
   }
