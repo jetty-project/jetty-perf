@@ -1,17 +1,17 @@
 package org.eclipse.jetty.perf.jdk;
 
-import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +67,8 @@ public class MavenToolchainsJdk implements FilenameSupplier
         Path toolchainsPath = fileSystem.getPath(fileName);
         if (!Files.exists(toolchainsPath))
             toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "toolchains.xml");
+        if (!Files.exists(toolchainsPath))
+            toolchainsPath = fileSystem.getPath(System.getProperty("user.home"), ".m2", "discovered-jdk-toolchains-cache.xml");
 
         if (Files.exists(toolchainsPath))
         {
