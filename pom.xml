@@ -41,7 +41,7 @@
     <dependency>
       <groupId>org.mortbay.jetty.orchestrator</groupId>
       <artifactId>jetty-cluster-orchestrator</artifactId>
-      <version>1.1.5</version>
+      <version>1.1.6</version>
     </dependency>
 
     <!-- Exclude then explicitly depend on jetty-load-generator deps to make sure we use the right jetty version -->
