@@ -8,6 +8,7 @@ import org.eclipse.jetty.ee9.servlet.ServletHolder;
 import org.eclipse.jetty.perf.test.FlatPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.util.Jetty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,7 +31,7 @@ public class EE9ServletPerfTest
         String className = testInfo.getTestClass().orElseThrow().getName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         String methodName = testInfo.getTestMethod().orElseThrow().getName();
-        testName = simpleClassName + "_" + methodName;
+        testName = simpleClassName + "_" + methodName + "_" + Jetty.VERSION;
     }
 
     @ParameterizedTest(name = "{0}")
