@@ -13,6 +13,7 @@ import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.ReportUtil;
+import org.eclipse.jetty.util.Jetty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ public class CometdBenchmarkTest implements Serializable
         String className = testInfo.getTestClass().orElseThrow().getName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
         String methodName = testInfo.getTestMethod().orElseThrow().getName();
-        testName = simpleClassName + "_" + methodName;
+        testName = simpleClassName + "_" + methodName + "_" + Jetty.VERSION;
     }
 
     @Test
