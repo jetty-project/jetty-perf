@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
+import org.eclipse.jetty.util.Jetty;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public class OutputCapturingCluster implements AutoCloseable
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         String className = stackTrace[3].getClassName();
         String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        return simpleClassName + "_" + stackTrace[3].getMethodName();
+        return simpleClassName + "_" + stackTrace[3].getMethodName() + "_" + Jetty.VERSION;
     }
 
     @Override
