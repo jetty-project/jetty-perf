@@ -20,7 +20,7 @@
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
     <cometd.version>8.0.8-SNAPSHOT</cometd.version>
-    <jetty.version>12.0.20-SNAPSHOT</jetty.version>
+    <jetty.version>12.0.21-SNAPSHOT</jetty.version>
     <jetty-load-generator.version>4.0.19</jetty-load-generator.version>
   </properties>
 
