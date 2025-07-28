@@ -57,7 +57,7 @@ import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
+public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
 {
     private static final Logger LOG = LoggerFactory.getLogger(Jetty12ClusteredPerfTest.class);
 
@@ -88,6 +88,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         }
     }
 
+    @Override
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         MonitoredQueuedThreadPool qtp = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE);
@@ -206,6 +207,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         env.put(Server.class.getName(), server);
     }
 
+    @Override
     protected void stopServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         ConcurrentMap<String, Object> env = clusterTools.nodeEnvironment();
@@ -213,6 +215,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         server.stop();
     }
 
+    @Override
     protected void runLoadGenerator(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
@@ -302,6 +305,7 @@ public class Jetty12ClusteredPerfTest extends AbstractClusteredPerfTest
         env.put(CompletableFuture.class.getName(), cf);
     }
 
+    @Override
     protected void runProbeGenerator(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");

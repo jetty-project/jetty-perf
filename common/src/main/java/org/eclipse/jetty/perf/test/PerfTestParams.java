@@ -65,6 +65,8 @@ public class PerfTestParams implements Serializable
     public int SERVER_RESERVED_THREADS = parameters.readAsInt("SERVER_RESERVED_THREADS", -1);
     public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
     public String JSSE_PROVIDER = parameters.read("JSSE_PROVIDER", "");
+    public String COMETD_SERVER_CMDLINE = parameters.read("COMETD_SERVER_CMDLINE", "");
+    public String COMETD_CLIENTS_CMDLINE = parameters.read("COMETD_CLIENTS_CMDLINE", "");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.OS_CPU,
@@ -113,6 +115,8 @@ public class PerfTestParams implements Serializable
         result.put("SERVER_USE_VIRTUAL_THREADS", SERVER_USE_VIRTUAL_THREADS);
         result.put("HTTP_PROTOCOL", HTTP_PROTOCOL);
         result.put("JSSE_PROVIDER", JSSE_PROVIDER);
+        result.put("COMETD_CLIENTS_CMDLINE", COMETD_CLIENTS_CMDLINE);
+        result.put("COMETD_SERVER_CMDLINE", COMETD_SERVER_CMDLINE);
 
         return result;
     }
@@ -205,6 +209,14 @@ public class PerfTestParams implements Serializable
     public Cluster buildCluster(String testName) throws Exception
     {
         return new Cluster(testName, getClusterConfiguration());
+    }
+
+    public int getLoadersCount()
+    {
+        return getClusterConfiguration().nodeArrays().stream()
+            .filter(nac -> nac.id().equals("loaders"))
+            .mapToInt(na -> na.nodes().size()).sum();
+
     }
 
     public int getParticipantCount()

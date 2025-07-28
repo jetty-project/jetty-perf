@@ -16,6 +16,7 @@ import org.eclipse.jetty.perf.test.ClusteredTestContext;
 import org.eclipse.jetty.perf.test.junit.ClusteredTest;
 import org.eclipse.jetty.perf.util.OutputCapturer;
 import org.eclipse.jetty.perf.util.ReportUtil;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.ClusterTools;
@@ -32,6 +33,7 @@ import org.mortbay.jetty.orchestrator.tools.Barrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Disabled
 public class CometdBenchmarkTest implements Serializable
 {
     private static final Logger LOG = LoggerFactory.getLogger(CometdBenchmarkTest.class);
