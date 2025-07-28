@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -22,7 +23,7 @@ public class StatisticalSyncSocketAddressResolver extends SocketAddressResolver.
     private final LongAdder resolves = new LongAdder();
 
     @Override
-    public void resolve(String host, int port, Promise<List<InetSocketAddress>> promise)
+    public void resolve(String host, int port, Map<String, Object> context, Promise<List<InetSocketAddress>> promise)
     {
         resolves.increment();
         Promise<List<InetSocketAddress>> p = new Promise.Wrapper<>(promise)
@@ -58,7 +59,7 @@ public class StatisticalSyncSocketAddressResolver extends SocketAddressResolver.
                 super.failed(x);
             }
         };
-        super.resolve(host, port, p);
+        super.resolve(host, port, context, p);
     }
 
     @Override

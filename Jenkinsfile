@@ -7,9 +7,9 @@ pipeline {
     }
     parameters {
         // These settings are only used in this script.
-        string(defaultValue: 'jetty-12.0.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
-        string(defaultValue: '12.0.24-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-        string(defaultValue: 'profiler-12.0.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
+        string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+        string(defaultValue: '12.1.0-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+        string(defaultValue: 'profiler-12.1.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
         string(defaultValue: 'CoreHandlerPerfTest#testNoGzipAsync', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest', name: 'TEST_TO_RUN')
 
         // These settings are used both by the test JVM and by this script too.
