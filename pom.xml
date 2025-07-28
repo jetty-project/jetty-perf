@@ -28,6 +28,7 @@
     <module>core</module>
     <module>ee9</module>
     <module>ee10</module>
+    <module>ee11</module>
   </modules>
 
   <dependencyManagement>
@@ -60,6 +61,11 @@
       <dependency>
         <groupId>org.eclipse.jetty.ee10</groupId>
         <artifactId>jetty-ee10-webapp</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee11</groupId>
+        <artifactId>jetty-ee11-webapp</artifactId>
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
