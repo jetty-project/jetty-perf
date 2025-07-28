@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.cometd.benchmark.client.CometDLoadClient;
 import org.cometd.benchmark.server.CometDLoadServer;
+import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.test.AbstractClusteredPerfTest;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
 import org.eclipse.jetty.perf.test.PerfTestParams;
@@ -85,13 +86,19 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         serverArray.executeOnAll(tools ->
         {
-            perfTestParamsCustomizer.accept(perfTestParams);
-            runServer(perfTestParams, tools);
+            try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
+            {
+                perfTestParamsCustomizer.accept(perfTestParams);
+                runServer(perfTestParams, tools);
+            }
         }).get(120, TimeUnit.SECONDS);
         loadersArray.executeOnAll(tools ->
         {
-            perfTestParamsCustomizer.accept(perfTestParams);
-            runClient(perfTestParams, tools);
+            try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
+            {
+                perfTestParamsCustomizer.accept(perfTestParams);
+                runClient(perfTestParams, tools);
+            }
         }).get(120, TimeUnit.SECONDS);
 
         LOG.info("Generating report...");
