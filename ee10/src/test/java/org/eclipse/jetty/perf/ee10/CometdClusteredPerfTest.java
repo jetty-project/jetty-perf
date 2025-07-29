@@ -86,11 +86,10 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         serverArray.executeOnAll(tools ->
         {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
-            {
-                perfTestParamsCustomizer.accept(perfTestParams);
-                runServer(perfTestParams, tools);
-            }
+            ConfigurableMonitor configurableMonitor = new ConfigurableMonitor(perfTestParams.getMonitoredItems());
+            tools.nodeEnvironment().put(ConfigurableMonitor.class.getName(), configurableMonitor);
+            perfTestParamsCustomizer.accept(perfTestParams);
+            runServer(perfTestParams, tools);
         }).get(120, TimeUnit.SECONDS);
         loadersArray.executeOnAll(tools ->
         {
@@ -99,6 +98,11 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
                 perfTestParamsCustomizer.accept(perfTestParams);
                 runClient(perfTestParams, tools);
             }
+        }).get(120, TimeUnit.SECONDS);
+        serverArray.executeOnAll(tools ->
+        {
+            ConfigurableMonitor configurableMonitor = (ConfigurableMonitor)tools.nodeEnvironment().get(ConfigurableMonitor.class.getName());
+            configurableMonitor.close();
         }).get(120, TimeUnit.SECONDS);
 
         LOG.info("Generating report...");
