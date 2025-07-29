@@ -1,4 +1,4 @@
-package org.eclipse.jetty.perf.ee10;
+package org.eclipse.jetty.perf.ee11;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -114,13 +114,13 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
     protected void runServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
-        CometDLoadServer.main(merge(perfTestParams.COMETD_CLIENTS_CMDLINE,"--auto"));
+        CometDLoadServer.main(merge(perfTestParams.COMETD_CLIENTS_CMDLINE,"--auto", "--transports=jetty"));
     }
 
     protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
     {
         int clientId = clusterTools.barrier("cometd-client-id-barrier", perfTestParams.getLoadersCount()).await();
-        CometDLoadClient.main(merge(perfTestParams.COMETD_SERVER_CMDLINE,"--auto", "--host=" + perfTestParams.getServerUri().getHost(), "--channel=/a/" + clientId));
+        CometDLoadClient.main(merge(perfTestParams.COMETD_SERVER_CMDLINE,"--auto", "--http2", "--host=" + perfTestParams.getServerUri().getHost(), "--channel=/a/" + clientId));
     }
 
     private static String[] merge(String argsLine, String... extraArgs)

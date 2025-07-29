@@ -1,4 +1,4 @@
-package org.eclipse.jetty.perf.ee10;
+package org.eclipse.jetty.perf.ee11;
 
 import java.io.Serializable;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
