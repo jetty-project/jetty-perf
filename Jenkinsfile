@@ -41,8 +41,8 @@ pipeline {
         string(defaultValue: '', description: 'The server\'s reserved threads. Defaults to -1', name: 'SERVER_RESERVED_THREADS')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, https, h2c,  h2', name: 'HTTP_PROTOCOL')
         string(defaultValue: '', description: 'The JSSE provider to use, defaults to the JVM internal one. You can choose from this list: -empty string-, Conscrypt, BCJSSE', name: 'JSSE_PROVIDER')
-        string(defaultValue: '', description: 'The CometD clients benchmark command line', name: 'COMETD_CLIENTS_CMDLINE')
-        string(defaultValue: '', description: 'The CometD server benchmark command line', name: 'COMETD_SERVER_CMDLINE')
+        string(defaultValue: '--http2', description: 'The CometD clients benchmark command line', name: 'COMETD_CLIENTS_CMDLINE')
+        string(defaultValue: '--reservedThreads=0', description: 'The CometD server benchmark command line', name: 'COMETD_SERVER_CMDLINE')
     }
     //tools {
     //    jdk "${JDK_TO_USE}"
