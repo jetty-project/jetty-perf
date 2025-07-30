@@ -1,4 +1,4 @@
-package org.eclipse.jetty.perf.ee11;
+package org.eclipse.jetty.perf.handler;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
