@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import org.cometd.bayeux.server.BayeuxServer;
 import org.cometd.bayeux.server.ServerMessage;
 import org.cometd.bayeux.server.ServerSession;
-import org.cometd.benchmark.Config;
 import org.cometd.benchmark.client.CometDLoadClient;
 import org.cometd.server.AbstractServerTransport;
 import org.cometd.server.BayeuxServerImpl;
@@ -86,7 +85,6 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         NodeArray serverArray = cluster.nodeArray("server");
         NodeArray loadersArray = cluster.nodeArray("loaders");
-        NodeArray probeArray = cluster.nodeArray("probe");
 
         NodeJob logSysInfo = tools -> LOG.info("{} '{}/{}': running JVM version '{}'",
             tools.getGlobalNodeId().getHostname(),
@@ -95,8 +93,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             System.getProperty("java.vm.version"));
         List<NodeArrayFuture> futures = List.of(
             serverArray.executeOnAll(logSysInfo),
-            loadersArray.executeOnAll(logSysInfo),
-            probeArray.executeOnAll(logSysInfo)
+            loadersArray.executeOnAll(logSysInfo)
         );
         for (NodeArrayFuture future : futures)
         {
@@ -204,22 +201,22 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             }
         });
 
-        String cometdURLMapping = Config.COMETD_PATH + "/*";
+        String cometdURLMapping = "/cometd/*";
 
         // Make sure the expiration timeout is large to avoid clients to timeout
         // This value must be several times larger than the client value
         // (e.g. 60 s on server vs 5 s on client) so that it's guaranteed that
         // it will be the client to dispose idle connections.
-        bayeuxServer.setOption(AbstractServerTransport.MAX_INTERVAL_OPTION, String.valueOf(10 * Config.MAX_NETWORK_DELAY));
+        bayeuxServer.setOption(AbstractServerTransport.MAX_INTERVAL_OPTION, String.valueOf(10 * 5000L));
         // Explicitly set the timeout value.
-        bayeuxServer.setOption(AbstractServerTransport.TIMEOUT_OPTION, String.valueOf(Config.META_CONNECT_TIMEOUT));
+        bayeuxServer.setOption(AbstractServerTransport.TIMEOUT_OPTION, String.valueOf(20000L));
         // Use the faster JSON parser/generator.
         bayeuxServer.setOption(AbstractServerTransport.JSON_CONTEXT_OPTION, JacksonJSONContextServer.class.getName());
         bayeuxServer.setOption(AbstractWebSocketTransport.COMETD_URL_MAPPING_OPTION, cometdURLMapping);
         bayeuxServer.addExtension(new AcknowledgedMessagesExtension());
         bayeuxServer.addExtension(messageLatencyExtension);
 
-        ContextHandler context = new ContextHandler(Config.CONTEXT_PATH);
+        ContextHandler context = new ContextHandler("/cometd");
         server.setHandler(context);
         context.getContext().setAttribute(BayeuxServer.ATTRIBUTE, bayeuxServer);
         context.setAttribute(ContextHandler.MANAGED_ATTRIBUTES, BayeuxServer.ATTRIBUTE);
@@ -259,8 +256,8 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         @Override
         public boolean rcv(ServerSession session, ServerMessage.Mutable message) {
-            if (message.getChannel().startsWith(Config.CHANNEL_PREFIX)) {
-                String id = (String)message.getDataAsMap().get(Config.ID_FIELD);
+            if (message.getChannel().startsWith("/bench/")) {
+                String id = (String)message.getDataAsMap().get("msg_id");
                 if (id != null) {
                     message.put(SERVER_TIME_FIELD, NanoTime.now());
                 }
@@ -270,8 +267,8 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         private void complete(List<ServerMessage> messages) {
             for (ServerMessage message : messages) {
-                if (message.getChannel().startsWith(Config.CHANNEL_PREFIX)) {
-                    String id = (String)message.getDataAsMap().get(Config.ID_FIELD);
+                if (message.getChannel().startsWith("/bench/")) {
+                    String id = (String)message.getDataAsMap().get("msg_id");
                     if (id != null) {
                         Long serverTime = (Long)message.get(SERVER_TIME_FIELD);
                         if (serverTime != null) {
