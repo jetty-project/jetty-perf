@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,7 @@ import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
+import org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy;
 import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
@@ -212,6 +214,24 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
     {
         ConcurrentMap<String, Object> env = clusterTools.nodeEnvironment();
         Server server = (Server)env.get(Server.class.getName());
+        Collection<AdaptiveExecutionStrategy> adaptiveExecutionStrategies = server.getContainedBeans(AdaptiveExecutionStrategy.class);
+        for (AdaptiveExecutionStrategy strategy : adaptiveExecutionStrategies)
+        {
+            long epcTasksConsumed = strategy.getEPCTasksConsumed();
+            long pecTasksExecuted = strategy.getPECTasksExecuted();
+            long pcTasksConsumed = strategy.getPCTasksConsumed();
+            long picTasksExecuted = strategy.getPICTasksExecuted();
+
+            try (PrintWriter pw = new PrintWriter("AdaptiveExecutionStrategy.txt"))
+            {
+                pw.println("Strategy " + strategy);
+                pw.println(" EPC: " + epcTasksConsumed);
+                pw.println(" PEC: " + pecTasksExecuted);
+                pw.println(" PC:  " + pcTasksConsumed);
+                pw.println(" PIC: " + picTasksExecuted);
+                pw.println();
+            }
+        }
         server.stop();
     }
 
