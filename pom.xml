@@ -21,7 +21,6 @@
 
     <jetty.version>12.1.0-SNAPSHOT</jetty.version>
     <jetty-load-generator.version>4.0.18</jetty-load-generator.version>
-    <cometd.version>8.0.10-SNAPSHOT</cometd.version>
   </properties>
 
   <modules>
@@ -126,11 +125,6 @@
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-alpn-server</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-util-ajax</artifactId>
         <version>${jetty.version}</version>
       </dependency>
@@ -143,47 +137,6 @@
         <groupId>org.eclipse.jetty.toolchain</groupId>
         <artifactId>jetty-perf-helper</artifactId>
         <version>1.0.7</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-api-server</artifactId>
-        <version>${cometd.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-server-common</artifactId>
-        <version>${cometd.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-server-http-jetty</artifactId>
-        <version>${cometd.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-server-websocket-common</artifactId>
-        <version>${cometd.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-server-websocket-jetty</artifactId>
-        <version>${cometd.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.cometd.java</groupId>
-        <artifactId>cometd-java-benchmark-client</artifactId>
-        <version>${cometd.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <dependency>
