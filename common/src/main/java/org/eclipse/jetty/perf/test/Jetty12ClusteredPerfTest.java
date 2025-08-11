@@ -214,24 +214,6 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
     {
         ConcurrentMap<String, Object> env = clusterTools.nodeEnvironment();
         Server server = (Server)env.get(Server.class.getName());
-        Collection<AdaptiveExecutionStrategy> adaptiveExecutionStrategies = server.getContainedBeans(AdaptiveExecutionStrategy.class);
-        for (AdaptiveExecutionStrategy strategy : adaptiveExecutionStrategies)
-        {
-            long epcTasksConsumed = strategy.getEPCTasksConsumed();
-            long pecTasksExecuted = strategy.getPECTasksExecuted();
-            long pcTasksConsumed = strategy.getPCTasksConsumed();
-            long picTasksExecuted = strategy.getPICTasksExecuted();
-
-            try (PrintWriter pw = new PrintWriter("AdaptiveExecutionStrategy.txt"))
-            {
-                pw.println("Strategy " + strategy);
-                pw.println(" EPC: " + epcTasksConsumed);
-                pw.println(" PEC: " + pecTasksExecuted);
-                pw.println(" PC:  " + pcTasksConsumed);
-                pw.println(" PIC: " + picTasksExecuted);
-                pw.println();
-            }
-        }
         server.stop();
     }
 
