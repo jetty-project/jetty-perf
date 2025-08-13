@@ -21,6 +21,7 @@
 
     <jetty.version>12.1.0-SNAPSHOT</jetty.version>
     <jetty-load-generator.version>4.0.18</jetty-load-generator.version>
+    <cometd.version>8.1.0-SNAPSHOT</cometd.version>
   </properties>
 
   <modules>
@@ -29,6 +30,7 @@
     <module>ee9</module>
     <module>ee10</module>
     <module>ee11</module>
+    <module>cometd</module>
   </modules>
 
   <dependencyManagement>
@@ -38,36 +40,36 @@
         <artifactId>jetty-perf-common</artifactId>
         <version>${project.version}</version>
       </dependency>
+
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-server</artifactId>
+        <artifactId>jetty-bom</artifactId>
         <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>jetty-http2-server</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-jmx</artifactId>
-        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.ee9</groupId>
-        <artifactId>jetty-ee9-webapp</artifactId>
+        <artifactId>jetty-ee9-bom</artifactId>
         <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.ee10</groupId>
-        <artifactId>jetty-ee10-webapp</artifactId>
+        <artifactId>jetty-ee10-bom</artifactId>
         <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.ee11</groupId>
-        <artifactId>jetty-ee11-webapp</artifactId>
+        <artifactId>jetty-ee11-bom</artifactId>
         <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
+
       <dependency>
         <groupId>org.mortbay.jetty.orchestrator</groupId>
         <artifactId>jetty-cluster-orchestrator</artifactId>
@@ -84,59 +86,62 @@
         <version>2.5.2</version>
       </dependency>
 
-      <!-- Exclude then explicitly depend on jetty-load-generator deps to make sure we use the right jetty version -->
       <dependency>
         <groupId>org.mortbay.jetty.loadgenerator</groupId>
         <artifactId>jetty-load-generator-client</artifactId>
         <version>${jetty-load-generator.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-client</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty.http2</groupId>
-            <artifactId>jetty-http2-client-transport</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-alpn-java-client</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util-ajax</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-client</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>jetty-http2-client-transport</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-alpn-java-client</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-util-ajax</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-slf4j-impl</artifactId>
-        <version>${jetty.version}</version>
-      </dependency>
+
       <dependency>
         <groupId>org.eclipse.jetty.toolchain</groupId>
         <artifactId>jetty-perf-helper</artifactId>
         <version>1.0.7</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-api-server</artifactId>
+        <version>${cometd.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-server-common</artifactId>
+        <version>${cometd.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-server-http-jetty</artifactId>
+        <version>${cometd.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-server-websocket-common</artifactId>
+        <version>${cometd.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-server-websocket-jetty</artifactId>
+        <version>${cometd.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-benchmark-client</artifactId>
+        <version>${cometd.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.cometd.java</groupId>
+        <artifactId>cometd-java-client-websocket-jetty</artifactId>
+        <version>${cometd.version}</version>
       </dependency>
 
       <dependency>

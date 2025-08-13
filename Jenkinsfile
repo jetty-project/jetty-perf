@@ -41,6 +41,7 @@ pipeline {
         string(defaultValue: '', description: 'The server\'s reserved threads. Defaults to -1', name: 'SERVER_RESERVED_THREADS')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, https, h2c,  h2', name: 'HTTP_PROTOCOL')
         string(defaultValue: '', description: 'The JSSE provider to use, defaults to the JVM internal one. You can choose from this list: -empty string-, Conscrypt, BCJSSE', name: 'JSSE_PROVIDER')
+        string(defaultValue: '--http2', description: 'The CometD clients benchmark command line', name: 'COMETD_CLIENTS_CMDLINE')
     }
     //tools {
     //    jdk "${JDK_TO_USE}"
@@ -66,6 +67,25 @@ pipeline {
                                   branches         : [[name: "*/$JETTY_BRANCH"]],
                                   extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
                                   userRemoteConfigs: [[url: 'https://github.com/eclipse/jetty.project.git']]])
+                        timeout(time: 30, unit: 'MINUTES') {
+                            withEnv(["JAVA_HOME=${tool "jdk17"}",
+                                     "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
+                                     "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
+                                configFileProvider(
+                                    [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
+                                    //sh "mvn -Pfast -ntp -s $GLOBAL_MVN_SETTINGS -V -B -U -Psnapshot-repositories -am clean install -Dmaven.test.skip=true -T6 -e"
+                                    // the good one sh "mvn -DskipTests -Dcheckstyle.skip=true -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -T7 -e" // -Dmaven.build.cache.enabled=false"
+                                    sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -e -DskipTests -Dmaven.build.cache.remote.url=http://10.0.0.15:8081/repository/maven-build-cache -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=nexus-cred"
+                                }
+                            }
+                        }
+                        sh "cd .."
+
+                        sh "mkdir cometd ; cd cometd"
+                        checkout([$class           : 'GitSCM',
+                                  branches         : [[name: "*/8.1.x"]],
+                                  extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
+                                  userRemoteConfigs: [[url: 'https://github.com/cometd/cometd.git']]])
                         timeout(time: 30, unit: 'MINUTES') {
                             withEnv(["JAVA_HOME=${tool "jdk17"}",
                                      "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
