@@ -1,4 +1,4 @@
-package org.eclipse.jetty.perf.handler;
+package org.eclipse.jetty.perf.cometd;
 
 import java.io.Serializable;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
