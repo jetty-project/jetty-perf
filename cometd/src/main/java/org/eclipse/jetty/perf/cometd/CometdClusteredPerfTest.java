@@ -1,18 +1,16 @@
 package org.eclipse.jetty.perf.cometd;
 
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import org.cometd.bayeux.server.BayeuxServer;
 import org.cometd.bayeux.server.ServerMessage;
 import org.cometd.bayeux.server.ServerSession;
-import org.cometd.benchmark.client.CometDLoadClient;
 import org.cometd.server.AbstractServerTransport;
 import org.cometd.server.BayeuxServerImpl;
 import org.cometd.server.JacksonJSONContextServer;
@@ -24,6 +22,7 @@ import org.cometd.server.websocket.common.AbstractWebSocketEndPoint;
 import org.cometd.server.websocket.common.AbstractWebSocketTransport;
 import org.cometd.server.websocket.jetty.JettyWebSocketTransport;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
@@ -105,11 +104,13 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         {
             perfTestParamsCustomizer.accept(perfTestParams);
             runServer(perfTestParams, tools);
-        });
+        }).get(30, TimeUnit.SECONDS);
         loadersArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
-            runClient(perfTestParams, tools);
+            int batches = approximateBatches((int)perfTestParams.getWarmupDuration().toSeconds());
+            LOG.info("Warmup batches: {}", batches);
+            runClient(perfTestParams, tools, batches);
         }).get(10, TimeUnit.MINUTES);
 
         LOG.info("Running...");
@@ -126,13 +127,22 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         {
             try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
             {
-                runClient(perfTestParams, tools);
+                perfTestParamsCustomizer.accept(perfTestParams);
+                int batches = approximateBatches((int)perfTestParams.getRunDuration().toSeconds());
+                LOG.info("Run batches: {}", batches);
+                runClient(perfTestParams, tools, batches);
             }
         }).get(10, TimeUnit.MINUTES);
+
+        // dump the server before disconnecting the clients
+        serverArray.executeOnAll(this::dumpServer).get(30, TimeUnit.SECONDS);
+        loadersArray.executeOnAll(this::stopClient).get(30, TimeUnit.SECONDS);
+
         serverArray.executeOnAll(tools ->
         {
             Recorder recorder = (Recorder)tools.nodeEnvironment().get(Recorder.class.getName());
             recorder.stopRecording();
+            @SuppressWarnings("unchecked")
             List<LifeCycle> lifeCycles = (List<LifeCycle>)tools.nodeEnvironment().get(LifeCycle.class.getName());
             lifeCycles.forEach(l -> LifeCycle.stop(l));
             ConfigurableMonitor configurableMonitor = (ConfigurableMonitor)tools.nodeEnvironment().get(ConfigurableMonitor.class.getName());
@@ -144,6 +154,12 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         long after = System.nanoTime();
         LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
+    }
+
+    private static int approximateBatches(int seconds)
+    {
+        // a batch of 100 takes ~1.5s
+        return (int)(Math.max(1, seconds / 1.5) * 100);
     }
 
     protected void runServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
@@ -229,6 +245,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         wsHandler.setHandler(new CometDHandler(invocationType));
         clusterTools.nodeEnvironment().put(LifeCycle.class.getName(), Arrays.asList(server, bayeuxServer));
+        clusterTools.nodeEnvironment().put(Server.class.getName(), server);
 
         new Thread(() -> {
             try
@@ -240,7 +257,45 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
                 throw new RuntimeException(e);
             }
         }, "Bayeux Server Starter").start();
-        server.start();
+        new Thread(() -> {
+            try
+            {
+                server.start();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }, "Jetty Server Starter").start();
+    }
+
+    private void dumpServer(ClusterTools clusterTools) throws Exception
+    {
+        Server server = (Server)clusterTools.nodeEnvironment().get(Server.class.getName());
+        try (PrintWriter printWriter = new PrintWriter("ServerDump.txt"))
+        {
+            server.dump(printWriter);
+        }
+    }
+
+    protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools, int batches) throws Exception
+    {
+        int clientId = clusterTools.barrier("cometd-client-id-barrier", perfTestParams.getLoadersCount()).await();
+        CometDLoadClient client = new CometDLoadClient();
+        client.host = perfTestParams.getServerUri().getHost();
+        client.port = perfTestParams.getServerPort();
+        client.channel = "/a/" + clientId;
+        client.batches = batches;
+        if (perfTestParams.getHttpVersion().equals(HttpVersion.HTTP_2))
+            client.http2 = true;
+        client.run();
+        clusterTools.nodeEnvironment().put(CometDLoadClient.class.getName(), client);
+    }
+
+    protected void stopClient(ClusterTools clusterTools)
+    {
+        CometDLoadClient client = (CometDLoadClient)clusterTools.nodeEnvironment().get(CometDLoadClient.class.getName());
+        client.disconnect();
     }
 
     private static class MessageLatencyExtension implements BayeuxServer.Extension
@@ -278,19 +333,5 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
                 }
             }
         }
-    }
-
-    protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
-    {
-        int clientId = clusterTools.barrier("cometd-client-id-barrier", perfTestParams.getLoadersCount()).await();
-        CometDLoadClient.main(merge(perfTestParams.COMETD_CLIENTS_CMDLINE,"--auto", "--host=" + perfTestParams.getServerUri().getHost(), "--port=" + perfTestParams.getServerPort(), "--channel=/a/" + clientId));
-    }
-
-    private static String[] merge(String argsLine, String... extraArgs)
-    {
-        List<String> result = new ArrayList<>();
-        Stream.of(argsLine.split(" ")).map(String::trim).filter(s -> !s.isEmpty()).forEach(result::add);
-        result.addAll(List.of(extraArgs));
-        return result.toArray(new String[0]);
     }
 }
