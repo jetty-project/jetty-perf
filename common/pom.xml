@@ -62,8 +62,8 @@
       <artifactId>HdrHistogram</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.kamranzafar</groupId>
-      <artifactId>jtar</artifactId>
+      <groupId>tools.profiler</groupId>
+      <artifactId>async-profiler</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
