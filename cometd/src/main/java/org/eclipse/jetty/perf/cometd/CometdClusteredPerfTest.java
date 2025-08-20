@@ -278,26 +278,8 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             }
         }, latencyRecorder));
 
-        new Thread(() -> {
-            try
-            {
-                bayeuxServer.start();
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-        }, "Bayeux Server Starter").start();
-        new Thread(() -> {
-            try
-            {
-                server.start();
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-        }, "Jetty Server Starter").start();
+        server.start();
+        bayeuxServer.start();
     }
 
     protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools, int batches) throws Exception
