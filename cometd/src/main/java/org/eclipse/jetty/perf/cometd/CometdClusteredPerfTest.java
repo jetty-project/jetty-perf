@@ -26,6 +26,7 @@ import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.io.ByteBufferPool;
+import org.eclipse.jetty.perf.cometd.perfutil.ConcurrentScheduler;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.test.AbstractClusteredPerfTest;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
@@ -40,12 +41,12 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.util.BlockingArrayQueue;
 import org.eclipse.jetty.util.NanoTime;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.Invocable;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.websocket.server.WebSocketUpgradeHandler;
 import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -147,10 +148,16 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             recorders.forEach(Recorder::stopRecording);
             @SuppressWarnings("unchecked")
             List<LifeCycle> lifeCycles = (List<LifeCycle>)tools.nodeEnvironment().get(LifeCycle.class.getName());
-            lifeCycles.forEach(l -> LifeCycle.stop(l));
+            for (LifeCycle l : lifeCycles)
+            {
+                LOG.info("stopping {}", l);
+                LifeCycle.stop(l);
+                LOG.info("stopped {}", l);
+            }
             ConfigurableMonitor configurableMonitor = (ConfigurableMonitor)tools.nodeEnvironment().get(ConfigurableMonitor.class.getName());
             configurableMonitor.close();
-        }).get(30, TimeUnit.SECONDS);
+        }).get(60, TimeUnit.SECONDS);
+        LOG.info("Server monitoring stopped");
         loadersArray.executeOnAll(tools ->
         {
             @SuppressWarnings("unchecked")
@@ -161,7 +168,8 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
             CometDLoadClient client = (CometDLoadClient)tools.nodeEnvironment().get(CometDLoadClient.class.getName());
             client.disconnect();
-        }).get(30, TimeUnit.SECONDS);
+        }).get(60, TimeUnit.SECONDS);
+        LOG.info("Loaders monitoring stopped");
 
         LOG.info("Generating report...");
         generateReport(Path.of(reportRootPath), perfTestParams.getNodeArrayIds(), cluster);
@@ -172,13 +180,14 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools, Invocable.InvocationType invocationType) throws Exception
     {
-        MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE);
+        MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, new BlockingArrayQueue<>(16 * 1024 * 1024, 1024 * 1024));
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
         ByteBufferPool bufferPool = perfTestParams.SERVER_USE_BYTE_BUFFER_POOLING ? null : new ByteBufferPool.NonPooling();
         Server server = new Server(serverThreadPool, null, bufferPool);
-        QueuedThreadPool cometdThreadPool = new QueuedThreadPool();
+        MonitoredQueuedThreadPool cometdThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, new BlockingArrayQueue<>(16 * 1024 * 1024, 1024 * 1024));
         cometdThreadPool.setReservedThreads(0);
         BayeuxServerImpl bayeuxServer = new BayeuxServerImpl();
+        bayeuxServer.setScheduler(new ConcurrentScheduler(64, 1, "concurrent-scheduler"));
         bayeuxServer.setExecutor(cometdThreadPool);
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         MessageLatencyExtension messageLatencyExtension = new MessageLatencyExtension(latencyRecorder);
@@ -273,6 +282,15 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
                         printWriter.println(String.format("Average task latency=%d", serverThreadPool.getAverageTaskLatency()));
                         printWriter.println(String.format("Max task latency=%d", serverThreadPool.getMaxTaskLatency()));
                         printWriter.println(String.format("Max busy threads=%d", serverThreadPool.getMaxBusyThreads()));
+                    }
+                    try (PrintWriter printWriter = new PrintWriter("CometdMonitoredQueuedThreadPool.txt"))
+                    {
+                        printWriter.println(String.format("Average queue latency=%d", cometdThreadPool.getAverageQueueLatency()));
+                        printWriter.println(String.format("Max queue latency=%d", cometdThreadPool.getMaxQueueLatency()));
+                        printWriter.println(String.format("Max queue size=%d", cometdThreadPool.getMaxQueueSize()));
+                        printWriter.println(String.format("Average task latency=%d", cometdThreadPool.getAverageTaskLatency()));
+                        printWriter.println(String.format("Max task latency=%d", cometdThreadPool.getMaxTaskLatency()));
+                        printWriter.println(String.format("Max busy threads=%d", cometdThreadPool.getMaxBusyThreads()));
                     }
 
                     try (PrintWriter printWriter = new PrintWriter("ServerDump.txt"))
