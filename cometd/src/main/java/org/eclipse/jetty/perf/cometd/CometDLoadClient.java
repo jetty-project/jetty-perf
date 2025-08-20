@@ -107,7 +107,7 @@ public class CometDLoadClient
     boolean tls = false;
     int selectors = 1;
     int maxThreads = 256;
-    ClientTransportType transport = ClientTransportType.LONG_POLLING;
+    ClientTransportType transport = ClientTransportType.JETTY_WEBSOCKET;
     boolean http2 = false;
     boolean perMessageDeflate = false;
     String context = Config.CONTEXT_PATH;
@@ -152,25 +152,6 @@ public class CometDLoadClient
         int maxThreads = this.maxThreads;
 
         ClientTransportType transport = this.transport;
-
-        boolean http2 = this.http2;
-        if (transport == ClientTransportType.LONG_POLLING)
-        {
-        }
-        else
-        {
-            http2 = false;
-        }
-
-        boolean perMessageDeflate = this.perMessageDeflate;
-        if (transport == ClientTransportType.JETTY_WEBSOCKET || transport == ClientTransportType.JAKARTA_WEBSOCKET)
-        {
-        }
-        else
-        {
-            perMessageDeflate = false;
-        }
-        this.perMessageDeflate = perMessageDeflate;
 
         String contextPath = this.context;
         String url = (tls ? "https" : "http") + "://" + host + ":" + port + contextPath + Config.COMETD_PATH;
