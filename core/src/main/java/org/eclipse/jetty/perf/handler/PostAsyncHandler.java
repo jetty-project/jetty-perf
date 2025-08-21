@@ -49,6 +49,10 @@ public class PostAsyncHandler extends Handler.Abstract
                     else
                         response.write(true, DATA.slice(0, (int)responseLength), callback);
                 }
+                else
+                {
+                    callback.succeeded();
+                }
             }
         });
         return true;
