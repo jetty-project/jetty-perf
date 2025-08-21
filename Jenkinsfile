@@ -41,6 +41,8 @@ pipeline {
         string(defaultValue: '', description: 'The server\'s reserved threads. Defaults to -1', name: 'SERVER_RESERVED_THREADS')
         string(defaultValue: '', description: 'The HTTP protocol to use, defaults to http. You can choose from this list: http, https, h2c,  h2', name: 'HTTP_PROTOCOL')
         string(defaultValue: '', description: 'The JSSE provider to use, defaults to the JVM internal one. You can choose from this list: -empty string-, Conscrypt, BCJSSE', name: 'JSSE_PROVIDER')
+        string(defaultValue: '', description: 'The requests content length. If greater than 0, the method changes to POST. Defaults to 0.', name: 'LOADER_REQUEST_CONTENT_LENGTH')
+        string(defaultValue: '', description: 'The response content length. Defaults to 0.', name: 'LOADER_RESPONSE_CONTENT_LENGTH')
     }
     //tools {
     //    jdk "${JDK_TO_USE}"

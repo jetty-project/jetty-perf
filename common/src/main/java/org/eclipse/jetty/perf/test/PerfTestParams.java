@@ -65,6 +65,8 @@ public class PerfTestParams implements Serializable
     public int SERVER_RESERVED_THREADS = parameters.readAsInt("SERVER_RESERVED_THREADS", -1);
     public String HTTP_PROTOCOL = parameters.read("HTTP_PROTOCOL", "http");
     public String JSSE_PROVIDER = parameters.read("JSSE_PROVIDER", "");
+    public int LOADER_REQUEST_CONTENT_LENGTH = parameters.readAsInt("LOADER_REQUEST_CONTENT_LENGTH", 0);
+    public int LOADER_RESPONSE_CONTENT_LENGTH = parameters.readAsInt("LOADER_RESPONSE_CONTENT_LENGTH", 0);
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.OS_CPU,
@@ -111,8 +113,13 @@ public class PerfTestParams implements Serializable
         result.put("SERVER_ACCEPTOR_COUNT", SERVER_ACCEPTOR_COUNT);
         result.put("SERVER_SELECTOR_COUNT", SERVER_SELECTOR_COUNT);
         result.put("SERVER_USE_VIRTUAL_THREADS", SERVER_USE_VIRTUAL_THREADS);
+        result.put("SERVER_USE_BYTE_BUFFER_POOLING", SERVER_USE_BYTE_BUFFER_POOLING);
+        result.put("SERVER_THREAD_POOL_SIZE", SERVER_THREAD_POOL_SIZE);
+        result.put("SERVER_RESERVED_THREADS", SERVER_RESERVED_THREADS);
         result.put("HTTP_PROTOCOL", HTTP_PROTOCOL);
         result.put("JSSE_PROVIDER", JSSE_PROVIDER);
+        result.put("LOADER_REQUEST_CONTENT_LENGTH", LOADER_REQUEST_CONTENT_LENGTH);
+        result.put("LOADER_RESPONSE_CONTENT_LENGTH", LOADER_RESPONSE_CONTENT_LENGTH);
 
         return result;
     }

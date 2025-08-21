@@ -50,7 +50,6 @@ import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
-import org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy;
 import org.mortbay.jetty.load.generator.HTTP1ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.HTTP2ClientTransportBuilder;
 import org.mortbay.jetty.load.generator.LoadGenerator;
@@ -231,6 +230,13 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
             sslContextFactory.setProvider(perfTestParams.getJsseProvider());
 
         URI serverUri = perfTestParams.getServerUri();
+
+        Resource resource = new Resource(serverUri.getPath());
+        if (perfTestParams.LOADER_REQUEST_CONTENT_LENGTH > 0)
+            resource.method("POST").requestLength(perfTestParams.LOADER_REQUEST_CONTENT_LENGTH);
+        if (perfTestParams.LOADER_RESPONSE_CONTENT_LENGTH > 0)
+            resource.responseLength(perfTestParams.LOADER_RESPONSE_CONTENT_LENGTH);
+
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .socketAddressResolver(new StatisticalSyncSocketAddressResolver())
             .scheme(serverUri.getScheme())
@@ -241,7 +247,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
             .threads(perfTestParams.getLoaderThreads())
             .rateRampUpPeriod(perfTestParams.getWarmupDuration().toSeconds() / 2)
             .resourceRate(perfTestParams.getLoaderRate())
-            .resource(new Resource(serverUri.getPath()))
+            .resource(resource)
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
             .resourceListener(responseStatusListener)
