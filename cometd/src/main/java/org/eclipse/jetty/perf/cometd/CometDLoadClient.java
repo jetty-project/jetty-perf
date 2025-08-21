@@ -107,7 +107,7 @@ public class CometDLoadClient
     boolean tls = false;
     int selectors = 1;
     int maxThreads = 256;
-    ClientTransportType transport = ClientTransportType.JETTY_WEBSOCKET;
+    ClientTransportType transport = ClientTransportType.LONG_POLLING;
     boolean http2 = false;
     boolean perMessageDeflate = false;
     String context = Config.CONTEXT_PATH;
