@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -326,6 +325,12 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
             sslContextFactory.setProvider(perfTestParams.getJsseProvider());
 
         URI serverUri = perfTestParams.getServerUri();
+        Resource resource = new Resource(serverUri.getPath());
+        if (perfTestParams.LOADER_REQUEST_CONTENT_LENGTH > 0)
+            resource.method("POST").requestLength(perfTestParams.LOADER_REQUEST_CONTENT_LENGTH);
+        if (perfTestParams.LOADER_RESPONSE_CONTENT_LENGTH > 0)
+            resource.responseLength(perfTestParams.LOADER_RESPONSE_CONTENT_LENGTH);
+
         LoadGenerator.Builder builder = LoadGenerator.builder()
             .scheme(serverUri.getScheme())
             .host(serverUri.getHost())
@@ -334,7 +339,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
             .runFor(perfTestParams.getWarmupDuration().plus(perfTestParams.getRunDuration()).toSeconds(), TimeUnit.SECONDS)
             .threads(1)
             .resourceRate(perfTestParams.getProbeRate())
-            .resource(new Resource(serverUri.getPath()))
+            .resource(resource)
             .resourceListener(responseTimeListener)
             .listener(responseTimeListener)
             .resourceListener(responseStatusListener)
