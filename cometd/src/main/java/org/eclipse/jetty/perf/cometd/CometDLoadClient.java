@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.websocket.WebSocketContainer;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.atomic.LongAdder;
 import org.HdrHistogram.Histogram;
+import org.HdrHistogram.HistogramLogReader;
 import org.cometd.bayeux.Channel;
 import org.cometd.bayeux.ChannelId;
 import org.cometd.bayeux.Message;
@@ -56,6 +56,7 @@ import org.eclipse.jetty.http2.client.transport.HttpClientTransportOverHTTP2;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.jmx.MBeanContainer;
+import org.eclipse.jetty.perf.util.LatencyRecorder;
 import org.eclipse.jetty.toolchain.perf.PlatformMonitor;
 import org.eclipse.jetty.util.BlockingArrayQueue;
 import org.eclipse.jetty.util.NanoTime;
@@ -68,15 +69,9 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 public class CometDLoadClient
 {
     private static final String START_FIELD = "start";
+    private static final String HISTOGRAM_FILENAME = "perf.hlog";
 
-    private final Collection<Histogram> allHistograms = new CopyOnWriteArrayList<>();
-    private final ThreadLocal<Histogram> histogram = ThreadLocal.withInitial(() ->
-    {
-        Histogram histogram = new Histogram(TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MINUTES.toNanos(1), 3);
-        allHistograms.add(histogram);
-        return histogram;
-    });
-
+    private final LatencyRecorder latencyRecorder;
     private final PlatformMonitor monitor = new PlatformMonitor();
     private final AtomicLong ids = new AtomicLong();
     private final List<LoadBayeuxClient> bayeuxClients = new BlockingArrayQueue<>();
@@ -124,10 +119,9 @@ public class CometDLoadClient
     boolean randomize = false;
     String file = "./result.json";
 
-    public static void main(String[] args) throws Exception
+    public CometDLoadClient(boolean recordHistogram) throws Exception
     {
-        CometDLoadClient client = new CometDLoadClient();
-        client.run();
+        latencyRecorder = recordHistogram ? new LatencyRecorder(HISTOGRAM_FILENAME) : null;
     }
 
     public void disconnect()
@@ -255,6 +249,9 @@ public class CometDLoadClient
             // Send a message to the server to signal the start of the test.
             statsClient.begin();
 
+            if (latencyRecorder != null)
+                latencyRecorder.startRecording();
+
             PlatformMonitor.Start start = monitor.start();
             System.err.println();
             System.err.println(start);
@@ -335,6 +332,9 @@ public class CometDLoadClient
         }
 
         statsClient.exit();
+
+        if (latencyRecorder != null)
+            latencyRecorder.stopRecording();
 
         LifeCycle.stop(webSocketContainer);
         LifeCycle.stop(webSocketClient);
@@ -500,7 +500,8 @@ public class CometDLoadClient
     private void updateLatencies(long startTime, long sendTime, long arrivalTime, long endTime)
     {
         long wallLatency = endTime - startTime;
-        histogram.get().recordValue(wallLatency);
+        if (latencyRecorder != null)
+            latencyRecorder.recordValue(wallLatency);
 
         long latency = TimeUnit.MICROSECONDS.toNanos(TimeUnit.NANOSECONDS.toMicros(arrivalTime - sendTime));
         Atomics.updateMin(minLatency, latency);
@@ -573,12 +574,20 @@ public class CometDLoadClient
             );
         }
 
-        Histogram histogram = allHistograms.stream().reduce(new Histogram(TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MINUTES.toNanos(1), 3), (h1, h2) ->
+        Histogram histogram = new Histogram(3);
+        try (HistogramLogReader reader = new HistogramLogReader(HISTOGRAM_FILENAME))
         {
-            h1.add(h2);
-            return h1;
-        });
-//        System.err.println(new HistogramSnapshot(histogram, 20, "Messages - Latency", "\u00B5s", this));
+            while (reader.hasNext())
+            {
+                Histogram h = (Histogram) reader.nextIntervalHistogram();
+                if (h != null)
+                    histogram.add(h);
+            }
+        }
+        catch (Exception e)
+        {
+            System.err.println("Error collecting histogram: " + e);
+        }
 
         System.err.printf("Messages - Network Latency Min/Ave/Max = %d/%d/%d ms%n",
             TimeUnit.NANOSECONDS.toMillis(minLatency.get()),
@@ -610,7 +619,6 @@ public class CometDLoadClient
 
     private void reset()
     {
-        allHistograms.forEach(Histogram::reset);
         threadPool.reset();
         start.set(0L);
         end.set(0L);

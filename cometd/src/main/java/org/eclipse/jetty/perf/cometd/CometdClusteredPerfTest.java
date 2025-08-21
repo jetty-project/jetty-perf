@@ -110,7 +110,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             perfTestParamsCustomizer.accept(perfTestParams);
             int batches = approximateBatches((int)perfTestParams.getWarmupDuration().toSeconds());
             LOG.info("Warmup batches: {}", batches);
-            runClient(perfTestParams, tools, batches);
+            runClient(perfTestParams, tools, batches, false);
         }).get(10, TimeUnit.MINUTES);
 
         LOG.info("Running...");
@@ -131,7 +131,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
                 perfTestParamsCustomizer.accept(perfTestParams);
                 int batches = approximateBatches((int)perfTestParams.getRunDuration().toSeconds());
                 LOG.info("Run batches: {}", batches);
-                runClient(perfTestParams, tools, batches);
+                runClient(perfTestParams, tools, batches, true);
             }
         }).get(10, TimeUnit.MINUTES);
         serverArray.executeOnAll(tools ->
@@ -279,10 +279,10 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         bayeuxServer.start();
     }
 
-    protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools, int batches) throws Exception
+    protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools, int batches, boolean recordHistogram) throws Exception
     {
         int clientId = clusterTools.barrier("cometd-client-id-barrier", perfTestParams.getLoadersCount()).await();
-        CometDLoadClient client = new CometDLoadClient();
+        CometDLoadClient client = new CometDLoadClient(recordHistogram);
         client.host = perfTestParams.getServerUri().getHost();
         client.port = perfTestParams.getServerPort();
         client.channel = "/a/" + clientId;
