@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.websocket.WebSocketContainer;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ import org.cometd.common.JacksonJSONContextClient;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpClientTransport;
 import org.eclipse.jetty.client.Request;
+import org.eclipse.jetty.client.RoundRobinConnectionPool;
 import org.eclipse.jetty.client.transport.HttpClientTransportOverHTTP;
 import org.eclipse.jetty.ee11.websocket.jakarta.client.JakartaWebSocketClientContainerProvider;
 import org.eclipse.jetty.http.HttpHeader;
@@ -177,6 +177,7 @@ public class CometDLoadClient
             HTTP2Client http2Client = new HTTP2Client(clientConnector);
             httpClientTransport = new HttpClientTransportOverHTTP2(http2Client);
         }
+        httpClientTransport.setConnectionPoolFactory(destination -> new RoundRobinConnectionPool(destination, 64, 1));
         httpClient = new HttpClient(httpClientTransport);
         httpClient.setMaxConnectionsPerDestination(60000);
         httpClient.setMaxRequestsQueuedPerDestination(10000);
