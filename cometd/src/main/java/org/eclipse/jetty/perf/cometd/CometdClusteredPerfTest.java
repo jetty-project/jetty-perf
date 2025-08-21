@@ -64,21 +64,20 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         super(testName, reportRootPath, perfTestParams, perfTestParamsCustomizer);
     }
 
-    public static void runTest(ClusteredTestContext clusteredTestContext) throws Exception
+    public static void runTest(ClusteredTestContext clusteredTestContext, Invocable.InvocationType invocationType) throws Exception
     {
-        runTest(clusteredTestContext, new PerfTestParams(), p -> {});
+        runTest(clusteredTestContext, new PerfTestParams(), invocationType, p -> {});
     }
 
-    public static void runTest(ClusteredTestContext clusteredTestContext, PerfTestParams perfTestParams, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
+    public static void runTest(ClusteredTestContext clusteredTestContext, PerfTestParams perfTestParams, Invocable.InvocationType invocationType, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
         try (CometdClusteredPerfTest clusteredPerfTest = new CometdClusteredPerfTest(clusteredTestContext.getTestName(), clusteredTestContext.getReportRootPath(), perfTestParams, perfTestParamsCustomizer))
         {
-            clusteredPerfTest.execute();
+            clusteredPerfTest.execute(invocationType);
         }
     }
 
-    @Override
-    protected void execute() throws Exception
+    private void execute(Invocable.InvocationType invocationType) throws Exception
     {
         LOG.info("Parameters:");
         perfTestParams.asMap().forEach((k, v) -> System.out.println("  " + k + " = '" + v + "'"));
@@ -104,7 +103,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         serverArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
-            startServer(perfTestParams, tools);
+            startServer(perfTestParams, tools, invocationType);
         }).get(30, TimeUnit.SECONDS);
         loadersArray.executeOnAll(tools ->
         {
@@ -161,7 +160,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         return (int)(Math.max(1, seconds / 1.5) * 100);
     }
 
-    protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools) throws Exception
+    protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools, Invocable.InvocationType invocationType) throws Exception
     {
         MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE);
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
@@ -233,8 +232,6 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         server.setHandler(context);
         context.getContext().setAttribute(BayeuxServer.ATTRIBUTE, bayeuxServer);
         context.setAttribute(ContextHandler.MANAGED_ATTRIBUTES, BayeuxServer.ATTRIBUTE);
-
-        Invocable.InvocationType invocationType = Invocable.InvocationType.BLOCKING;
 
         WebSocketUpgradeHandler wsHandler = WebSocketUpgradeHandler.from(server, context, container ->
             container.setInvocationType(invocationType));

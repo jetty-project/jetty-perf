@@ -31,6 +31,4 @@ public abstract class AbstractClusteredPerfTest implements Serializable, Closeab
             cluster = null;
         }
     }
-
-    protected abstract void execute() throws Exception;
 }

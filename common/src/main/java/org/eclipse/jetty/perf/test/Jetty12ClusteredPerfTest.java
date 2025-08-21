@@ -70,8 +70,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
 
     public static void runTest(ClusteredTestContext clusteredTestContext, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
     {
-        runTest(clusteredTestContext, new PerfTestParams(), testedHandlerSupplier, p ->
-        {});
+        runTest(clusteredTestContext, new PerfTestParams(), testedHandlerSupplier, p -> {});
     }
 
     public static void runTest(ClusteredTestContext clusteredTestContext, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception

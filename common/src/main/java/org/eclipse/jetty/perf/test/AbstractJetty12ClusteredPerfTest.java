@@ -28,7 +28,6 @@ public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClustered
         super(testName, reportRootPath, perfTestParams, perfTestParamsCustomizer);
     }
 
-    @Override
     protected void execute() throws Exception
     {
         LOG.info("Parameters:");
