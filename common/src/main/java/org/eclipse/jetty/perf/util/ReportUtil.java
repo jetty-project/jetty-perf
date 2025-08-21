@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -13,11 +12,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.eclipse.jetty.perf.histogram.HgrmReport;
 import org.eclipse.jetty.perf.histogram.JHiccupReport;
 import org.eclipse.jetty.perf.histogram.PerfReport;
-import org.eclipse.jetty.perf.histogram.PlatformMonitorReport;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.NodeArray;
 import org.slf4j.Logger;
@@ -104,7 +101,6 @@ public class ReportUtil
             {
                 PerfReport.createHtmlHistogram(hlogFile.toFile(), os);
             }
-            PlatformMonitorReport.createSnapshotHistogram(reportFolder, hlogFile);
         }
     }
 

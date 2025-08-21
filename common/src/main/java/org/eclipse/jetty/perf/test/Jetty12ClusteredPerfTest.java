@@ -30,7 +30,6 @@ import org.eclipse.jetty.perf.histogram.loader.ResponseTimeListener;
 import org.eclipse.jetty.perf.httpclient.StatisticalSyncSocketAddressResolver;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.eclipse.jetty.perf.util.LatencyRecorder;
-import org.eclipse.jetty.perf.util.PlatformMonitorRecorder;
 import org.eclipse.jetty.perf.util.Recorder;
 import org.eclipse.jetty.perf.util.SerializableConsumer;
 import org.eclipse.jetty.perf.util.SerializableSupplier;
@@ -203,7 +202,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
                     LOG.error("Error writing server reports", e);
                 }
             }
-        }, new PlatformMonitorRecorder(), latencyRecorder));
+        }, latencyRecorder));
         env.put(CompletableFuture.class.getName(), CompletableFuture.completedFuture(null));
         env.put(Server.class.getName(), server);
     }
@@ -223,7 +222,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
         Map<String, Object> env = clusterTools.nodeEnvironment();
-        env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
+        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
         SslContextFactory.Client sslContextFactory = new SslContextFactory.Client(true);
         if (perfTestParams.isTlsEnabled())
@@ -320,7 +319,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
         ResponseTimeListener responseTimeListener = new ResponseTimeListener(latencyRecorder);
         ResponseStatusListener responseStatusListener = new ResponseStatusListener("http-client-statuses.log");
         Map<String, Object> env = clusterTools.nodeEnvironment();
-        env.put(Recorder.class.getName(), List.of(new PlatformMonitorRecorder(), latencyRecorder, responseStatusListener));
+        env.put(Recorder.class.getName(), List.of(latencyRecorder, responseStatusListener));
 
         SslContextFactory.Client sslContextFactory = new SslContextFactory.Client(true);
         if (perfTestParams.isTlsEnabled())
