@@ -117,8 +117,11 @@ public class CometDLoadClient
     int iterations = 1;
     int clients = 1000;
     int batches = 1000;
+
+    // If any of these 2 are changed, secondsToBatches() must be changed accordingly.
     int batchSize = 10;
     long batchPause = 10000;
+
     int messageSize = 50;
     boolean randomize = false;
     String connectionPoolType = "first";
@@ -147,6 +150,12 @@ public class CometDLoadClient
             case "random" -> destination -> new RandomConnectionPool(destination, maxConnectionsPerDestination, 1);
             default -> throw new IllegalArgumentException("Unsupported connection pool: " + connectionPoolType);
         };
+    }
+
+    public static int secondsToBatches(int seconds)
+    {
+        // a batch of 100 takes 2s according to the existing config
+        return Math.max(1, seconds / 2) * 100;
     }
 
     public void run() throws Exception

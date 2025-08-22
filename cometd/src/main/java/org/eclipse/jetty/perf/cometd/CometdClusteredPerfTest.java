@@ -108,7 +108,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         loadersArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
-            int batches = approximateBatches((int)perfTestParams.getWarmupDuration().toSeconds());
+            int batches = CometDLoadClient.secondsToBatches((int)perfTestParams.getWarmupDuration().toSeconds());
             LOG.info("Warmup batches: {}", batches);
             runClient(perfTestParams, tools, batches, false);
         }).get(10, TimeUnit.MINUTES);
@@ -129,7 +129,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
             {
                 perfTestParamsCustomizer.accept(perfTestParams);
-                int batches = approximateBatches((int)perfTestParams.getRunDuration().toSeconds());
+                int batches = CometDLoadClient.secondsToBatches((int)perfTestParams.getRunDuration().toSeconds());
                 LOG.info("Run batches: {}", batches);
                 runClient(perfTestParams, tools, batches, true);
             }
@@ -152,12 +152,6 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
         long after = System.nanoTime();
         LOG.info("Done; elapsed={} ms", TimeUnit.NANOSECONDS.toMillis(after - before));
-    }
-
-    private static int approximateBatches(int seconds)
-    {
-        // a batch of 100 takes ~1.5s
-        return (int)(Math.max(1, seconds / 1.5) * 100);
     }
 
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools, Invocable.InvocationType invocationType) throws Exception
