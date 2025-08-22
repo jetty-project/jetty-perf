@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.websocket.WebSocketContainer;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,6 @@ import org.cometd.bayeux.Message;
 import org.cometd.bayeux.client.ClientSessionChannel;
 import org.cometd.benchmark.Atomics;
 import org.cometd.benchmark.Config;
-import org.cometd.benchmark.MonitoringQueuedThreadPool;
 import org.cometd.client.BayeuxClient;
 import org.cometd.client.ext.AckExtension;
 import org.cometd.client.http.jetty.JettyHttpClientTransport;
@@ -67,6 +67,7 @@ import org.eclipse.jetty.util.SocketAddressResolver;
 import org.eclipse.jetty.util.component.Container;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 public class CometDLoadClient
@@ -91,7 +92,7 @@ public class CometDLoadClient
     private final Map<String, AtomicStampedReference<Long>> sendTimes = new ConcurrentHashMap<>();
     private final Map<String, AtomicStampedReference<List<Long>>> arrivalTimes = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(8);
-    private final MonitoringQueuedThreadPool threadPool = new MonitoringQueuedThreadPool(0);
+    private final MonitoredQueuedThreadPool threadPool = new MonitoredQueuedThreadPool();
     private final DynamicConnectionStatistics connectionStatistics = new DynamicConnectionStatistics();
     private HttpClient httpClient;
     private WebSocketClient webSocketClient;
@@ -334,7 +335,7 @@ public class CometDLoadClient
                 results.put("threadPool", threadPool);
                 threadPool.put("tasks", this.threadPool.getTasks());
                 threadPool.put("queueSizeMax", this.threadPool.getMaxQueueSize());
-                threadPool.put("activeThreadsMax", this.threadPool.getMaxActiveThreads());
+//                threadPool.put("activeThreadsMax", this.threadPool.getMaxActiveThreads());
                 threadPool.put("queueLatencyAverage", new Measure(TimeUnit.NANOSECONDS.toMillis(this.threadPool.getAverageQueueLatency()), "ms"));
                 threadPool.put("queueLatencyMax", new Measure(TimeUnit.NANOSECONDS.toMillis(this.threadPool.getMaxQueueLatency()), "ms"));
                 threadPool.put("taskTimeAverage", new Measure(TimeUnit.NANOSECONDS.toMillis(this.threadPool.getAverageTaskLatency()), "ms"));
@@ -354,7 +355,31 @@ public class CometDLoadClient
         statsClient.exit();
 
         if (latencyRecorder != null)
+        {
             latencyRecorder.stopRecording();
+
+            try
+            {
+                try (PrintWriter printWriter = new PrintWriter("HttpClientMonitoredQueuedThreadPool.txt"))
+                {
+                    printWriter.println(String.format("Average queue latency=%d", threadPool.getAverageQueueLatency()));
+                    printWriter.println(String.format("Max queue latency=%d", threadPool.getMaxQueueLatency()));
+                    printWriter.println(String.format("Max queue size=%d", threadPool.getMaxQueueSize()));
+                    printWriter.println(String.format("Average task latency=%d", threadPool.getAverageTaskLatency()));
+                    printWriter.println(String.format("Max task latency=%d", threadPool.getMaxTaskLatency()));
+                    printWriter.println(String.format("Max busy threads=%d", threadPool.getMaxBusyThreads()));
+                }
+
+                try (PrintWriter printWriter = new PrintWriter("HttpClientDump.txt"))
+                {
+                    httpClient.dump(printWriter);
+                }
+            }
+            catch (Exception e)
+            {
+                System.err.println("Error writing http client reports" + e);
+            }
+        }
 
         LifeCycle.stop(webSocketContainer);
         LifeCycle.stop(webSocketClient);
@@ -616,7 +641,7 @@ public class CometDLoadClient
 
         System.err.printf("Slowest Message ID = %s time = %d ms%n", maxTime.getReference(), maxTime.getStamp());
 
-        Config.printThreadPool("Thread Pool", threadPool);
+//        Config.printThreadPool("Thread Pool", threadPool);
 
         return histogram;
     }
