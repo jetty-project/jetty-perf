@@ -1,5 +1,6 @@
 package org.eclipse.jetty.perf.cometd;
 
+import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -171,7 +172,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools, Invocable.InvocationType invocationType) throws Exception
     {
-        MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE);
+        MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, new DisruptorBlockingQueue<>(1024*1024));
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
         Server server = new Server(serverThreadPool, null, null);
         QueuedThreadPool cometdThreadPool = new QueuedThreadPool();
