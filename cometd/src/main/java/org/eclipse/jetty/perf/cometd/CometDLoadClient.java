@@ -641,9 +641,21 @@ public class CometDLoadClient
 
         System.err.printf("Slowest Message ID = %s time = %d ms%n", maxTime.getReference(), maxTime.getStamp());
 
-//        Config.printThreadPool("Thread Pool", threadPool);
+        printThreadPool("Thread Pool", threadPool);
 
         return histogram;
+    }
+
+    public static void printThreadPool(String name, MonitoredQueuedThreadPool threadPool)
+    {
+        System.err.printf("%s:%n" +
+            "    threads:                %d%n" +
+            "    tasks:                  %d%n" +
+            "    max concurrent threads: %d%n" +
+            "    max queue size:         %d%n" +
+            "    queue latency avg/max:  %d/%d ms%n" +
+            "    task time avg/max:      %d/%d ms%n",
+            name, threadPool.getThreads(), threadPool.getTasks(), threadPool.getMaxBusyThreads(), threadPool.getMaxQueueSize(), TimeUnit.NANOSECONDS.toMillis(threadPool.getAverageQueueLatency()), TimeUnit.NANOSECONDS.toMillis(threadPool.getMaxQueueLatency()), TimeUnit.NANOSECONDS.toMillis(threadPool.getAverageTaskLatency()), TimeUnit.NANOSECONDS.toMillis(threadPool.getMaxTaskLatency()));
     }
 
     private void saveResults(Map<String, Object> run, String path)
