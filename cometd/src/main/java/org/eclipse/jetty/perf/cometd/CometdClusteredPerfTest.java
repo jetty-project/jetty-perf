@@ -289,6 +289,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         client.batches = batches;
         if (perfTestParams.getHttpVersion().equals(HttpVersion.HTTP_2))
             client.http2 = true;
+        client.connectionPoolType = perfTestParams.LOADER_CONNECTION_POOL_FACTORY_TYPE;
         client.run();
         clusterTools.nodeEnvironment().put(CometDLoadClient.class.getName(), client);
     }

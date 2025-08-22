@@ -43,8 +43,11 @@ import org.cometd.client.transport.TransportListener;
 import org.cometd.client.websocket.jakarta.WebSocketTransport;
 import org.cometd.client.websocket.jetty.JettyWebSocketTransport;
 import org.cometd.common.JacksonJSONContextClient;
+import org.eclipse.jetty.client.ConnectionPool;
+import org.eclipse.jetty.client.DuplexConnectionPool;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpClientTransport;
+import org.eclipse.jetty.client.RandomConnectionPool;
 import org.eclipse.jetty.client.Request;
 import org.eclipse.jetty.client.RoundRobinConnectionPool;
 import org.eclipse.jetty.client.transport.HttpClientTransportOverHTTP;
@@ -117,6 +120,7 @@ public class CometDLoadClient
     long batchPause = 10000;
     int messageSize = 50;
     boolean randomize = false;
+    String connectionPoolType = "first";
     String file = "./result.json";
 
     public CometDLoadClient(boolean recordHistogram) throws Exception
@@ -131,6 +135,17 @@ public class CometDLoadClient
             disconnectClient(bayeuxClient);
         }
         bayeuxClients.clear();
+    }
+
+    private ConnectionPool.Factory buildConnectionPoolFactory()
+    {
+        return switch (connectionPoolType)
+        {
+            case "first" -> destination -> new DuplexConnectionPool(destination, 64);
+            case "round-robin" -> destination -> new RoundRobinConnectionPool(destination, 64, 1);
+            case "random" -> destination -> new RandomConnectionPool(destination, 64, 1);
+            default -> throw new IllegalArgumentException("Unsupported connection pool: " + connectionPoolType);
+        };
     }
 
     public void run() throws Exception
@@ -177,7 +192,7 @@ public class CometDLoadClient
             HTTP2Client http2Client = new HTTP2Client(clientConnector);
             httpClientTransport = new HttpClientTransportOverHTTP2(http2Client);
         }
-        httpClientTransport.setConnectionPoolFactory(destination -> new RoundRobinConnectionPool(destination, 64, 1));
+        httpClientTransport.setConnectionPoolFactory(buildConnectionPoolFactory());
         httpClient = new HttpClient(httpClientTransport);
         httpClient.setMaxConnectionsPerDestination(60000);
         httpClient.setMaxRequestsQueuedPerDestination(10000);
