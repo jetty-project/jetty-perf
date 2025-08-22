@@ -66,6 +66,10 @@
       <artifactId>async-profiler</artifactId>
     </dependency>
     <dependency>
+      <groupId>tools.profiler</groupId>
+      <artifactId>jfr-converter</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-slf4j-impl</artifactId>
     </dependency>

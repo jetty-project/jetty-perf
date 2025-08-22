@@ -194,7 +194,8 @@ public class PerfTestParams implements Serializable
         if (monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
             monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOC) ||
             monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES))
+            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES) ||
+            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_JFR_CPU))
         {
             result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
             if (JDK_TO_USE.contains("21"))

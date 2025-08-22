@@ -1,6 +1,5 @@
 package org.eclipse.jetty.perf.monitoring;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,11 +7,11 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerAllocationMonitor;
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCacheMissesMonitor;
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerLockMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerMonitor;
 import org.eclipse.jetty.perf.monitoring.jhiccup.JHiccupMonitor;
 import org.eclipse.jetty.perf.monitoring.jmx.JitCompilationMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
@@ -28,7 +27,7 @@ import org.eclipse.jetty.perf.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConfigurableMonitor implements Closeable
+public class ConfigurableMonitor implements Monitor
 {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurableMonitor.class);
 
@@ -48,6 +47,7 @@ public class ConfigurableMonitor implements Closeable
         ASYNC_PROF_ALLOC,
         ASYNC_PROF_LOCK,
         ASYNC_PROF_CACHE_MISSES,
+        ASYNC_PROF_JFR_CPU,
 
         SJK_TTOP,
 
@@ -141,6 +141,10 @@ public class ConfigurableMonitor implements Closeable
             case ASYNC_PROF_CACHE_MISSES:
                 if (osName.contains("linux"))
                     return new AsyncProfilerCacheMissesMonitor();
+                return null;
+            case ASYNC_PROF_JFR_CPU:
+                if (osName.contains("linux"))
+                    return new JfrAsyncProfilerMonitor();
                 return null;
             case OS_PERF_STAT:
                 if (osName.contains("linux"))
