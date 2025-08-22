@@ -137,13 +137,13 @@ public class CometDLoadClient
         bayeuxClients.clear();
     }
 
-    private ConnectionPool.Factory buildConnectionPoolFactory()
+    private ConnectionPool.Factory buildConnectionPoolFactory(int maxConnectionsPerDestination)
     {
         return switch (connectionPoolType)
         {
-            case "first" -> destination -> new DuplexConnectionPool(destination, 64);
-            case "round-robin" -> destination -> new RoundRobinConnectionPool(destination, 64, 1);
-            case "random" -> destination -> new RandomConnectionPool(destination, 64, 1);
+            case "first" -> destination -> new DuplexConnectionPool(destination, maxConnectionsPerDestination);
+            case "round-robin" -> destination -> new RoundRobinConnectionPool(destination, maxConnectionsPerDestination, 1);
+            case "random" -> destination -> new RandomConnectionPool(destination, maxConnectionsPerDestination, 1);
             default -> throw new IllegalArgumentException("Unsupported connection pool: " + connectionPoolType);
         };
     }
@@ -186,13 +186,16 @@ public class CometDLoadClient
         clientConnector.setExecutor(threadPool);
         clientConnector.setSelectors(selectors);
         clientConnector.setSslContextFactory(new SslContextFactory.Client(true));
-        HttpClientTransport httpClientTransport = new HttpClientTransportOverHTTP(clientConnector);
+        HttpClientTransport httpClientTransport;
         if (http2)
         {
             HTTP2Client http2Client = new HTTP2Client(clientConnector);
             httpClientTransport = new HttpClientTransportOverHTTP2(http2Client);
         }
-        httpClientTransport.setConnectionPoolFactory(buildConnectionPoolFactory());
+        else
+        {
+            httpClientTransport = new HttpClientTransportOverHTTP(clientConnector);
+        }
         httpClient = new HttpClient(httpClientTransport);
         httpClient.setMaxConnectionsPerDestination(60000);
         httpClient.setMaxRequestsQueuedPerDestination(10000);
@@ -202,6 +205,7 @@ public class CometDLoadClient
         httpClient.addBean(connectionStatistics);
         LifeCycle.start(httpClient);
         mbeanContainer.beanAdded(null, httpClient);
+        httpClientTransport.setConnectionPoolFactory(buildConnectionPoolFactory(httpClient.getMaxConnectionsPerDestination()));
 
         webSocketClient = new WebSocketClient(httpClient);
         webSocketClient.setInputBufferSize(8 * 1024);
