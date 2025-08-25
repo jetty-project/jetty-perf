@@ -99,22 +99,25 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             future.get(30, TimeUnit.SECONDS);
         }
 
+        long before = System.nanoTime();
         LOG.info("Warming up...");
         serverArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
             startServer(perfTestParams, tools, invocationType);
         }).get(30, TimeUnit.SECONDS);
-        loadersArray.executeOnAll(tools ->
+        NodeArrayFuture loadersFuture = loadersArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
-            int batches = CometDLoadClient.secondsToBatches((int)perfTestParams.getWarmupDuration().toSeconds());
-            LOG.info("Warmup batches: {}", batches);
-            runClient(perfTestParams, tools, batches, false);
-        }).get(10, TimeUnit.MINUTES);
+            int warmupBatches = CometDLoadClient.secondsToBatches((int)perfTestParams.getWarmupDuration().toSeconds());
+            LOG.info("Warmup batches: {}", warmupBatches);
+            int runBatches = CometDLoadClient.secondsToBatches((int)perfTestParams.getRunDuration().toSeconds());
+            LOG.info("Run batches: {}", runBatches);
+            runClient(perfTestParams, tools, warmupBatches + runBatches);
+        });
 
+        Thread.sleep(perfTestParams.getWarmupDuration().toSeconds() * 1000);
         LOG.info("Running...");
-        long before = System.nanoTime();
 
         serverArray.executeOnAll(tools ->
         {
@@ -126,14 +129,16 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         }).get(30, TimeUnit.SECONDS);
         loadersArray.executeOnAll(tools ->
         {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
-            {
-                perfTestParamsCustomizer.accept(perfTestParams);
-                int batches = CometDLoadClient.secondsToBatches((int)perfTestParams.getRunDuration().toSeconds());
-                LOG.info("Run batches: {}", batches);
-                runClient(perfTestParams, tools, batches, true);
-            }
-        }).get(10, TimeUnit.MINUTES);
+            @SuppressWarnings("unchecked")
+            List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
+            recorders.forEach(Recorder::startRecording);
+            ConfigurableMonitor configurableMonitor = new ConfigurableMonitor(perfTestParams.getMonitoredItems());
+            tools.nodeEnvironment().put(ConfigurableMonitor.class.getName(), configurableMonitor);
+        }).get(30, TimeUnit.SECONDS);
+
+        loadersFuture.get(perfTestParams.getRunDuration().toSeconds() + 30, TimeUnit.SECONDS);
+        LOG.info("Stopping...");
+
         serverArray.executeOnAll(tools ->
         {
             @SuppressWarnings("unchecked")
@@ -273,10 +278,12 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         bayeuxServer.start();
     }
 
-    protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools, int batches, boolean recordHistogram) throws Exception
+    protected void runClient(PerfTestParams perfTestParams, ClusterTools clusterTools, int batches) throws Exception
     {
+        LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
+        clusterTools.nodeEnvironment().put(Recorder.class.getName(), List.of(latencyRecorder));
         int clientId = clusterTools.barrier("cometd-client-id-barrier", perfTestParams.getLoadersCount()).await();
-        CometDLoadClient client = new CometDLoadClient(recordHistogram);
+        CometDLoadClient client = new CometDLoadClient(latencyRecorder);
         client.host = perfTestParams.getServerUri().getHost();
         client.port = perfTestParams.getServerPort();
         client.channel = "/a/" + clientId;
@@ -290,6 +297,10 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
     protected void stopClient(ClusterTools clusterTools)
     {
+        @SuppressWarnings("unchecked")
+        List<Recorder> recorders = (List<Recorder>)clusterTools.nodeEnvironment().get(Recorder.class.getName());
+        recorders.forEach(Recorder::stopRecording);
+
         CometDLoadClient client = (CometDLoadClient)clusterTools.nodeEnvironment().get(CometDLoadClient.class.getName());
         client.disconnect();
     }

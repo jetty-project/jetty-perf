@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -73,7 +74,6 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 public class CometDLoadClient
 {
     private static final String START_FIELD = "start";
-    private static final String HISTOGRAM_FILENAME = "perf.hlog";
 
     private final LatencyRecorder latencyRecorder;
     private final PlatformMonitor monitor = new PlatformMonitor();
@@ -124,9 +124,9 @@ public class CometDLoadClient
     String connectionPoolType = "first";
     String file = "./result.json";
 
-    public CometDLoadClient(boolean recordHistogram) throws Exception
+    public CometDLoadClient(LatencyRecorder latencyRecorder)
     {
-        latencyRecorder = recordHistogram ? new LatencyRecorder(HISTOGRAM_FILENAME) : null;
+        this.latencyRecorder = Objects.requireNonNull(latencyRecorder);
     }
 
     public void disconnect()
@@ -276,9 +276,6 @@ public class CometDLoadClient
             // Send a message to the server to signal the start of the test.
             statsClient.begin();
 
-            if (latencyRecorder != null)
-                latencyRecorder.startRecording();
-
             PlatformMonitor.Start start = monitor.start();
             System.err.println();
             System.err.println(start);
@@ -360,31 +357,26 @@ public class CometDLoadClient
 
         statsClient.exit();
 
-        if (latencyRecorder != null)
+        try
         {
-            latencyRecorder.stopRecording();
-
-            try
+            try (PrintWriter printWriter = new PrintWriter("HttpClientMonitoredQueuedThreadPool.txt"))
             {
-                try (PrintWriter printWriter = new PrintWriter("HttpClientMonitoredQueuedThreadPool.txt"))
-                {
-                    printWriter.println(String.format("Average queue latency=%d", threadPool.getAverageQueueLatency()));
-                    printWriter.println(String.format("Max queue latency=%d", threadPool.getMaxQueueLatency()));
-                    printWriter.println(String.format("Max queue size=%d", threadPool.getMaxQueueSize()));
-                    printWriter.println(String.format("Average task latency=%d", threadPool.getAverageTaskLatency()));
-                    printWriter.println(String.format("Max task latency=%d", threadPool.getMaxTaskLatency()));
-                    printWriter.println(String.format("Max busy threads=%d", threadPool.getMaxBusyThreads()));
-                }
+                printWriter.println(String.format("Average queue latency=%d", threadPool.getAverageQueueLatency()));
+                printWriter.println(String.format("Max queue latency=%d", threadPool.getMaxQueueLatency()));
+                printWriter.println(String.format("Max queue size=%d", threadPool.getMaxQueueSize()));
+                printWriter.println(String.format("Average task latency=%d", threadPool.getAverageTaskLatency()));
+                printWriter.println(String.format("Max task latency=%d", threadPool.getMaxTaskLatency()));
+                printWriter.println(String.format("Max busy threads=%d", threadPool.getMaxBusyThreads()));
+            }
 
-                try (PrintWriter printWriter = new PrintWriter("HttpClientDump.txt"))
-                {
-                    httpClient.dump(printWriter);
-                }
-            }
-            catch (Exception e)
+            try (PrintWriter printWriter = new PrintWriter("HttpClientDump.txt"))
             {
-                System.err.println("Error writing http client reports" + e);
+                httpClient.dump(printWriter);
             }
+        }
+        catch (Exception e)
+        {
+            System.err.println("Error writing http client reports" + e);
         }
 
         LifeCycle.stop(webSocketContainer);
@@ -551,8 +543,7 @@ public class CometDLoadClient
     private void updateLatencies(long startTime, long sendTime, long arrivalTime, long endTime)
     {
         long wallLatency = endTime - startTime;
-        if (latencyRecorder != null)
-            latencyRecorder.recordValue(wallLatency);
+        latencyRecorder.recordValue(wallLatency);
 
         long latency = TimeUnit.MICROSECONDS.toNanos(TimeUnit.NANOSECONDS.toMicros(arrivalTime - sendTime));
         Atomics.updateMin(minLatency, latency);
@@ -626,7 +617,7 @@ public class CometDLoadClient
         }
 
         Histogram histogram = new Histogram(3);
-        try (HistogramLogReader reader = new HistogramLogReader(HISTOGRAM_FILENAME))
+        try (HistogramLogReader reader = new HistogramLogReader(latencyRecorder.getFilename()))
         {
             while (reader.hasNext())
             {

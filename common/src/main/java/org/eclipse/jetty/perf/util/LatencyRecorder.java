@@ -14,10 +14,17 @@ import org.HdrHistogram.SingleWriterRecorder;
 public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 {
     private final HistogramLogRecorder recorder;
+    private final String histogramFilename;
 
     public LatencyRecorder(String histogramFilename) throws FileNotFoundException
     {
         this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
+        this.histogramFilename = histogramFilename;
+    }
+
+    public String getFilename()
+    {
+        return histogramFilename;
     }
 
     @Override
