@@ -8,8 +8,8 @@ import java.util.TimerTask;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.HdrHistogram.Histogram;
-import org.HdrHistogram.HistogramLogWriter;
 import org.HdrHistogram.SingleWriterRecorder;
+import org.eclipse.jetty.perf.util.histo.HistogramLogWriter;
 
 public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 {
@@ -66,6 +66,7 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
                 return singleWriterRecorder;
             });
             writer = new HistogramLogWriter(histogramFilename);
+            writer.ensureBufferCapacity(8 * 1024 * 1024); // pre-allocate a 8 MB buffer
             timer.schedule(new TimerTask()
             {
                 private final Histogram collectiveHistogram = new Histogram(numberOfSignificantValueDigits);
