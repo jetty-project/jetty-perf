@@ -11,7 +11,8 @@ import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerAllocationMonito
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCacheMissesMonitor;
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerLockMonitor;
-import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerCpuAllocMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.jhiccup.JHiccupMonitor;
 import org.eclipse.jetty.perf.monitoring.jmx.JitCompilationMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
@@ -48,6 +49,7 @@ public class ConfigurableMonitor implements Monitor
         ASYNC_PROF_LOCK,
         ASYNC_PROF_CACHE_MISSES,
         ASYNC_PROF_JFR_CPU,
+        ASYNC_PROF_JFR_CPU_ALLOC,
 
         SJK_TTOP,
 
@@ -144,7 +146,11 @@ public class ConfigurableMonitor implements Monitor
                 return null;
             case ASYNC_PROF_JFR_CPU:
                 if (osName.contains("linux"))
-                    return new JfrAsyncProfilerMonitor();
+                    return new JfrAsyncProfilerCpuMonitor();
+                return null;
+            case ASYNC_PROF_JFR_CPU_ALLOC:
+                if (osName.contains("linux"))
+                    return new JfrAsyncProfilerCpuAllocMonitor();
                 return null;
             case OS_PERF_STAT:
                 if (osName.contains("linux"))
