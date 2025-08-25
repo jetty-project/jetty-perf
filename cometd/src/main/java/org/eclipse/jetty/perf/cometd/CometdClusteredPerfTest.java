@@ -119,21 +119,21 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         Thread.sleep(perfTestParams.getWarmupDuration().toSeconds() * 1000);
         LOG.info("Running...");
 
-        serverArray.executeOnAll(tools ->
-        {
-            @SuppressWarnings("unchecked")
-            List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
-            recorders.forEach(Recorder::startRecording);
-            ConfigurableMonitor configurableMonitor = new ConfigurableMonitor(perfTestParams.getMonitoredItems());
-            tools.nodeEnvironment().put(ConfigurableMonitor.class.getName(), configurableMonitor);
-        }).get(30, TimeUnit.SECONDS);
         loadersArray.executeOnAll(tools ->
         {
+            ConfigurableMonitor configurableMonitor = new ConfigurableMonitor(perfTestParams.getMonitoredItems());
+            tools.nodeEnvironment().put(ConfigurableMonitor.class.getName(), configurableMonitor);
             @SuppressWarnings("unchecked")
             List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
             recorders.forEach(Recorder::startRecording);
+        }).get(30, TimeUnit.SECONDS);
+        serverArray.executeOnAll(tools ->
+        {
             ConfigurableMonitor configurableMonitor = new ConfigurableMonitor(perfTestParams.getMonitoredItems());
             tools.nodeEnvironment().put(ConfigurableMonitor.class.getName(), configurableMonitor);
+            @SuppressWarnings("unchecked")
+            List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
+            recorders.forEach(Recorder::startRecording);
         }).get(30, TimeUnit.SECONDS);
 
         loadersFuture.get(perfTestParams.getRunDuration().toSeconds() + 30, TimeUnit.SECONDS);
@@ -150,7 +150,17 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
             ConfigurableMonitor configurableMonitor = (ConfigurableMonitor)tools.nodeEnvironment().get(ConfigurableMonitor.class.getName());
             configurableMonitor.close();
         }).get(30, TimeUnit.SECONDS);
-        loadersArray.executeOnAll(this::stopClient).get(30, TimeUnit.SECONDS);
+        loadersArray.executeOnAll(tools ->
+        {
+            @SuppressWarnings("unchecked")
+            List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());
+            recorders.forEach(Recorder::stopRecording);
+            ConfigurableMonitor configurableMonitor = (ConfigurableMonitor)tools.nodeEnvironment().get(ConfigurableMonitor.class.getName());
+            configurableMonitor.close();
+
+            CometDLoadClient client = (CometDLoadClient)tools.nodeEnvironment().get(CometDLoadClient.class.getName());
+            client.disconnect();
+        }).get(30, TimeUnit.SECONDS);
 
         LOG.info("Generating report...");
         generateReport(Path.of(reportRootPath), perfTestParams.getNodeArrayIds(), cluster);
@@ -293,16 +303,6 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         client.connectionPoolType = perfTestParams.LOADER_CONNECTION_POOL_FACTORY_TYPE;
         client.run();
         clusterTools.nodeEnvironment().put(CometDLoadClient.class.getName(), client);
-    }
-
-    protected void stopClient(ClusterTools clusterTools)
-    {
-        @SuppressWarnings("unchecked")
-        List<Recorder> recorders = (List<Recorder>)clusterTools.nodeEnvironment().get(Recorder.class.getName());
-        recorders.forEach(Recorder::stopRecording);
-
-        CometDLoadClient client = (CometDLoadClient)clusterTools.nodeEnvironment().get(CometDLoadClient.class.getName());
-        client.disconnect();
     }
 
     private static class MessageLatencyExtension implements BayeuxServer.Extension
