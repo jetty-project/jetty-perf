@@ -25,7 +25,7 @@ public class ClusteredTestParameterResolver implements ParameterResolver
             Class<?> testClass = extensionContext.getTestClass().orElseThrow();
             Method testMethod = extensionContext.getTestMethod().orElseThrow();
             ClusteredTestContext clusteredTestContext = new ClusteredTestContext(testClass, testMethod);
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put("ClusteredTestContext", (ExtensionContext.Store.CloseableResource)clusteredTestContext::close);
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put("ClusteredTestContext", clusteredTestContext);
             return clusteredTestContext;
         }
         catch (Exception e)
