@@ -26,7 +26,7 @@ public class JfrAsyncProfilerMonitor implements Monitor
             // this is fine
         }
         profiler = AsyncProfiler.getInstance();
-        profiler.execute("start,jfr,event=cpu,file=" + outputPath.toAbsolutePath());
+        profiler.execute("start,jfr,features=comptask,event=cpu,file=" + outputPath.toAbsolutePath());
     }
 
     @Override
