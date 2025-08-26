@@ -17,7 +17,7 @@ pipeline {
 
         // These settings are only used by the test JVM.
         string(defaultValue: 'ASYNC_PROF_JFR_CPU', description: 'Extra monitored items, as a CSV string.' +
-            ' You can choose from this list: GC_LOGS, SJK_TTOP, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES, ASYNC_PROF_JFR_CPU, ASYNC_PROF_JFR_CPU_ALLOC, ASYNC_PROF_JFR_CPU_LOCK', name: 'OPTIONAL_MONITORED_ITEMS')
+            ' You can choose from this list: GC_LOGS, SJK_TTOP, ASYNC_PROF_CPU, ASYNC_PROF_ALLOC, ASYNC_PROF_LOCK, ASYNC_PROF_CACHE_MISSES, ASYNC_PROF_JFR_CPU, ASYNC_PROF_JFR_CPU_ALLOC, ASYNC_PROF_JFR_CPU_LOCK, ASYNC_PROF_JFR_CPU_WALLCLOCK', name: 'OPTIONAL_MONITORED_ITEMS')
 
         string(defaultValue: 'load-master', description: 'Name of the server machine', name: 'SERVER_NAME')
         string(defaultValue: '-Xms32G -Xmx32G', description: 'Arguments of the server JVM', name: 'SERVER_JVM_OPTS')
