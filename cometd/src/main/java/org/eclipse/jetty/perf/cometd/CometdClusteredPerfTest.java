@@ -46,6 +46,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.Invocable;
 import org.eclipse.jetty.util.thread.MonitoredQueuedThreadPool;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.Scheduler;
 import org.eclipse.jetty.websocket.server.WebSocketUpgradeHandler;
 import org.mortbay.jetty.orchestrator.ClusterTools;
 import org.mortbay.jetty.orchestrator.NodeArray;
@@ -177,7 +178,14 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         Server server = new Server(serverThreadPool, null, null);
         QueuedThreadPool cometdThreadPool = new QueuedThreadPool();
         cometdThreadPool.setReservedThreads(0);
-        BayeuxServerImpl bayeuxServer = new BayeuxServerImpl();
+        BayeuxServerImpl bayeuxServer = new BayeuxServerImpl()
+        {
+            @Override
+            public Scheduler.Task schedule(Runnable task, long delay)
+            {
+                return () -> true;
+            }
+        };
         bayeuxServer.setExecutor(cometdThreadPool);
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         MessageLatencyExtension messageLatencyExtension = new MessageLatencyExtension(latencyRecorder);
