@@ -206,7 +206,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         }
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
-        httpConfiguration.setHeaderCacheSize(16 * 1024);
+        httpConfiguration.setHeaderCacheSize(0);
         ConnectionFactory http = new HttpConnectionFactory(httpConfiguration);
         HTTP2ServerConnectionFactory http2 = tls ? new HTTP2ServerConnectionFactory(httpConfiguration) : new HTTP2CServerConnectionFactory(httpConfiguration);
         ConnectionFactory[] factories = {http, http2};
