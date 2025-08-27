@@ -25,6 +25,7 @@ import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
+import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.test.AbstractClusteredPerfTest;
 import org.eclipse.jetty.perf.test.ClusteredTestContext;
@@ -173,7 +174,8 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
     {
         MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE);
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
-        Server server = new Server(serverThreadPool, null, null);
+        ByteBufferPool bufferPool = perfTestParams.SERVER_USE_BYTE_BUFFER_POOLING ? null : new ByteBufferPool.NonPooling();
+        Server server = new Server(serverThreadPool, null, bufferPool);
         QueuedThreadPool cometdThreadPool = new QueuedThreadPool();
         cometdThreadPool.setReservedThreads(0);
         BayeuxServerImpl bayeuxServer = new BayeuxServerImpl();
@@ -195,6 +197,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         }
 
         HttpConfiguration httpConfiguration = new HttpConfiguration();
+        httpConfiguration.setHeaderCacheSize(16 * 1024);
         ConnectionFactory http = new HttpConnectionFactory(httpConfiguration);
         HTTP2ServerConnectionFactory http2 = tls ? new HTTP2ServerConnectionFactory(httpConfiguration) : new HTTP2CServerConnectionFactory(httpConfiguration);
         ConnectionFactory[] factories = {http, http2};
