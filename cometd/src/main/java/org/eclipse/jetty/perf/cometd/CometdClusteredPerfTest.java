@@ -180,11 +180,11 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
 
     protected void startServer(PerfTestParams perfTestParams, ClusterTools clusterTools, Invocable.InvocationType invocationType) throws Exception
     {
-        MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, new BlockingArrayQueue<>(16 * 1024 * 1024, 1024 * 1024));
+        MonitoredQueuedThreadPool serverThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, BlockingArrayQueue.newInstance(16 * 1024 * 1024, Integer.MAX_VALUE));
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
         ByteBufferPool bufferPool = perfTestParams.SERVER_USE_BYTE_BUFFER_POOLING ? null : new ByteBufferPool.NonPooling();
         Server server = new Server(serverThreadPool, null, bufferPool);
-        MonitoredQueuedThreadPool cometdThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, new BlockingArrayQueue<>(16 * 1024 * 1024, 1024 * 1024));
+        MonitoredQueuedThreadPool cometdThreadPool = new MonitoredQueuedThreadPool(perfTestParams.SERVER_THREAD_POOL_SIZE, perfTestParams.SERVER_THREAD_POOL_SIZE, 24 * 3600 * 1000, BlockingArrayQueue.newInstance(16 * 1024 * 1024, Integer.MAX_VALUE));
         cometdThreadPool.setReservedThreads(0);
         BayeuxServerImpl bayeuxServer = new BayeuxServerImpl();
         bayeuxServer.setScheduler(new ConcurrentScheduler(64, 1, "concurrent-scheduler"));
@@ -322,6 +322,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         if (perfTestParams.getHttpVersion().equals(HttpVersion.HTTP_2))
             client.http2 = true;
         client.connectionPoolType = perfTestParams.LOADER_CONNECTION_POOL_FACTORY_TYPE;
+        client.messageSize = perfTestParams.LOADER_REQUEST_CONTENT_LENGTH;
         client.run();
         clusterTools.nodeEnvironment().put(CometDLoadClient.class.getName(), client);
     }
