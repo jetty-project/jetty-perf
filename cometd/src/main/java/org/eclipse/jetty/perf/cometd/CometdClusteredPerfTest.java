@@ -176,7 +176,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
         ByteBufferPool bufferPool = perfTestParams.SERVER_USE_BYTE_BUFFER_POOLING ? null : new ByteBufferPool.NonPooling();
         Server server = new Server(serverThreadPool, null, bufferPool);
-        QueuedThreadPool cometdThreadPool = new QueuedThreadPool();
+        MonitoredQueuedThreadPool cometdThreadPool = new QueuedThreadPool();
         cometdThreadPool.setReservedThreads(0);
         BayeuxServerImpl bayeuxServer = new BayeuxServerImpl();
         bayeuxServer.setExecutor(cometdThreadPool);
@@ -304,6 +304,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         if (perfTestParams.getHttpVersion().equals(HttpVersion.HTTP_2))
             client.http2 = true;
         client.connectionPoolType = perfTestParams.LOADER_CONNECTION_POOL_FACTORY_TYPE;
+        client.messageSize = perfTestParams.LOADER_REQUEST_CONTENT_LENGTH;
         client.run();
         clusterTools.nodeEnvironment().put(CometDLoadClient.class.getName(), client);
     }
