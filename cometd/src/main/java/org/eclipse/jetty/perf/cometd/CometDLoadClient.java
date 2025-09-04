@@ -118,7 +118,7 @@ public class CometDLoadClient
     int clients = 1000;
     int batches = 1000;
     int batchSize = 10;
-    final long batchPause = 10000; // If this is changed, secondsToBatches() must be changed accordingly.
+    final long batchPause = 100000; // If this is changed, secondsToBatches() must be changed accordingly.
     int messageSize = 50;
     boolean randomize = false;
     String connectionPoolType = "first";
@@ -151,8 +151,8 @@ public class CometDLoadClient
 
     public static int secondsToBatches(int seconds)
     {
-        // a batch of 100 takes 1s according to the existing config
-        return seconds * 100;
+        // a batch of 10 takes 1s according to the existing config
+        return seconds * 10;
     }
 
     public void run() throws Exception
