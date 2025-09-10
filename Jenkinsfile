@@ -19,7 +19,14 @@ pipeline {
     stage('Jetty Perf Run') {
       steps {
         script {
-          JETTY_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          //JETTY_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          def version = sh(
+              script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout",
+              returnStdout: true
+          ).trim()
+          
+          echo "Project version: ${version}"    
+          JETTY_VERSION = version
           echo "Detected Jetty version: $JETTY_VERSION"
 
           def built = build(job: '/load_testing/jetty-perf-main', propagate: true,
