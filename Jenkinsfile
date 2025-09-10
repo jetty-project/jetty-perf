@@ -9,7 +9,6 @@ pipeline {
     buildDiscarder logRotator(numToKeepStr: '100')
   }
   parameters {
-    string(defaultValue: '12.1.0-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
     string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: 'main-12.1.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
     string(defaultValue: 'load-jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
@@ -20,6 +19,9 @@ pipeline {
     stage('Jetty Perf Run') {
       steps {
         script {
+          JETTY_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Detected Jetty version: $JETTY_VERSION"
+
           def built = build(job: '/load_testing/jetty-perf-main', propagate: true,
                   parameters: [string(name: 'JETTY_VERSION', value: "${JETTY_VERSION}"),
                                string(name: 'JETTY_BRANCH', value: "${JETTY_BRANCH}"),
