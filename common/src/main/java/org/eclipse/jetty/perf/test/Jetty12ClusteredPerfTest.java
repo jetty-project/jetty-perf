@@ -115,6 +115,7 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
             customizer.setSniHostCheck(false);
             httpConfiguration.addCustomizer(customizer);
         }
+        httpConfiguration.setHeaderCacheSize(0);
 
         ConnectionFactory http;
         if (perfTestParams.getHttpVersion() == HttpVersion.HTTP_2)
