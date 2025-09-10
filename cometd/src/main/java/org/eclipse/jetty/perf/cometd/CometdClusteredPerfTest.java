@@ -176,7 +176,7 @@ public class CometdClusteredPerfTest extends AbstractClusteredPerfTest
         serverThreadPool.setReservedThreads(perfTestParams.SERVER_RESERVED_THREADS);
         ByteBufferPool bufferPool = perfTestParams.SERVER_USE_BYTE_BUFFER_POOLING ? null : new ByteBufferPool.NonPooling();
         Server server = new Server(serverThreadPool, null, bufferPool);
-        MonitoredQueuedThreadPool cometdThreadPool = new QueuedThreadPool();
+        MonitoredQueuedThreadPool cometdThreadPool = new MonitoredQueuedThreadPool();
         cometdThreadPool.setReservedThreads(0);
         BayeuxServerImpl bayeuxServer = new BayeuxServerImpl();
         bayeuxServer.setExecutor(cometdThreadPool);
