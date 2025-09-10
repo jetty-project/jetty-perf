@@ -16,15 +16,20 @@ import java.util.Map;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.conscrypt.OpenSSLProvider;
+import org.eclipse.jetty.client.Connection;
 import org.eclipse.jetty.client.ConnectionPool;
+import org.eclipse.jetty.client.Destination;
 import org.eclipse.jetty.client.DuplexConnectionPool;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
 import org.eclipse.jetty.client.RandomConnectionPool;
 import org.eclipse.jetty.client.RoundRobinConnectionPool;
 import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.io.internal.CompoundPool;
+import org.eclipse.jetty.io.internal.QueuedPool;
 import org.eclipse.jetty.perf.jdk.LocalJdk;
 import org.eclipse.jetty.perf.monitoring.ConfigurableMonitor;
 import org.eclipse.jetty.perf.util.JenkinsParameters;
+import org.eclipse.jetty.util.ConcurrentPool;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
@@ -129,6 +134,9 @@ public class PerfTestParams implements Serializable
         int connections = LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION;
         switch (LOADER_CONNECTION_POOL_FACTORY_TYPE)
         {
+            case "custom":
+                if (getHttpVersion().getVersion() <= 11)
+                  return destination -> new CustomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
             case "random":
                 return destination -> new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
             case "round-robin":
@@ -140,6 +148,27 @@ public class PerfTestParams implements Serializable
                     return destination -> new DuplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
                 else
                     return destination -> new MultiplexConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
+        }
+    }
+
+    private static class CustomConnectionPool extends MultiplexConnectionPool
+    {
+        public CustomConnectionPool(Destination destination, int maxConnections)
+        {
+            super(destination, () ->
+            {
+                if (maxConnections > ConcurrentPool.OPTIMAL_MAX_SIZE)
+                {
+                    ConcurrentPool<Connection> concurrentPool = new ConcurrentPool<>(ConcurrentPool.StrategyType.RANDOM, ConcurrentPool.OPTIMAL_MAX_SIZE, (c) -> 1);
+                    QueuedPool<Connection> queuedPool = new QueuedPool<>(maxConnections - ConcurrentPool.OPTIMAL_MAX_SIZE);
+                    return new CompoundPool<>(concurrentPool, queuedPool);
+                }
+                else
+                {
+                    return new ConcurrentPool<>(ConcurrentPool.StrategyType.RANDOM, maxConnections, (c) -> 1);
+                }
+            }, 1);
+            setMaximizeConnections(true);
         }
     }
 
