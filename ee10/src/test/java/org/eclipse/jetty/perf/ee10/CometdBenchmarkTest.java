@@ -44,21 +44,18 @@ public class CometdBenchmarkTest implements Serializable
         ConfigurableMonitor.Item.CMDLINE_MEMORY,
         ConfigurableMonitor.Item.CMDLINE_NETWORK,
         ConfigurableMonitor.Item.CMDLINE_DISK,
-        ConfigurableMonitor.Item.ASYNC_PROF_CPU, // Async Profiler seems to be the cause of the 59th second latency spike.
         ConfigurableMonitor.Item.JHICCUP
     );
 
     private static String[] defaultJvmOpts(String... extra)
     {
         List<String> result = new ArrayList<>();
-        result.add("-XX:+UnlockExperimentalVMOptions");
+        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.GC_LOGS))
+            result.addAll(List.of("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
         result.add("-XX:+UseZGC");
+        if (JDK_TO_USE.contains("21"))
+            result.add("-XX:+ZGenerational"); // use generational ZGC on JDK 21
         result.add("-XX:+AlwaysPreTouch");
-        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
-            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOC) ||
-            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK) ||
-            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES))
-            result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
         result.addAll(Arrays.asList(extra));
         return result.toArray(new String[0]);
     }

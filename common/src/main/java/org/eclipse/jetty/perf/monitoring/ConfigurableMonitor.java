@@ -9,16 +9,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerAllocationMonitor;
-import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCacheMissesMonitor;
-import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCpuMonitor;
-import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerLockMonitor;
 import org.eclipse.jetty.perf.monitoring.jhiccup.JHiccupMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxDiskMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxNetworkMonitor;
-import org.eclipse.jetty.perf.monitoring.os.LinuxPerfStatMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsNetworkMonitor;
@@ -36,15 +31,6 @@ public class ConfigurableMonitor implements Closeable
         CMDLINE_MEMORY,
         CMDLINE_NETWORK,
         CMDLINE_DISK,
-
-        // Only one kind of async profiling can be enabled at a time.
-        ASYNC_PROF_CPU,
-        ASYNC_PROF_ALLOC,
-        ASYNC_PROF_LOCK,
-        ASYNC_PROF_CACHE_MISSES,
-
-        PERF_STAT,
-
         JHICCUP,
         GC_LOGS,
     }
@@ -120,26 +106,6 @@ public class ConfigurableMonitor implements Closeable
             case CMDLINE_DISK:
                 if (osName.contains("linux"))
                     return new LinuxDiskMonitor();
-                return null;
-            case ASYNC_PROF_CPU:
-                if (osName.contains("linux"))
-                    return new AsyncProfilerCpuMonitor();
-                return null;
-            case ASYNC_PROF_ALLOC:
-                if (osName.contains("linux"))
-                    return new AsyncProfilerAllocationMonitor();
-                return null;
-            case ASYNC_PROF_LOCK:
-                if (osName.contains("linux"))
-                    return new AsyncProfilerLockMonitor();
-                return null;
-            case ASYNC_PROF_CACHE_MISSES:
-                if (osName.contains("linux"))
-                    return new AsyncProfilerCacheMissesMonitor();
-                return null;
-            case PERF_STAT:
-                if (osName.contains("linux"))
-                    return new LinuxPerfStatMonitor();
                 return null;
             case JHICCUP:
                 return new JHiccupMonitor();

@@ -53,10 +53,7 @@
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.kamranzafar</groupId>
-      <artifactId>jtar</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-slf4j-impl</artifactId>

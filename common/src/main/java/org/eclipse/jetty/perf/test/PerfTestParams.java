@@ -190,15 +190,6 @@ public class PerfTestParams implements Serializable
         if (JDK_TO_USE.contains("21"))
             result.add("-XX:+ZGenerational"); // use generational ZGC on JDK 21
         result.add("-XX:+AlwaysPreTouch");
-        if (MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
-            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOC) ||
-            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK) ||
-            MONITORED_ITEMS.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES))
-        {
-            result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
-            if (JDK_TO_USE.contains("21"))
-                result.add("-XX:+EnableDynamicAgentLoading"); // JDK 21 needs this flag to disable a warning when async prof is used
-        }
         result.addAll(List.of(extra));
         return result.toArray(new String[0]);
     }

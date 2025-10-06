@@ -74,7 +74,6 @@
         <version>1.1.6</version>
       </dependency>
 
-      <!-- Exclude then explicitly depend on jetty-load-generator deps to make sure we use the right jetty version -->
       <dependency>
         <groupId>org.mortbay.jetty.loadgenerator</groupId>
         <artifactId>jetty-load-generator-client</artifactId>
@@ -85,11 +84,6 @@
         <groupId>org.hdrhistogram</groupId>
         <artifactId>HdrHistogram</artifactId>
         <version>2.1.12</version>
-      </dependency>
-      <dependency>
-        <groupId>org.kamranzafar</groupId>
-        <artifactId>jtar</artifactId>
-        <version>2.3</version>
       </dependency>
 
       <dependency>
