@@ -50,18 +50,20 @@ pipeline {
                 configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
                   sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -e -Dmaven.build.cache.remote.url=http://10.0.0.15:8081/repository/maven-build-cache -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=nexus-cred"
+
+                  script {
+                    def version = sh(
+                        script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Project version: ${version}"
+                    JETTY_VERSION = version
+                    echo "Detected Jetty version: $JETTY_VERSION"
+                  }
+
                 }
               }
-            }
-            script {
-              def version = sh(
-                  script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout",
-                  returnStdout: true
-              ).trim()
-
-              echo "Project version: ${version}"
-              JETTY_VERSION = version
-              echo "Detected Jetty version: $JETTY_VERSION"
             }
           }
         }
