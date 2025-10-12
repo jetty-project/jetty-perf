@@ -10,6 +10,7 @@ pipeline {
   }
   parameters {
     string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
+    string(defaultValue: 'main-12.1.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
     string(defaultValue: 'jdk17', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
 
