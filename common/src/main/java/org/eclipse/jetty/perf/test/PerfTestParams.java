@@ -19,7 +19,7 @@ import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration
 
 public class PerfTestParams implements Serializable
 {
-    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "load-jdk17");
+    private static final String JDK_TO_USE = System.getProperty("test.jdk.name", "jdk17");
     private static final String OPTIONAL_MONITORED_ITEMS = System.getProperty("test.optional.monitored.items", "");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
