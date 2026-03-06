@@ -84,7 +84,7 @@ pipeline {
 
                         sh "mkdir cometd ; cd cometd"
                         checkout([$class           : 'GitSCM',
-                                  branches         : [[name: "*/8.1.x"]],
+                                  branches         : [[name: "*/9.0.x"]],
                                   extensions       : [[$class: 'CloneOption', depth: 1, noTags: true, shallow: true]],
                                   userRemoteConfigs: [[url: 'https://github.com/cometd/cometd.git']]])
                         timeout(time: 30, unit: 'MINUTES') {
