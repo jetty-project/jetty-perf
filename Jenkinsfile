@@ -46,11 +46,11 @@ pipeline {
                       userRemoteConfigs: [[url: 'https://github.com/eclipse/jetty.project.git']]])
             timeout(time: 30, unit: 'MINUTES') {
               withEnv(["JAVA_HOME=${tool "jdk17"}",
-                       "PATH+MAVEN=${tool "maven3"}/bin",
+                       "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -e -Dmaven.build.cache.remote.url=http://10.0.0.15:8081/repository/maven-build-cache -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=nexus-cred"
+                  sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -Dmaven.repo.local=.repository -e -Dmaven.build.cache.remote.url=http://10.0.0.15:8081/repository/maven-build-cache -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=nexus-cred"
 
                   script {
                     def version = sh(
