@@ -46,7 +46,7 @@ pipeline {
                       userRemoteConfigs: [[url: 'https://github.com/eclipse/jetty.project.git']]])
             timeout(time: 30, unit: 'MINUTES') {
               withEnv(["JAVA_HOME=${tool "jdk17"}",
-                       "PATH+MAVEN=${tool "jdk17"}/bin:${tool "maven3"}/bin",
+                       "PATH+MAVEN=${tool "maven3"}/bin",
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
