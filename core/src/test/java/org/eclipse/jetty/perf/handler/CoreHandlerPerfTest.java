@@ -42,7 +42,7 @@ public class CoreHandlerPerfTest
             AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(asyncHandler);
             return contextHandlerCollection;
-        });
+        }, p -> p.SERVER_SELECTOR_COUNT = Runtime.getRuntime().availableProcessors());
         boolean succeeded = assertExpectationsFromReport(clusteredTestContext, params, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
@@ -70,7 +70,7 @@ public class CoreHandlerPerfTest
             SyncHandlerUsingBlocker syncHandler = new SyncHandlerUsingBlocker("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(syncHandler);
             return contextHandlerCollection;
-        });
+        }, p -> p.SERVER_SELECTOR_COUNT = Runtime.getRuntime().availableProcessors());
         boolean succeeded = assertExpectationsFromReport(clusteredTestContext, params, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
@@ -99,7 +99,7 @@ public class CoreHandlerPerfTest
             SyncHandlerUsingOutputStream syncHandler = new SyncHandlerUsingOutputStream("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(syncHandler);
             return contextHandlerCollection;
-        });
+        }, p -> p.SERVER_SELECTOR_COUNT = Runtime.getRuntime().availableProcessors());
         boolean succeeded = assertExpectationsFromReport(clusteredTestContext, params, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
@@ -127,7 +127,7 @@ public class CoreHandlerPerfTest
             AsyncHandler asyncHandler = new AsyncHandler("Hi there!".getBytes(US_ASCII));
             targetContextHandler.setHandler(asyncHandler);
             return contextHandlerCollection;
-        });
+        }, p -> p.SERVER_SELECTOR_COUNT = Runtime.getRuntime().availableProcessors());
         boolean succeeded = assertExpectationsFromReport(clusteredTestContext, params, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
