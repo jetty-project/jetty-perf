@@ -15,7 +15,7 @@ pipeline {
     string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
 
     string(defaultValue: 'load-master', description: 'server node', name: 'SERVER_NAME')
-    string(defaultValue: 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5', description: 'loader nodes', name: 'LOADER_NAMES')
+    string(defaultValue: 'load-client-1,load-client-2,load-client-3,load-client-4', description: 'loader nodes', name: 'LOADER_NAMES')
     string(defaultValue: 'load-sample', description: 'probe node', name: 'PROBE_NAME')
 
     string(defaultValue: '12-1-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
