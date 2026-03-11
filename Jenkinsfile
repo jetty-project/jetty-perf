@@ -50,7 +50,7 @@ pipeline {
                        "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
                 configFileProvider(
                     [configFile(fileId: 'oss-settings.xml', variable: 'GLOBAL_MVN_SETTINGS')]) {
-                  sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -Dmaven.repo.local=.repository -e -Dmaven.build.cache.remote.url=http://10.0.0.15:8081/repository/maven-build-cache -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=nexus-cred"
+                  sh "mvn -ntp -s $GLOBAL_MVN_SETTINGS -V -B clean install -DskipTests -e -Dmaven.build.cache.remote.url=http://10.0.0.15:8081/repository/maven-build-cache -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.remote.server.id=nexus-cred"
 
                   script {
                     def version = sh(
@@ -88,7 +88,7 @@ pipeline {
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
             configFileProvider(
                 [configFile(fileId: 'all-repos', variable: 'GLOBAL_MVN_SETTINGS')]) {
-              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test -Dmaven.repo.local=.repository" +
+              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS -Dmaven.test.failure.ignore=true -V -B -e clean test" +
                   " -Dtest='${TEST_TO_RUN}'" +
                   " -Djetty.version='${JETTY_VERSION}'" +
                   " -Dtest.jdk.name='${JDK_TO_USE}'" +
