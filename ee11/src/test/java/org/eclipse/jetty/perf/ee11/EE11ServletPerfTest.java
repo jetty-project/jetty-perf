@@ -17,6 +17,9 @@ import static org.hamcrest.Matchers.is;
 
 public class EE11ServletPerfTest
 {
+    private static final int WARMUP_DURATION = 60;
+    private static final int RUN_DURATION = 180;
+
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 200_000, 4,  5_000, 25_000, 10.0",
@@ -25,6 +28,8 @@ public class EE11ServletPerfTest
     public void testNoGzipAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
+        params.WARMUP_DURATION = WARMUP_DURATION;
+        params.RUN_DURATION = RUN_DURATION;
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
@@ -53,6 +58,8 @@ public class EE11ServletPerfTest
     public void testNoGzipSync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
+        params.WARMUP_DURATION = WARMUP_DURATION;
+        params.RUN_DURATION = RUN_DURATION;
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
