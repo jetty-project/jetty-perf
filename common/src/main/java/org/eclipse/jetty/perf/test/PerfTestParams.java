@@ -377,4 +377,10 @@ public class PerfTestParams implements Serializable
         }
         return JSSE_PROVIDER;
     }
+
+    @Override
+    public String toString()
+    {
+        return HTTP_PROTOCOL;
+    }
 }
