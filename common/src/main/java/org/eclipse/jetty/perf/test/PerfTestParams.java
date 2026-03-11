@@ -79,7 +79,8 @@ public class PerfTestParams implements Serializable
         ConfigurableMonitor.Item.OS_NETWORK,
         ConfigurableMonitor.Item.OS_DISK,
         ConfigurableMonitor.Item.OS_PERF_STAT,
-        ConfigurableMonitor.Item.JHICCUP
+        ConfigurableMonitor.Item.JHICCUP,
+        ConfigurableMonitor.Item.JIT_COMPILATION_TIME
     );
 
     private final EnumSet<ConfigurableMonitor.Item> monitoredItems = EnumSet.copyOf(new HashSet<ConfigurableMonitor.Item>() // javac 11 needs HashSet to be typed
