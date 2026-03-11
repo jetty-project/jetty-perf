@@ -30,9 +30,9 @@ pipeline {
       agent { node { label "${SERVER_NAME}" } }
       when {
         beforeAgent true
-        expression {
-          return JETTY_VERSION.endsWith("SNAPSHOT");
-        }
+//         expression {
+//           return JETTY_VERSION.endsWith("SNAPSHOT");
+//         }
       }
       steps {
         toolchains (jdkToUse: "$JDK_TO_USE", nodes: "$SERVER_NAME,$LOADER_NAMES,$PROBE_NAME")
