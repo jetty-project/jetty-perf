@@ -88,7 +88,7 @@ pipeline {
                    "MAVEN_OPTS=-Xms2g -Xmx4g -Djava.awt.headless=true"]) {
             configFileProvider(
                 [configFile(fileId: 'all-repos', variable: 'GLOBAL_MVN_SETTINGS')]) {
-              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test" +
+              sh "mvn -ntp -DtrimStackTrace=false -U -s $GLOBAL_MVN_SETTINGS  -Dmaven.test.failure.ignore=true -V -B -e clean test -Dmaven.repo.local=.repository" +
                   " -Dtest='${TEST_TO_RUN}'" +
                   " -Djetty.version='${JETTY_VERSION}'" +
                   " -Dtest.jdk.name='${JDK_TO_USE}'" +
