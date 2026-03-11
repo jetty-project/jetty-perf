@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.params.ParameterizedTest;
 
 public class ClusteredTestParameterResolver implements ParameterResolver
 {
@@ -24,7 +25,9 @@ public class ClusteredTestParameterResolver implements ParameterResolver
         {
             Class<?> testClass = extensionContext.getTestClass().orElseThrow();
             Method testMethod = extensionContext.getTestMethod().orElseThrow();
-            ClusteredTestContext clusteredTestContext = new ClusteredTestContext(testClass, testMethod);
+            boolean parameterized = testMethod.getAnnotation(ParameterizedTest.class) != null;
+            String[] extraParams = parameterized ? new String[]{extensionContext.getDisplayName()} : new String[0];
+            ClusteredTestContext clusteredTestContext = new ClusteredTestContext(testClass, testMethod, extraParams);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put("ClusteredTestContext", clusteredTestContext);
             return clusteredTestContext;
         }

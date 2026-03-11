@@ -10,8 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.eclipse.jetty.perf.util.OutputCapturer;
-import org.eclipse.jetty.util.Jetty;
-import org.junit.jupiter.api.TestInfo;
 
 public class ClusteredTestContext implements Closeable
 {
@@ -19,28 +17,13 @@ public class ClusteredTestContext implements Closeable
     private final Path reportRootPath;
     private final OutputCapturer outputCapturer;
 
-    public ClusteredTestContext(TestInfo testInfo) throws Exception
-    {
-        // Generate test name
-        String className = testInfo.getTestClass().orElseThrow().getName();
-        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        String methodName = testInfo.getTestMethod().orElseThrow().getName();
-        testName = simpleClassName + "_" + methodName + "_prof_" + Jetty.VERSION;
-
-        // Create report folder
-        reportRootPath = createReportRootPath(testName);
-
-        // Capture stdout and stderr
-        outputCapturer = new OutputCapturer(reportRootPath);
-    }
-
-    public ClusteredTestContext(Class<?> testClass, Method testMethod) throws Exception
+    public ClusteredTestContext(Class<?> testClass, Method testMethod, String... testParameterNames) throws Exception
     {
         // Generate test name
         testName = testClass.getSimpleName() + "_" + testMethod.getName();
 
         // Create report folder
-        reportRootPath = createReportRootPath(testName);
+        reportRootPath = createReportRootPath(testName, testParameterNames);
 
         // Capture stdout and stderr
         outputCapturer = new OutputCapturer(reportRootPath);
