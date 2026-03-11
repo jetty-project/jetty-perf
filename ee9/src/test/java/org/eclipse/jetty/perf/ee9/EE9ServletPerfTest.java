@@ -1,48 +1,35 @@
 package org.eclipse.jetty.perf.ee9;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 
 import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee9.servlet.ServletHolder;
-import org.eclipse.jetty.perf.test.FlatPerfTest;
+import org.eclipse.jetty.perf.test.ClusteredTestContext;
+import org.eclipse.jetty.perf.test.Jetty12ClusteredPerfTest;
 import org.eclipse.jetty.perf.test.PerfTestParams;
+import org.eclipse.jetty.perf.test.junit.ClusteredTest;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.util.Jetty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import static org.eclipse.jetty.perf.assertions.Assertions.assertExpectationsFromReport;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class EE9ServletPerfTest
 {
-    private static final Duration WARMUP_DURATION = Duration.ofSeconds(60);
-    private static final Duration RUN_DURATION = Duration.ofSeconds(180);
-
-    private String testName;
-
-    @BeforeEach
-    protected void beforeEach(TestInfo testInfo)
-    {
-        // Generate test name
-        String className = testInfo.getTestClass().orElseThrow().getName();
-        String simpleClassName = className.substring(className.lastIndexOf('.') + 1);
-        String methodName = testInfo.getTestMethod().orElseThrow().getName();
-        testName = simpleClassName + "_" + methodName + "_" + Jetty.VERSION;
-    }
-
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 200_000, 4,  5_500, 25_000, 10.0",
         "h2c,  100_000, 4, 18_000, 38_000, 15.0"
     })
-    public void testNoGzipAsync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
+    public void testNoGzipAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        PerfTestParams params = new PerfTestParams(protocol, loaderRate, loaderThreads, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        PerfTestParams params = new PerfTestParams();
+        params.HTTP_PROTOCOL = protocol;
+        params.LOADER_RATE = loaderRate;
+        params.LOADER_THREADS = loaderThreads;
+        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -55,6 +42,7 @@ public class EE9ServletPerfTest
             contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
             return contextHandlerCollection;
         });
+        boolean succeeded = assertExpectationsFromReport(clusteredTestContext, params, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
@@ -63,10 +51,13 @@ public class EE9ServletPerfTest
         "http, 200_000, 4,  5_500, 25_000, 10.0",
         "h2c,  100_000, 4, 18_000, 38_000, 15.0"
     })
-    public void testNoGzipSync(PerfTestParams.Protocol protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws Exception
+    public void testNoGzipSync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
-        PerfTestParams params = new PerfTestParams(protocol, loaderRate, loaderThreads, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
-        boolean succeeded = FlatPerfTest.runTest(testName, params, WARMUP_DURATION, RUN_DURATION, () ->
+        PerfTestParams params = new PerfTestParams();
+        params.HTTP_PROTOCOL = protocol;
+        params.LOADER_RATE = loaderRate;
+        params.LOADER_THREADS = loaderThreads;
+        Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
             ServletContextHandler targetContextHandler = new ServletContextHandler();
@@ -79,6 +70,7 @@ public class EE9ServletPerfTest
             contextHandlerCollection.addHandler(uselessContextHandler.getCoreContextHandler());
             return contextHandlerCollection;
         });
+        boolean succeeded = assertExpectationsFromReport(clusteredTestContext, params, expectedP99ServerLatency, expectedP99ProbeLatency, expectedP99ErrorMargin);
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 }

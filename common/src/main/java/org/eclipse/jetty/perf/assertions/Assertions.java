@@ -14,11 +14,48 @@ import java.util.Map;
 
 import org.HdrHistogram.AbstractHistogram;
 import org.HdrHistogram.HistogramLogReader;
+import org.eclipse.jetty.perf.test.ClusteredTestContext;
+import org.eclipse.jetty.perf.test.PerfTestParams;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 
 public class Assertions
 {
+    public static boolean assertExpectationsFromReport(ClusteredTestContext clusteredTestContext, PerfTestParams params, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin) throws IOException
+    {
+        Path reportRootPath = clusteredTestContext.getReportRootPath();
+        NodeArrayConfiguration serverCfg = params.getServerNodeArray();
+        NodeArrayConfiguration loadersCfg = params.getLoadersNodeArray();
+        NodeArrayConfiguration probeCfg = params.getProbeNodeArray();
+        int loadersCount = params.getLoadersCount();
+        long totalLoadersRequestCount = params.getLoaderRate() * loadersCount * params.getRunDuration().toSeconds();
+        long totalProbeRequestCount = params.getProbeRate() * params.getRunDuration().toSeconds();
+
+        boolean succeeded = true;
+
+        System.out.println(" Asserting loaders");
+        // assert loaders did not get too many HTTP errors
+        succeeded &= assertHttpClientStatuses(reportRootPath, loadersCfg, params.getRunDuration().toSeconds() * 2); // max 2 errors per second on avg
+        // assert loaders had a given throughput
+        succeeded &= assertThroughput(reportRootPath, loadersCfg, totalLoadersRequestCount, 1);
+
+        System.out.println(" Asserting probe");
+        // assert probe did not get too many HTTP errors
+        succeeded &= assertHttpClientStatuses(reportRootPath, probeCfg, params.getRunDuration().toSeconds() * 2); // max 2 errors per second on avg
+        // assert probe had a given throughput and max latency
+        succeeded &= assertThroughput(reportRootPath, probeCfg, totalProbeRequestCount, 1);
+        // assert probe had a given max latency
+        succeeded &= assertP99Latency(reportRootPath, probeCfg, expectedP99ProbeLatency, expectedP99ErrorMargin, 2);
+
+        System.out.println(" Asserting server");
+        // assert server had a given throughput
+        succeeded &= assertThroughput(reportRootPath, serverCfg, totalLoadersRequestCount + totalProbeRequestCount, 1);
+        // assert server had a given max latency
+        succeeded &= assertP99Latency(reportRootPath, serverCfg, expectedP99ServerLatency, expectedP99ErrorMargin, 2);
+
+        return succeeded;
+    }
+
     public static boolean assertHttpClientStatuses(Path reportRootPath, NodeArrayConfiguration nodeArray, long maxErrors) throws IOException
     {
         List<Map.Entry<Long, String>> counters = new ArrayList<>();

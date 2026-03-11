@@ -1,5 +1,11 @@
 package org.eclipse.jetty.perf.jdk;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
 import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -7,12 +13,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
 import org.eclipse.jetty.perf.util.JvmUtil;
 import org.mortbay.jetty.orchestrator.util.FilenameSupplier;
 import org.slf4j.Logger;

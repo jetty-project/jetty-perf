@@ -18,7 +18,8 @@ public class HgrmReport
             while (reader.hasNext())
             {
                 Histogram histogram = (Histogram) reader.nextIntervalHistogram();
-                total.add(histogram);
+                if (histogram != null)
+                    total.add(histogram);
             }
             PrintStream ps = new PrintStream(out);
             total.outputPercentileDistribution(ps, 1000.0); // scale by 1000 to report in microseconds

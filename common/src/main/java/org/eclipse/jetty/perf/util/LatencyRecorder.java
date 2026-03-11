@@ -2,22 +2,29 @@ package org.eclipse.jetty.perf.util;
 
 import java.io.Closeable;
 import java.io.FileNotFoundException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.HdrHistogram.Histogram;
-import org.HdrHistogram.HistogramLogWriter;
-import org.HdrHistogram.Recorder;
-import org.eclipse.jetty.util.component.AbstractLifeCycle;
-import org.eclipse.jetty.util.component.LifeCycle;
+import org.HdrHistogram.SingleWriterRecorder;
+import org.eclipse.jetty.perf.util.histo.HistogramLogWriter;
 
-public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
+public class LatencyRecorder implements Recorder
 {
     private final HistogramLogRecorder recorder;
+    private final String histogramFilename;
 
     public LatencyRecorder(String histogramFilename) throws FileNotFoundException
     {
         this.recorder = new HistogramLogRecorder(histogramFilename, 3, 1000);
+        this.histogramFilename = histogramFilename;
+    }
+
+    public String getFilename()
+    {
+        return histogramFilename;
     }
 
     @Override
@@ -32,17 +39,6 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
         recorder.close();
     }
 
-    public LifeCycle asLifeCycle()
-    {
-        return new AbstractLifeCycle() {
-            @Override
-            protected void doStop()
-            {
-                stopRecording();
-            }
-        };
-    }
-
     public void recordValue(long value)
     {
         recorder.recordValue(value);
@@ -55,26 +51,37 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
             NOT_RECORDING, RECORDING, CLOSED
         }
 
-        private final Recorder recorder;
+        private final ThreadLocal<SingleWriterRecorder> recorderTl;
+        private final List<SingleWriterRecorder> recorders = new CopyOnWriteArrayList<>();
         private final Timer timer = new Timer();
         private final HistogramLogWriter writer;
         private volatile State state = State.NOT_RECORDING;
 
         public HistogramLogRecorder(String histogramFilename, int numberOfSignificantValueDigits, int intervalInMs) throws FileNotFoundException
         {
-            this.recorder = new Recorder(numberOfSignificantValueDigits);
-            this.writer = new HistogramLogWriter(histogramFilename);
+            recorderTl = ThreadLocal.withInitial(() ->
+            {
+                SingleWriterRecorder singleWriterRecorder = new SingleWriterRecorder(numberOfSignificantValueDigits);
+                recorders.add(singleWriterRecorder);
+                return singleWriterRecorder;
+            });
+            writer = new HistogramLogWriter(histogramFilename);
+            writer.ensureBufferCapacity(8 * 1024 * 1024); // pre-allocate a 8 MB buffer
             timer.schedule(new TimerTask()
             {
+                private final Histogram collectiveHistogram = new Histogram(numberOfSignificantValueDigits);
                 private Histogram intervalHistogram;
                 @Override
                 public void run()
                 {
-                    intervalHistogram = recorder.getIntervalHistogram(intervalHistogram);
-                    if (state == State.RECORDING)
+                    for (SingleWriterRecorder recorder : recorders)
                     {
-                        writer.outputIntervalHistogram(intervalHistogram);
+                        intervalHistogram = recorder.getIntervalHistogram(intervalHistogram, false);
+                        collectiveHistogram.add(intervalHistogram);
                     }
+                    if (state == State.RECORDING)
+                        writer.outputIntervalHistogram(collectiveHistogram);
+                    collectiveHistogram.reset();
                 }
             }, intervalInMs, intervalInMs);
         }
@@ -104,7 +111,9 @@ public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
 
         public void recordValue(long value)
         {
-            recorder.recordValue(value);
+            // Always record values even if state != State.RECORDING, the timer won't write the
+            // histogram data on disk, but the histogram code will be jit'ed.
+            recorderTl.get().recordValue(value);
         }
     }
 }

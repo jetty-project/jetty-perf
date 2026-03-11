@@ -27,6 +27,14 @@
       <groupId>org.mortbay.jetty.orchestrator</groupId>
       <artifactId>jetty-cluster-orchestrator</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bctls-jdk18on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.conscrypt</groupId>
+      <artifactId>conscrypt-openjdk-uber</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.mortbay.jetty.loadgenerator</groupId>
@@ -53,10 +61,23 @@
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>tools.profiler</groupId>
+      <artifactId>async-profiler</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.profiler</groupId>
+      <artifactId>jfr-converter</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-slf4j-impl</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>

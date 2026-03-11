@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -13,7 +12,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.eclipse.jetty.perf.histogram.HgrmReport;
 import org.eclipse.jetty.perf.histogram.JHiccupReport;
 import org.eclipse.jetty.perf.histogram.PerfReport;
@@ -25,26 +23,6 @@ import org.slf4j.LoggerFactory;
 public class ReportUtil
 {
     private static final Logger LOG = LoggerFactory.getLogger(ReportUtil.class);
-
-    public static Path createReportRootPath(String testName, String... testParameterNames) throws IOException
-    {
-        Path reportsRoot = FileSystems.getDefault().getPath("target", "reports");
-        Path reportRootPath = reportsRoot.resolve(testName);
-        for (String subPath : testParameterNames)
-            reportRootPath = reportRootPath.resolve(subPath);
-
-        // if report folder already exists, rename it out of the way
-        if (Files.isDirectory(reportRootPath))
-        {
-            Path parentFolder = reportsRoot.resolve(testName);
-            String timestamp = Long.toString(Files.getLastModifiedTime(parentFolder).toMillis());
-            Path newFolder = parentFolder.getParent().resolve(parentFolder.getFileName().toString() + "_" + timestamp);
-            Files.move(parentFolder, newFolder);
-        }
-
-        Files.createDirectories(reportRootPath);
-        return reportRootPath;
-    }
 
     public static void generateReport(Path reportPath, Collection<String> nodeArrayIds, Cluster cluster) throws IOException
     {

@@ -1,6 +1,5 @@
 package org.eclipse.jetty.perf.monitoring;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,30 +7,56 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerAllocationMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCacheMissesMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerCpuMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.AsyncProfilerLockMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerCpuAllocMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerCpuLockMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerCpuMonitor;
+import org.eclipse.jetty.perf.monitoring.asyncprof.JfrAsyncProfilerCpuWallClockMonitor;
 import org.eclipse.jetty.perf.monitoring.jhiccup.JHiccupMonitor;
+import org.eclipse.jetty.perf.monitoring.jmx.JitCompilationMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxDiskMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxNetworkMonitor;
+import org.eclipse.jetty.perf.monitoring.os.LinuxPerfStatMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsNetworkMonitor;
+import org.eclipse.jetty.perf.monitoring.sjk.SjkTtopMonitor;
 import org.eclipse.jetty.perf.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConfigurableMonitor implements Closeable
+public class ConfigurableMonitor implements Monitor
 {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurableMonitor.class);
 
     public enum Item
     {
-        CMDLINE_CPU,
-        CMDLINE_MEMORY,
-        CMDLINE_NETWORK,
-        CMDLINE_DISK,
+        OS_CPU,
+        OS_MEMORY,
+        OS_NETWORK,
+        OS_DISK,
+        OS_PERF_STAT,
+
         JHICCUP,
+        JIT_COMPILATION_TIME,
+
+        // Only one kind of async profiling can be enabled at a time.
+        ASYNC_PROF_CPU,
+        ASYNC_PROF_ALLOC,
+        ASYNC_PROF_LOCK,
+        ASYNC_PROF_CACHE_MISSES,
+        ASYNC_PROF_JFR_CPU,
+        ASYNC_PROF_JFR_CPU_ALLOC,
+        ASYNC_PROF_JFR_CPU_LOCK,
+        ASYNC_PROF_JFR_CPU_WALLCLOCK,
+
+        SJK_TTOP,
+
         GC_LOGS,
     }
 
@@ -62,14 +87,14 @@ public class ConfigurableMonitor implements Closeable
         monitors.forEach(IOUtil::close);
     }
 
-    public static List<ConfigurableMonitor.Item> parseConfigurableMonitorItems(String cmd)
+    public static List<Item> parseConfigurableMonitorItems(String cmd)
     {
         return Arrays.stream(cmd.split(","))
             .map(String::trim)
             .map(s -> {
                 try
                 {
-                    return ConfigurableMonitor.Item.valueOf(s);
+                    return Item.valueOf(s);
                 }
                 catch (IllegalArgumentException e)
                 {
@@ -85,28 +110,68 @@ public class ConfigurableMonitor implements Closeable
         String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         switch (item)
         {
-            case CMDLINE_CPU:
+            case OS_CPU:
                 if (osName.contains("linux"))
                     return new LinuxCpuMonitor();
                 if (osName.contains("windows"))
                     return new WindowsCpuMonitor();
                 return null;
-            case CMDLINE_MEMORY:
+            case OS_MEMORY:
                 if (osName.contains("linux"))
                     return new LinuxMemoryMonitor();
                 if (osName.contains("windows"))
                     return new WindowsMemoryMonitor();
                 return null;
-            case CMDLINE_NETWORK:
+            case OS_NETWORK:
                 if (osName.contains("linux"))
                     return new LinuxNetworkMonitor();
                 if (osName.contains("windows"))
                     return new WindowsNetworkMonitor();
                 return null;
-            case CMDLINE_DISK:
+            case OS_DISK:
                 if (osName.contains("linux"))
                     return new LinuxDiskMonitor();
                 return null;
+            case ASYNC_PROF_CPU:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerCpuMonitor();
+                return null;
+            case ASYNC_PROF_ALLOC:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerAllocationMonitor();
+                return null;
+            case ASYNC_PROF_LOCK:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerLockMonitor();
+                return null;
+            case ASYNC_PROF_CACHE_MISSES:
+                if (osName.contains("linux"))
+                    return new AsyncProfilerCacheMissesMonitor();
+                return null;
+            case ASYNC_PROF_JFR_CPU:
+                if (osName.contains("linux"))
+                    return new JfrAsyncProfilerCpuMonitor();
+                return null;
+            case ASYNC_PROF_JFR_CPU_ALLOC:
+                if (osName.contains("linux"))
+                    return new JfrAsyncProfilerCpuAllocMonitor();
+                return null;
+            case ASYNC_PROF_JFR_CPU_LOCK:
+                if (osName.contains("linux"))
+                    return new JfrAsyncProfilerCpuLockMonitor();
+                return null;
+            case ASYNC_PROF_JFR_CPU_WALLCLOCK:
+                if (osName.contains("linux"))
+                    return new JfrAsyncProfilerCpuWallClockMonitor();
+                return null;
+            case OS_PERF_STAT:
+                if (osName.contains("linux"))
+                    return new LinuxPerfStatMonitor();
+                return null;
+            case SJK_TTOP:
+                return new SjkTtopMonitor();
+            case JIT_COMPILATION_TIME:
+                return new JitCompilationMonitor();
             case JHICCUP:
                 return new JHiccupMonitor();
             case GC_LOGS:
