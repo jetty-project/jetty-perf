@@ -31,8 +31,7 @@ pipeline {
       when {
         beforeAgent true
         expression {
-//           return JETTY_VERSION.endsWith("SNAPSHOT");
-          return true;
+          return JETTY_VERSION.endsWith("SNAPSHOT");
         }
       }
       steps {
