@@ -253,6 +253,11 @@ public class PerfTestParams implements Serializable
 
     }
 
+    public NodeArrayConfiguration getLoadersNodeArray()
+    {
+        return getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("loaders")).findAny().orElseThrow();
+    }
+
     public int getParticipantCount()
     {
         return getClusterConfiguration().nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
@@ -261,6 +266,11 @@ public class PerfTestParams implements Serializable
     public List<String> getNodeArrayIds()
     {
         return getClusterConfiguration().nodeArrays().stream().map(NodeArrayConfiguration::id).toList();
+    }
+
+    public NodeArrayConfiguration getServerNodeArray()
+    {
+        return getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("server")).findAny().orElseThrow();
     }
 
     public URI getServerUri()
@@ -312,6 +322,11 @@ public class PerfTestParams implements Serializable
     public int getProbeRate()
     {
         return PROBE_RATE;
+    }
+
+    public NodeArrayConfiguration getProbeNodeArray()
+    {
+        return getClusterConfiguration().nodeArrays().stream().filter(nac -> nac.id().equals("probe")).findAny().orElseThrow();
     }
 
     public Duration getWarmupDuration()

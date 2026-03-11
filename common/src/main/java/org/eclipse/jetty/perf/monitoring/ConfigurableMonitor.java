@@ -87,14 +87,14 @@ public class ConfigurableMonitor implements Monitor
         monitors.forEach(IOUtil::close);
     }
 
-    public static List<ConfigurableMonitor.Item> parseConfigurableMonitorItems(String cmd)
+    public static List<Item> parseConfigurableMonitorItems(String cmd)
     {
         return Arrays.stream(cmd.split(","))
             .map(String::trim)
             .map(s -> {
                 try
                 {
-                    return ConfigurableMonitor.Item.valueOf(s);
+                    return Item.valueOf(s);
                 }
                 catch (IllegalArgumentException e)
                 {

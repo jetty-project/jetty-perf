@@ -11,7 +11,7 @@ import org.HdrHistogram.Histogram;
 import org.HdrHistogram.SingleWriterRecorder;
 import org.eclipse.jetty.perf.util.histo.HistogramLogWriter;
 
-public class LatencyRecorder implements org.eclipse.jetty.perf.util.Recorder
+public class LatencyRecorder implements Recorder
 {
     private final HistogramLogRecorder recorder;
     private final String histogramFilename;

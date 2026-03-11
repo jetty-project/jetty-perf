@@ -78,6 +78,11 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
         runTest(clusteredTestContext, new PerfTestParams(), testedHandlerSupplier, perfTestParamsCustomizer);
     }
 
+    public static void runTest(ClusteredTestContext clusteredTestContext, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier) throws Exception
+    {
+        runTest(clusteredTestContext, perfTestParams, testedHandlerSupplier, p -> {});
+    }
+
     public static void runTest(ClusteredTestContext clusteredTestContext, PerfTestParams perfTestParams, SerializableSupplier<Handler> testedHandlerSupplier, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
         try (Jetty12ClusteredPerfTest clusteredPerfTest = new Jetty12ClusteredPerfTest(clusteredTestContext.getTestName(), clusteredTestContext.getReportRootPath(), perfTestParams, testedHandlerSupplier, perfTestParamsCustomizer))
