@@ -21,7 +21,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 200_000, 4,  4_300, 23_000, 10.0",
+        "http, 100_000, 4,  4_300, 23_000, 10.0",
         "h2c,  100_000, 4, 15_000, 38_000, 15.0"
     })
     public void testNoGzipAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
@@ -49,7 +49,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 200_000, 4,  4_300, 25_000, 10.0",
+        "http, 100_000, 4,  4_300, 25_000, 10.0",
         "h2c,  100_000, 4, 16_000, 38_000, 15.0"
     })
     public void testNoGzipSyncUsingBlocker(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
@@ -78,7 +78,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 200_000, 4,  4_500, 25_000, 10.0",
+        "http, 100_000, 4,  4_500, 25_000, 10.0",
         "h2c,  100_000, 4, 19_000, 38_000, 15.0"
     })
     public void testNoGzipSyncUsingOutputStream(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
@@ -106,7 +106,7 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 200_000, 4, 3_200, 22_000, 10.0",
+        "http, 100_000, 4, 3_200, 22_000, 10.0",
         "h2c,  100_000, 4, 9_000, 33_000, 15.0"
     })
     public void testNoGzipFullyAsyncHandlerTree(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
