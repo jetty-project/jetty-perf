@@ -19,13 +19,10 @@ pipeline {
     string(defaultValue: 'load-sample', description: 'probe node', name: 'PROBE_NAME')
 
     string(defaultValue: '12-1-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-    string(defaultValue: '', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
-
-
+    string(defaultValue: 'ASYNC_PROF_JFR_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
   }
 
   stages {
-
     stage('Build Jetty') {
       agent { node { label "${SERVER_NAME}" } }
       when {
