@@ -2,6 +2,7 @@ package org.eclipse.jetty.perf.test;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.security.Security;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import org.eclipse.jetty.util.ConcurrentPool;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
+import org.mortbay.jetty.orchestrator.configuration.KubernetesRemoteHostLauncher;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
@@ -72,6 +74,13 @@ public class PerfTestParams implements Serializable
     public String JSSE_PROVIDER = parameters.read("JSSE_PROVIDER", "");
     public int LOADER_REQUEST_CONTENT_LENGTH = parameters.readAsInt("LOADER_REQUEST_CONTENT_LENGTH", 0);
     public int LOADER_RESPONSE_CONTENT_LENGTH = parameters.readAsInt("LOADER_RESPONSE_CONTENT_LENGTH", 0);
+    public boolean K8S_ENABLED = parameters.readAsBoolean("K8S_ENABLED", false);
+    public String K8S_NAMESPACE = parameters.read("K8S_NAMESPACE", "default");
+    public String K8S_IMAGE = parameters.read("K8S_IMAGE", "eclipse-temurin:21-jre");
+    public String K8S_KUBECONFIG = parameters.read("K8S_KUBECONFIG", "");
+    public String K8S_SERVER_NODE_SELECTORS = parameters.read("K8S_SERVER_NODE_SELECTORS", "");
+    public String K8S_LOADER_NODE_SELECTORS = parameters.read("K8S_LOADER_NODE_SELECTORS", "");
+    public String K8S_PROBE_NODE_SELECTORS  = parameters.read("K8S_PROBE_NODE_SELECTORS", "");
 
     private static final EnumSet<ConfigurableMonitor.Item> DEFAULT_MONITORED_ITEMS = EnumSet.of(
         ConfigurableMonitor.Item.OS_CPU,
@@ -91,6 +100,10 @@ public class PerfTestParams implements Serializable
 
     // Do not serialize this field, let it be reconstructed on each node.
     private transient ClusterConfiguration clusterConfiguration;
+    // Cached values for K8s mode: computed once on the controller, then serialized so pods can use
+    // them without re-creating KubernetesRemoteHostLauncher (which reads the local kubeconfig).
+    private String cachedServerHostname;
+    private int cachedParticipantCount;
 
     public PerfTestParams()
     {
@@ -125,6 +138,9 @@ public class PerfTestParams implements Serializable
         result.put("JSSE_PROVIDER", JSSE_PROVIDER);
         result.put("LOADER_REQUEST_CONTENT_LENGTH", LOADER_REQUEST_CONTENT_LENGTH);
         result.put("LOADER_RESPONSE_CONTENT_LENGTH", LOADER_RESPONSE_CONTENT_LENGTH);
+        result.put("K8S_ENABLED", K8S_ENABLED);
+        result.put("K8S_NAMESPACE", K8S_NAMESPACE);
+        result.put("K8S_IMAGE", K8S_IMAGE);
 
         return result;
     }
@@ -176,35 +192,93 @@ public class PerfTestParams implements Serializable
     {
         if (clusterConfiguration == null)
         {
-            if (SERVER_NAME.isEmpty())
-                throw new IllegalArgumentException("Server name cannot be empty");
-            SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
-                .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(SERVER_JVM_OPTS)))
-                .node(new Node(SERVER_NAME));
-
-            if (LOADER_NAMES.isEmpty())
-                throw new IllegalArgumentException("Loader names cannot be empty");
-            SimpleNodeArrayConfiguration loadersNodeArrayConfig = new SimpleNodeArrayConfiguration("loaders")
-                .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(LOADER_JVM_OPTS)));
-            List<String> loaderNames = Arrays.stream(LOADER_NAMES.split(",")).map(String::trim).toList();
-            for (String loaderName : loaderNames)
+            if (K8S_ENABLED)
             {
-                if (loaderName.isEmpty())
-                    throw new IllegalArgumentException("Loader names CSV list must not contain empty entries: " + LOADER_NAMES);
-                loadersNodeArrayConfig.node(new Node(loaderName));
+                if (K8S_KUBECONFIG.isEmpty())
+                    throw new IllegalArgumentException("K8S_KUBECONFIG must be set when K8S_ENABLED=true");
+                KubernetesRemoteHostLauncher launcher;
+                try
+                {
+                    launcher = new KubernetesRemoteHostLauncher.Builder()
+                        .namespace(K8S_NAMESPACE)
+                        .image(K8S_IMAGE)
+                        //.manageZooKeeper(false)
+                        .kubernetesConfig(Paths.get(K8S_KUBECONFIG))
+                        .build();
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Failed to create KubernetesRemoteHostLauncher", e);
+                }
+
+                if (SERVER_NAME.isEmpty())
+                    throw new IllegalArgumentException("Server name cannot be empty");
+                cachedServerHostname = launcher.podDnsNameFor(SERVER_NAME);
+                SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
+                    .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(SERVER_JVM_OPTS)))
+                    .node(new Node(SERVER_NAME, cachedServerHostname));
+                parseNodeSelectors(K8S_SERVER_NODE_SELECTORS).forEach(serverNodeArrayConfig::nodeSelector);
+
+                if (LOADER_NAMES.isEmpty())
+                    throw new IllegalArgumentException("Loader names cannot be empty");
+                SimpleNodeArrayConfiguration loadersNodeArrayConfig = new SimpleNodeArrayConfiguration("loaders")
+                    .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(LOADER_JVM_OPTS)));
+                parseNodeSelectors(K8S_LOADER_NODE_SELECTORS).forEach(loadersNodeArrayConfig::nodeSelector);
+                List<String> loaderNames = Arrays.stream(LOADER_NAMES.split(",")).map(String::trim).toList();
+                for (String loaderName : loaderNames)
+                {
+                    if (loaderName.isEmpty())
+                        throw new IllegalArgumentException("Loader names CSV list must not contain empty entries: " + LOADER_NAMES);
+                    loadersNodeArrayConfig.node(new Node(loaderName));
+                }
+
+                if (PROBE_NAME.isEmpty())
+                    throw new IllegalArgumentException("Probe name cannot be empty");
+                SimpleNodeArrayConfiguration probeNodeArrayConfig = new SimpleNodeArrayConfiguration("probe")
+                    .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(PROBE_JVM_OPTS)))
+                    .node(new Node(PROBE_NAME));
+                parseNodeSelectors(K8S_PROBE_NODE_SELECTORS).forEach(probeNodeArrayConfig::nodeSelector);
+
+                clusterConfiguration = new SimpleClusterConfiguration()
+                    .jvm(new Jvm((fs, h) -> "java"))
+                    .nodeArray(serverNodeArrayConfig)
+                    .nodeArray(loadersNodeArrayConfig)
+                    .nodeArray(probeNodeArrayConfig)
+                    .hostLauncher(launcher);
+                cachedParticipantCount = clusterConfiguration.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1;
             }
+            else
+            {
+                if (SERVER_NAME.isEmpty())
+                    throw new IllegalArgumentException("Server name cannot be empty");
+                SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
+                    .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(SERVER_JVM_OPTS)))
+                    .node(new Node(SERVER_NAME));
 
-            if (PROBE_NAME.isEmpty())
-                throw new IllegalArgumentException("Probe name cannot be empty");
-            SimpleNodeArrayConfiguration probeNodeArrayConfig = new SimpleNodeArrayConfiguration("probe")
-                .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(PROBE_JVM_OPTS)))
-                .node(new Node(PROBE_NAME));
+                if (LOADER_NAMES.isEmpty())
+                    throw new IllegalArgumentException("Loader names cannot be empty");
+                SimpleNodeArrayConfiguration loadersNodeArrayConfig = new SimpleNodeArrayConfiguration("loaders")
+                    .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(LOADER_JVM_OPTS)));
+                List<String> loaderNames = Arrays.stream(LOADER_NAMES.split(",")).map(String::trim).toList();
+                for (String loaderName : loaderNames)
+                {
+                    if (loaderName.isEmpty())
+                        throw new IllegalArgumentException("Loader names CSV list must not contain empty entries: " + LOADER_NAMES);
+                    loadersNodeArrayConfig.node(new Node(loaderName));
+                }
 
-            clusterConfiguration = new SimpleClusterConfiguration()
-                .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))
-                .nodeArray(serverNodeArrayConfig)
-                .nodeArray(loadersNodeArrayConfig)
-                .nodeArray(probeNodeArrayConfig);
+                if (PROBE_NAME.isEmpty())
+                    throw new IllegalArgumentException("Probe name cannot be empty");
+                SimpleNodeArrayConfiguration probeNodeArrayConfig = new SimpleNodeArrayConfiguration("probe")
+                    .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(PROBE_JVM_OPTS)))
+                    .node(new Node(PROBE_NAME));
+
+                clusterConfiguration = new SimpleClusterConfiguration()
+                    .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))
+                    .nodeArray(serverNodeArrayConfig)
+                    .nodeArray(loadersNodeArrayConfig)
+                    .nodeArray(probeNodeArrayConfig);
+            }
         }
         return clusterConfiguration;
     }
@@ -260,6 +334,8 @@ public class PerfTestParams implements Serializable
 
     public int getParticipantCount()
     {
+        if (cachedParticipantCount > 0)
+            return cachedParticipantCount;
         return getClusterConfiguration().nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1; // + 1 b/c of the test itself
     }
 
@@ -275,6 +351,11 @@ public class PerfTestParams implements Serializable
 
     public URI getServerUri()
     {
+        // In K8s mode, cachedServerHostname is computed on the controller and serialized with this
+        // object, so pods can resolve the server URI without re-creating KubernetesRemoteHostLauncher.
+        if (cachedServerHostname != null)
+            return URI.create("http" + (isTlsEnabled() ? "s" : "") + "://" + cachedServerHostname + ":" + getServerPort());
+
         String serverHostname = null;
         for (NodeArrayConfiguration nodeArrayConfiguration : getClusterConfiguration().nodeArrays())
         {
@@ -376,6 +457,20 @@ public class PerfTestParams implements Serializable
             default -> {}
         }
         return JSSE_PROVIDER;
+    }
+
+    private static Map<String, String> parseNodeSelectors(String csv)
+    {
+        Map<String, String> result = new LinkedHashMap<>();
+        if (csv == null || csv.isBlank())
+            return result;
+        for (String pair : csv.split(","))
+        {
+            int eq = pair.indexOf('=');
+            if (eq > 0)
+                result.put(pair.substring(0, eq).trim(), pair.substring(eq + 1).trim());
+        }
+        return result;
     }
 
     @Override
