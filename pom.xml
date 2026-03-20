@@ -20,6 +20,7 @@
     <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
 
     <jetty.version>12.1.8-SNAPSHOT</jetty.version>
+    <jetty-cluster-orchestrator.version>2.0.0-SNAPSHOT</jetty-cluster-orchestrator.version>
     <jetty-load-generator.version>4.1.7</jetty-load-generator.version>
   </properties>
 
@@ -70,9 +71,20 @@
 
       <dependency>
         <groupId>org.mortbay.jetty.orchestrator</groupId>
-        <artifactId>jetty-cluster-orchestrator</artifactId>
-        <version>2.0-SNAPSHOT</version>
+        <artifactId>jetty-cluster-orchestrator-api</artifactId>
+        <version>${jetty-cluster-orchestrator.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.mortbay.jetty.orchestrator</groupId>
+        <artifactId>jetty-cluster-orchestrator-k8s</artifactId>
+        <version>${jetty-cluster-orchestrator.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mortbay.jetty.orchestrator</groupId>
+        <artifactId>jetty-cluster-orchestrator-ssh</artifactId>
+        <version>${jetty-cluster-orchestrator.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bctls-jdk18on</artifactId>

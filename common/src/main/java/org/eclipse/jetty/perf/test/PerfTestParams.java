@@ -34,11 +34,11 @@ import org.eclipse.jetty.util.ConcurrentPool;
 import org.mortbay.jetty.orchestrator.Cluster;
 import org.mortbay.jetty.orchestrator.configuration.ClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.Jvm;
-import org.mortbay.jetty.orchestrator.configuration.KubernetesRemoteHostLauncher;
 import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
+import org.mortbay.jetty.orchestrator.k8s.launcher.KubernetesRemoteHostLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -213,10 +213,9 @@ public class PerfTestParams implements Serializable
 
                 if (SERVER_NAME.isEmpty())
                     throw new IllegalArgumentException("Server name cannot be empty");
-                cachedServerHostname = launcher.podDnsNameFor(SERVER_NAME);
                 SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
                     .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(SERVER_JVM_OPTS)))
-                    .node(new Node(SERVER_NAME, cachedServerHostname));
+                    .node(new Node(SERVER_NAME, SERVER_NAME));
                 parseNodeSelectors(K8S_SERVER_NODE_SELECTORS).forEach(serverNodeArrayConfig::nodeSelector);
 
                 if (LOADER_NAMES.isEmpty())
@@ -245,6 +244,7 @@ public class PerfTestParams implements Serializable
                     .nodeArray(loadersNodeArrayConfig)
                     .nodeArray(probeNodeArrayConfig)
                     .hostLauncher(launcher);
+                cachedServerHostname = SERVER_NAME;
                 cachedParticipantCount = clusterConfiguration.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1;
             }
             else

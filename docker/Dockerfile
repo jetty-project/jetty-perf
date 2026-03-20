@@ -1,5 +1,7 @@
 FROM ubuntu:24.04
 
+LABEL maintainer="Olivier Lamy <olamy@apache.org>"
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget \
