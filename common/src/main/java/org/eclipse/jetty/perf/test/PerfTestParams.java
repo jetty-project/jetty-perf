@@ -55,7 +55,7 @@ public class PerfTestParams implements Serializable
     public String SERVER_JVM_OPTS = parameters.read("SERVER_JVM_OPTS", "");
     public String LOADER_NAMES = parameters.read("LOADER_NAMES", "localhost");
     public String LOADER_JVM_OPTS = parameters.read("LOADER_JVM_OPTS", "");
-    public String PROBE_NAME = parameters.read("PROBE_NAME", "localhost");
+    public String PROBE_NAME = parameters.read("PROBE_NAME", "probe");
     public String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
     public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "first");
     public int LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", -1);
@@ -76,7 +76,7 @@ public class PerfTestParams implements Serializable
     public int LOADER_RESPONSE_CONTENT_LENGTH = parameters.readAsInt("LOADER_RESPONSE_CONTENT_LENGTH", 0);
     public boolean K8S_ENABLED = parameters.readAsBoolean("K8S_ENABLED", false);
     public String K8S_NAMESPACE = parameters.read("K8S_NAMESPACE", "default");
-    public String K8S_IMAGE = parameters.read("K8S_IMAGE", "eclipse-temurin:21-jre");
+    public String K8S_IMAGE = parameters.read("K8S_IMAGE", "jettyproject/jetty-perf-node:ubuntu24-jdk21");
     public String K8S_KUBECONFIG = parameters.read("K8S_KUBECONFIG", "");
     public String K8S_SERVER_NODE_SELECTORS = parameters.read("K8S_SERVER_NODE_SELECTORS", "");
     public String K8S_LOADER_NODE_SELECTORS = parameters.read("K8S_LOADER_NODE_SELECTORS", "");
@@ -192,6 +192,7 @@ public class PerfTestParams implements Serializable
     {
         if (clusterConfiguration == null)
         {
+            LOG.info("K8S_ENABLED {}", K8S_ENABLED);
             if (K8S_ENABLED)
             {
                 if (K8S_KUBECONFIG.isEmpty())
@@ -215,28 +216,25 @@ public class PerfTestParams implements Serializable
                     throw new IllegalArgumentException("Server name cannot be empty");
                 SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
                     .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(SERVER_JVM_OPTS)))
-                    .node(new Node(SERVER_NAME, SERVER_NAME));
-                parseNodeSelectors(K8S_SERVER_NODE_SELECTORS).forEach(serverNodeArrayConfig::nodeSelector);
+                    .node(new Node.Builder().withId(SERVER_NAME).withHostname(SERVER_NAME).withServicePort(getServerPort()).build());
 
                 if (LOADER_NAMES.isEmpty())
                     throw new IllegalArgumentException("Loader names cannot be empty");
                 SimpleNodeArrayConfiguration loadersNodeArrayConfig = new SimpleNodeArrayConfiguration("loaders")
                     .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(LOADER_JVM_OPTS)));
-                parseNodeSelectors(K8S_LOADER_NODE_SELECTORS).forEach(loadersNodeArrayConfig::nodeSelector);
                 List<String> loaderNames = Arrays.stream(LOADER_NAMES.split(",")).map(String::trim).toList();
                 for (String loaderName : loaderNames)
                 {
                     if (loaderName.isEmpty())
                         throw new IllegalArgumentException("Loader names CSV list must not contain empty entries: " + LOADER_NAMES);
-                    loadersNodeArrayConfig.node(new Node(loaderName));
+                    loadersNodeArrayConfig.node(new Node.Builder().withId(loaderName).withHostname(loaderName).build());
                 }
 
                 if (PROBE_NAME.isEmpty())
                     throw new IllegalArgumentException("Probe name cannot be empty");
                 SimpleNodeArrayConfiguration probeNodeArrayConfig = new SimpleNodeArrayConfiguration("probe")
                     .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(PROBE_JVM_OPTS)))
-                    .node(new Node(PROBE_NAME));
-                parseNodeSelectors(K8S_PROBE_NODE_SELECTORS).forEach(probeNodeArrayConfig::nodeSelector);
+                    .node(new Node.Builder().withId(PROBE_NAME).withHostname(PROBE_NAME).build());
 
                 clusterConfiguration = new SimpleClusterConfiguration()
                     .jvm(new Jvm((fs, h) -> "java"))
@@ -244,7 +242,7 @@ public class PerfTestParams implements Serializable
                     .nodeArray(loadersNodeArrayConfig)
                     .nodeArray(probeNodeArrayConfig)
                     .hostLauncher(launcher);
-                cachedServerHostname = SERVER_NAME;
+                cachedServerHostname = SERVER_NAME + "." + K8S_NAMESPACE + ".svc.cluster.local";
                 cachedParticipantCount = clusterConfiguration.nodeArrays().stream().mapToInt(na -> na.nodes().size()).sum() + 1;
             }
             else
@@ -253,7 +251,7 @@ public class PerfTestParams implements Serializable
                     throw new IllegalArgumentException("Server name cannot be empty");
                 SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
                     .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(SERVER_JVM_OPTS)))
-                    .node(new Node(SERVER_NAME));
+                    .node(new Node.Builder().withId(SERVER_NAME).withHostname(SERVER_NAME).withServicePort(8080).build());
 
                 if (LOADER_NAMES.isEmpty())
                     throw new IllegalArgumentException("Loader names cannot be empty");
@@ -264,14 +262,14 @@ public class PerfTestParams implements Serializable
                 {
                     if (loaderName.isEmpty())
                         throw new IllegalArgumentException("Loader names CSV list must not contain empty entries: " + LOADER_NAMES);
-                    loadersNodeArrayConfig.node(new Node(loaderName));
+                    loadersNodeArrayConfig.node(new Node.Builder().withId(loaderName).withHostname(loaderName).build());
                 }
 
                 if (PROBE_NAME.isEmpty())
                     throw new IllegalArgumentException("Probe name cannot be empty");
                 SimpleNodeArrayConfiguration probeNodeArrayConfig = new SimpleNodeArrayConfiguration("probe")
                     .jvm(new Jvm(new LocalJdk(JDK_TO_USE), defaultJvmOpts(PROBE_JVM_OPTS)))
-                    .node(new Node(PROBE_NAME));
+                    .node(new Node.Builder().withId(PROBE_NAME).withHostname(PROBE_NAME).build());
 
                 clusterConfiguration = new SimpleClusterConfiguration()
                     .jvm(new Jvm(new LocalJdk(JDK_TO_USE)))
@@ -457,20 +455,6 @@ public class PerfTestParams implements Serializable
             default -> {}
         }
         return JSSE_PROVIDER;
-    }
-
-    private static Map<String, String> parseNodeSelectors(String csv)
-    {
-        Map<String, String> result = new LinkedHashMap<>();
-        if (csv == null || csv.isBlank())
-            return result;
-        for (String pair : csv.split(","))
-        {
-            int eq = pair.indexOf('=');
-            if (eq > 0)
-                result.put(pair.substring(0, eq).trim(), pair.substring(eq + 1).trim());
-        }
-        return result;
     }
 
     @Override
