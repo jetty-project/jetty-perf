@@ -29,7 +29,7 @@ public class LinuxPerfC2cMonitor extends AbstractCommandMonitor
             process.waitFor();
 
             // output the report
-            Process p = new ProcessBuilder("perf", "c2c", "report", "--log-fd", "1", "--stdio")
+            Process p = new ProcessBuilder("perf", "c2c", "report", "--stdio")
                 .redirectErrorStream(true)
                 .redirectOutput(new File(DEFAULT_FILENAME))
                 .start();
