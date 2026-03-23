@@ -13,13 +13,14 @@ pipeline {
     string(defaultValue: 'main-12.1.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
     string(defaultValue: 'jdk21', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
-
-    string(defaultValue: 'load-master', description: 'server node', name: 'SERVER_NAME')
-    string(defaultValue: 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5', description: 'loader nodes', name: 'LOADER_NAMES')
-    string(defaultValue: 'load-sample', description: 'probe node', name: 'PROBE_NAME')
-
-    string(defaultValue: '12-1-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
-    string(defaultValue: 'ASYNC_PROF_JFR_CPU', description: 'Extra monitored items', name: 'OPTIONAL_MONITORED_ITEMS')
+  }
+  environment {
+    JETTY_VERSION = '12-1-SNAPSHOT'
+    OPTIONAL_MONITORED_ITEMS = 'ASYNC_PROF_JFR_CPU'
+    SERVER_NAME = 'load-master'
+    LOADER_NAMES = 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5'
+    PROBE_NAME = 'load-sample'
+    SERVER_RESERVED_THREADS = '64'
   }
 
   stages {
