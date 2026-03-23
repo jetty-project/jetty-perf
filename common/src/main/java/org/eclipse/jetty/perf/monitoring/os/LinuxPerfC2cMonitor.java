@@ -4,16 +4,17 @@ import java.io.File;
 
 public class LinuxPerfC2cMonitor extends AbstractCommandMonitor
 {
-    public static final String DEFAULT_FILENAME = "os/perf-c2c.log";
+    public static final String DEFAULT_RECORD_FILENAME = "os/perf-c2c-record.log";
+    public static final String DEFAULT_REPORT_FILENAME = "os/perf-c2c-report.log";
 
     public LinuxPerfC2cMonitor()
     {
-        this(DEFAULT_FILENAME);
+        this(DEFAULT_RECORD_FILENAME);
     }
 
     public LinuxPerfC2cMonitor(String filename)
     {
-        super(filename, "perf", "c2c", "record", "--log-fd", "1", "-p", Long.toString(ProcessHandle.current().pid()));
+        super(filename, "perf", "c2c", "record", "-p", Long.toString(ProcessHandle.current().pid()));
     }
 
     @Override
@@ -31,7 +32,7 @@ public class LinuxPerfC2cMonitor extends AbstractCommandMonitor
             // output the report
             Process p = new ProcessBuilder("perf", "c2c", "report", "--stdio")
                 .redirectErrorStream(true)
-                .redirectOutput(new File(DEFAULT_FILENAME))
+                .redirectOutput(new File(DEFAULT_REPORT_FILENAME))
                 .start();
             p.waitFor();
         }
