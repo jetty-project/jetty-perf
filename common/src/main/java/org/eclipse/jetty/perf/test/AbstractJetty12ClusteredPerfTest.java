@@ -22,6 +22,7 @@ import static org.eclipse.jetty.perf.util.ReportUtil.generateReport;
 public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClusteredPerfTest
 {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractJetty12ClusteredPerfTest.class);
+    private static final int JOB_TIMEOUT_SECONDS = 180;
 
     public AbstractJetty12ClusteredPerfTest(String testName, Path reportRootPath, PerfTestParams perfTestParams, SerializableConsumer<PerfTestParams> perfTestParamsCustomizer) throws Exception
     {
@@ -49,7 +50,7 @@ public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClustered
         );
         for (NodeArrayFuture future : futures)
         {
-            future.get(30, TimeUnit.SECONDS);
+            future.get(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         }
 
         LOG.info("Starting the server...");
@@ -57,19 +58,19 @@ public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClustered
         {
             perfTestParamsCustomizer.accept(perfTestParams);
             startServer(perfTestParams, tools);
-        }).get(30, TimeUnit.SECONDS);
+        }).get(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         LOG.info("Starting the loaders...");
         loadersArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
             runLoadGenerator(perfTestParams, tools);
-        }).get(30, TimeUnit.SECONDS);
+        }).get(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         LOG.info("Starting the probe...");
         probeArray.executeOnAll(tools ->
         {
             perfTestParamsCustomizer.accept(perfTestParams);
             runProbeGenerator(perfTestParams, tools);
-        }).get(30, TimeUnit.SECONDS);
+        }).get(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         LOG.info("Warming up {}s ...", perfTestParams.getWarmupDuration().toSeconds());
         Thread.sleep(perfTestParams.getWarmupDuration().toMillis());
@@ -107,16 +108,16 @@ public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClustered
             try
             {
                 LOG.info("  Signalling all participants to start recording...");
-                cluster.tools().barrier("run-start-barrier", perfTestParams.getParticipantCount()).await(30, TimeUnit.SECONDS);
+                cluster.tools().barrier("run-start-barrier", perfTestParams.getParticipantCount()).await(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 LOG.info("  Waiting for the duration of the run...");
                 Thread.sleep(perfTestParams.getRunDuration().toMillis());
                 LOG.info("  Signalling all participants to stop recording...");
-                cluster.tools().barrier("run-end-barrier", perfTestParams.getParticipantCount()).await(30, TimeUnit.SECONDS);
+                cluster.tools().barrier("run-end-barrier", perfTestParams.getParticipantCount()).await(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 LOG.info("  Signalled all participants to stop recording");
             }
             finally
             {
-                waitForFutures(30, TimeUnit.SECONDS, serverFuture, loadersFuture, probeFuture);
+                waitForFutures(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS, serverFuture, loadersFuture, probeFuture);
             }
 
             LOG.info("Stopping the server...");
@@ -124,7 +125,7 @@ public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClustered
             {
                 perfTestParamsCustomizer.accept(perfTestParams);
                 stopServer(perfTestParams, tools);
-            }).get(30, TimeUnit.SECONDS);
+            }).get(JOB_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
             LOG.info("Generating report...");
             generateReport(Path.of(reportRootPath), perfTestParams.getNodeArrayIds(), cluster);
