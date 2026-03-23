@@ -55,7 +55,7 @@ public class PerfTestParams implements Serializable
     public String SERVER_JVM_OPTS = parameters.read("SERVER_JVM_OPTS", "");
     public String LOADER_NAMES = parameters.read("LOADER_NAMES", "localhost");
     public String LOADER_JVM_OPTS = parameters.read("LOADER_JVM_OPTS", "");
-    public String PROBE_NAME = parameters.read("PROBE_NAME", "probe");
+    public String PROBE_NAME = parameters.read("PROBE_NAME", "loader-probe");
     public String PROBE_JVM_OPTS = parameters.read("PROBE_JVM_OPTS", "");
     public String LOADER_CONNECTION_POOL_FACTORY_TYPE = parameters.read("LOADER_CONNECTION_POOL_FACTORY_TYPE", "first");
     public int LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION = parameters.readAsInt("LOADER_CONNECTION_POOL_MAX_CONNECTIONS_PER_DESTINATION", -1);
@@ -216,7 +216,11 @@ public class PerfTestParams implements Serializable
                     throw new IllegalArgumentException("Server name cannot be empty");
                 SimpleNodeArrayConfiguration serverNodeArrayConfig = new SimpleNodeArrayConfiguration("server")
                     .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(SERVER_JVM_OPTS)))
-                    .node(new Node.Builder().withId(SERVER_NAME).withHostname(SERVER_NAME).withServicePort(getServerPort()).build());
+                    .node(new Node.Builder().withId(SERVER_NAME)
+                            .withHostname(SERVER_NAME)
+                            .withServicePort(getServerPort())
+                            .withNodeSelectors(Map.of("loader-name", SERVER_NAME))
+                            .build());
 
                 if (LOADER_NAMES.isEmpty())
                     throw new IllegalArgumentException("Loader names cannot be empty");
@@ -227,14 +231,21 @@ public class PerfTestParams implements Serializable
                 {
                     if (loaderName.isEmpty())
                         throw new IllegalArgumentException("Loader names CSV list must not contain empty entries: " + LOADER_NAMES);
-                    loadersNodeArrayConfig.node(new Node.Builder().withId(loaderName).withHostname(loaderName).build());
+                    loadersNodeArrayConfig.node(new Node.Builder().withId(loaderName)
+                            .withHostname(loaderName)
+                            .withNodeSelectors(Map.of("loader-name", loaderName))
+                            .build());
                 }
 
                 if (PROBE_NAME.isEmpty())
                     throw new IllegalArgumentException("Probe name cannot be empty");
                 SimpleNodeArrayConfiguration probeNodeArrayConfig = new SimpleNodeArrayConfiguration("probe")
                     .jvm(new Jvm((fs, h) -> "java", defaultJvmOpts(PROBE_JVM_OPTS)))
-                    .node(new Node.Builder().withId(PROBE_NAME).withHostname(PROBE_NAME).build());
+                    .node(new Node.Builder()
+                            .withId(PROBE_NAME)
+                            .withHostname(PROBE_NAME)
+                            .withNodeSelectors(Map.of("loader-name", PROBE_NAME))
+                            .build());
 
                 clusterConfiguration = new SimpleClusterConfiguration()
                     .jvm(new Jvm((fs, h) -> "java"))
