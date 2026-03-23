@@ -21,6 +21,7 @@ import org.eclipse.jetty.perf.monitoring.os.LinuxCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxDiskMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxMemoryMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxNetworkMonitor;
+import org.eclipse.jetty.perf.monitoring.os.LinuxPerfC2cMonitor;
 import org.eclipse.jetty.perf.monitoring.os.LinuxPerfStatMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsCpuMonitor;
 import org.eclipse.jetty.perf.monitoring.os.WindowsMemoryMonitor;
@@ -41,6 +42,7 @@ public class ConfigurableMonitor implements Monitor
         OS_NETWORK,
         OS_DISK,
         OS_PERF_STAT,
+        OS_PERF_C2C,
 
         JHICCUP,
         JIT_COMPILATION_TIME,
@@ -167,6 +169,10 @@ public class ConfigurableMonitor implements Monitor
             case OS_PERF_STAT:
                 if (osName.contains("linux"))
                     return new LinuxPerfStatMonitor();
+                return null;
+            case OS_PERF_C2C:
+                if (osName.contains("linux"))
+                    return new LinuxPerfC2cMonitor();
                 return null;
             case SJK_TTOP:
                 return new SjkTtopMonitor();
