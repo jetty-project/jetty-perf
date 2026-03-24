@@ -12,7 +12,7 @@ abstract class AbstractCommandMonitor implements Monitor
 {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractCommandMonitor.class);
 
-    public static final int DEFAULT_INTERVAL = 5;
+    public static final int DEFAULT_INTERVAL = 1;
 
     protected final Process process;
 
