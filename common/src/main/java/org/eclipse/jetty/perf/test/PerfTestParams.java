@@ -47,7 +47,7 @@ public class PerfTestParams implements Serializable
     // Must not be static as we want the test instance's values.
     private final JenkinsParameters parameters = new JenkinsParameters();
 
-    public String JDK_TO_USE = parameters.read("JDK_TO_USE", "jdk21");
+    public String JDK_TO_USE = parameters.read("JDK_TO_USE", "jdk25");
     public String OPTIONAL_MONITORED_ITEMS = parameters.read("OPTIONAL_MONITORED_ITEMS", "");
     public String SERVER_NAME = parameters.read("SERVER_NAME", "localhost");
     public String SERVER_JVM_OPTS = parameters.read("SERVER_JVM_OPTS", "");
