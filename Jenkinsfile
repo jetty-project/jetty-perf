@@ -16,7 +16,7 @@ pipeline {
   }
   environment {
     JETTY_VERSION = '12-1-SNAPSHOT'
-    OPTIONAL_MONITORED_ITEMS = 'ASYNC_PROF_JFR_CPU'
+    OPTIONAL_MONITORED_ITEMS = 'ASYNC_PROF_JFR_CPU,GC_LOGS'
     SERVER_NAME = 'load-master'
     LOADER_NAMES = 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5'
     PROBE_NAME = 'load-sample'
