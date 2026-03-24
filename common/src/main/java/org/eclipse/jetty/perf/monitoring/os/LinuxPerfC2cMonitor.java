@@ -14,7 +14,7 @@ public class LinuxPerfC2cMonitor extends AbstractCommandMonitor
 
     public LinuxPerfC2cMonitor(String filename)
     {
-        super(filename, "perf", "c2c", "record", "-p", Long.toString(ProcessHandle.current().pid()));
+        super(filename, "perf", "c2c", "record", "-m128M", "-u", "-p", Long.toString(ProcessHandle.current().pid()));
     }
 
     @Override

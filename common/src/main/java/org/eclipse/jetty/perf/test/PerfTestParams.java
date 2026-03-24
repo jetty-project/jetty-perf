@@ -4,12 +4,12 @@ import java.io.Serializable;
 import java.net.URI;
 import java.security.Security;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -213,26 +213,38 @@ public class PerfTestParams implements Serializable
     {
         List<String> extra = Arrays.stream(extraArgLine.split(" ")).map(String::trim).toList();
 
-        List<String> result = new ArrayList<>();
+        Collection<String> result = new LinkedHashSet<>();
         if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
             result.addAll(List.of("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
         result.add("-XX:+UseZGC");
         if (JDK_TO_USE.contains("21"))
             result.add("-XX:+ZGenerational"); // use generational ZGC on JDK 21
         result.add("-XX:+AlwaysPreTouch");
-        if (monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOC) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_JFR_CPU) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_JFR_CPU_ALLOC))
+        if (containsMonitoredItems("ASYNC_PROF"))
         {
-            result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
+            result.add("-XX:+UnlockDiagnosticVMOptions");
+            result.add("-XX:+DebugNonSafepoints");
             if (JDK_TO_USE.contains("21"))
                 result.add("-XX:+EnableDynamicAgentLoading"); // JDK 21 needs this flag to disable a warning when async prof is used
         }
+        if (monitoredItems.contains(ConfigurableMonitor.Item.OS_PERF_C2C))
+        {
+            result.add("-XX:+UnlockDiagnosticVMOptions");
+            result.add("-XX:+DumpPerfMapAtExit");
+            result.add("-XX:+PreserveFramePointer");
+        }
         result.addAll(extra);
         return result.toArray(new String[0]);
+    }
+
+    private boolean containsMonitoredItems(String namePrefix)
+    {
+        for (ConfigurableMonitor.Item monitoredItem : monitoredItems)
+        {
+            if (monitoredItem.name().startsWith(namePrefix))
+                return true;
+        }
+        return false;
     }
 
     public EnumSet<ConfigurableMonitor.Item> getMonitoredItems()
