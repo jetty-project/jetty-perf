@@ -4,6 +4,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,10 @@ public abstract class AbstractJetty12ClusteredPerfTest extends AbstractClustered
 
         NodeJob recordingJob = tools ->
         {
-            try (ConfigurableMonitor ignore = new ConfigurableMonitor(perfTestParams.getMonitoredItems()))
+            EnumSet<ConfigurableMonitor.Item> monitoredItems = perfTestParams.getMonitoredItems();
+            if (!perfTestParams.isServer(tools.getGlobalNodeId()))
+                monitoredItems.remove(ConfigurableMonitor.Item.OS_PERF_C2C); // perf c2c is too heavy for loaders and can make them unresponsive
+            try (ConfigurableMonitor ignore = new ConfigurableMonitor(monitoredItems))
             {
                 @SuppressWarnings("unchecked")
                 List<Recorder> recorders = (List<Recorder>)tools.nodeEnvironment().get(Recorder.class.getName());

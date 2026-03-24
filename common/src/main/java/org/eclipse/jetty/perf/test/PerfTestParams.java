@@ -37,6 +37,7 @@ import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,6 +256,11 @@ public class PerfTestParams implements Serializable
     public Cluster buildCluster(String testName) throws Exception
     {
         return new Cluster(testName, getClusterConfiguration());
+    }
+
+    public boolean isServer(GlobalNodeId globalNodeId)
+    {
+        return globalNodeId.getNodeId().contains("server");
     }
 
     public int getLoadersCount()
