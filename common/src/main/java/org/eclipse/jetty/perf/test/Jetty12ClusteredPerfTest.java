@@ -43,7 +43,6 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -157,19 +156,16 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
 
         LatencyRecorder latencyRecorder = new LatencyRecorder("perf.hlog");
         Handler latencyRecordingHandler = new ModernLatencyRecordingHandler(testedHandlerSupplier.get(), latencyRecorder);
-        StatisticsHandler statisticsHandler = new StatisticsHandler(latencyRecordingHandler);
-        server.setHandler(statisticsHandler);
+        server.setHandler(latencyRecordingHandler);
         server.start();
 
         Map<String, Object> env = clusterTools.nodeEnvironment();
         env.put(MonitoredQueuedThreadPool.class.getName(), qtp);
-        env.put(StatisticsHandler.class.getName(), statisticsHandler);
         env.put(Recorder.class.getName(), List.of(new Recorder()
         {
             @Override
             public void startRecording()
             {
-                statisticsHandler.reset();
                 qtp.reset();
             }
 
@@ -178,11 +174,6 @@ public class Jetty12ClusteredPerfTest extends AbstractJetty12ClusteredPerfTest
             {
                 try
                 {
-                    try (PrintWriter printWriter = new PrintWriter("StatisticsHandler.txt"))
-                    {
-                        statisticsHandler.dump(printWriter);
-                    }
-
                     try (PrintWriter printWriter = new PrintWriter("MonitoredQueuedThreadPool.txt"))
                     {
                         printWriter.println(String.format("Average queue latency=%d", qtp.getAverageQueueLatency()));
