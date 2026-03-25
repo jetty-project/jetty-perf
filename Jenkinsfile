@@ -13,7 +13,7 @@ pipeline {
         string(defaultValue: 'CoreHandlerPerfTest', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest, EE11ServletPerfTest, CometdBenchmarkTest', name: 'TEST_TO_RUN')
 
         // These settings are used both by the test JVM and by this script too.
-        string(defaultValue: 'jdk21', description: 'JDK to use', name: 'JDK_TO_USE')
+        string(defaultValue: 'jdk25', description: 'JDK to use', name: 'JDK_TO_USE')
 
         // These settings are only used by the test JVM.
         string(defaultValue: 'ASYNC_PROF_JFR_CPU', description: 'Extra monitored items, as a CSV string.' +
