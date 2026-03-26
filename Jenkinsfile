@@ -11,7 +11,6 @@ pipeline {
   parameters {
     string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
     string(defaultValue: 'main-12.1.x', description: 'Jetty perf Branch', name: 'JETTY_PERF_BRANCH')
-    string(defaultValue: 'jdk25', description: 'JDK to use', name: 'JDK_TO_USE')
     string(defaultValue: '*', description: 'Test pattern to use', name: 'TEST_TO_RUN')
   }
   environment {
@@ -20,7 +19,10 @@ pipeline {
     SERVER_NAME = 'load-master'
     LOADER_NAMES = 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5'
     PROBE_NAME = 'load-sample'
-    SERVER_RESERVED_THREADS = '64'
+    JDK_TO_USE = 'jdk25'
+    SERVER_JVM_OPTS = '-XX:+UseZGC -Xms32G -Xmx32G'
+    LOADER_JVM_OPTS = '-XX:+UseZGC -Xms8G -Xmx8G'
+    PROBE_JVM_OPTS = '-XX:+UseZGC -Xms8G -Xmx8G'
   }
 
   stages {
