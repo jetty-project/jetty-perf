@@ -4,12 +4,12 @@ import java.io.Serializable;
 import java.net.URI;
 import java.security.Security;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +37,7 @@ import org.mortbay.jetty.orchestrator.configuration.Node;
 import org.mortbay.jetty.orchestrator.configuration.NodeArrayConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleClusterConfiguration;
 import org.mortbay.jetty.orchestrator.configuration.SimpleNodeArrayConfiguration;
+import org.mortbay.jetty.orchestrator.rpc.GlobalNodeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +137,7 @@ public class PerfTestParams implements Serializable
         {
             case "custom":
                 if (getHttpVersion().getVersion() <= 11)
-                  return destination -> new CustomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
+                    return destination -> new CustomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination());
             case "random":
                 return destination -> new RandomConnectionPool(destination, connections > 0 ? connections : destination.getHttpClient().getMaxConnectionsPerDestination(), 1);
             case "round-robin":
@@ -211,28 +212,39 @@ public class PerfTestParams implements Serializable
 
     private String[] defaultJvmOpts(String extraArgLine)
     {
-        List<String> extra = Arrays.stream(extraArgLine.split(" ")).map(String::trim).toList();
-
-        List<String> result = new ArrayList<>();
-        if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
-            result.addAll(List.of("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
-        result.add("-XX:+UseZGC");
-        if (JDK_TO_USE.contains("21"))
-            result.add("-XX:+ZGenerational"); // use generational ZGC on JDK 21
+        Collection<String> result = new LinkedHashSet<>();
         result.add("-XX:+AlwaysPreTouch");
-        if (monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CPU) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_ALLOC) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_LOCK) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_CACHE_MISSES) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_JFR_CPU) ||
-            monitoredItems.contains(ConfigurableMonitor.Item.ASYNC_PROF_JFR_CPU_ALLOC))
+        if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
         {
-            result.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints"));
+            result.add("-Xlog:async"); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
+            result.add("-Xlog:gc*:file=gc.log:time,level,tags");
+        }
+        if (containsMonitoredItems("ASYNC_PROF.*"))
+        {
+            result.add("-XX:+UnlockDiagnosticVMOptions");
+            result.add("-XX:+DebugNonSafepoints");
             if (JDK_TO_USE.contains("21"))
                 result.add("-XX:+EnableDynamicAgentLoading"); // JDK 21 needs this flag to disable a warning when async prof is used
         }
+        if (monitoredItems.contains(ConfigurableMonitor.Item.OS_PERF_C2C))
+        {
+            result.add("-XX:+UnlockDiagnosticVMOptions");
+            result.add("-XX:+DumpPerfMapAtExit");
+            result.add("-XX:+PreserveFramePointer");
+        }
+        List<String> extra = Arrays.stream(extraArgLine.split(" ")).map(String::trim).toList();
         result.addAll(extra);
         return result.toArray(new String[0]);
+    }
+
+    private boolean containsMonitoredItems(String regex)
+    {
+        for (ConfigurableMonitor.Item monitoredItem : monitoredItems)
+        {
+            if (monitoredItem.name().matches(regex))
+                return true;
+        }
+        return false;
     }
 
     public EnumSet<ConfigurableMonitor.Item> getMonitoredItems()
@@ -243,6 +255,11 @@ public class PerfTestParams implements Serializable
     public Cluster buildCluster(String testName) throws Exception
     {
         return new Cluster(testName, getClusterConfiguration());
+    }
+
+    public boolean isServer(GlobalNodeId globalNodeId)
+    {
+        return globalNodeId.getNodeId().contains("server");
     }
 
     public int getLoadersCount()

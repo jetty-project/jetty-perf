@@ -15,7 +15,7 @@ pipeline {
   }
   environment {
     JETTY_VERSION = '12-1-SNAPSHOT'
-    OPTIONAL_MONITORED_ITEMS = 'ASYNC_PROF_JFR_CPU,GC_LOGS'
+    OPTIONAL_MONITORED_ITEMS = 'ASYNC_PROF_JFR_CPU'
     SERVER_NAME = 'load-master'
     LOADER_NAMES = 'load-client-1,load-client-2,load-client-3,load-client-4,load-client-5'
     PROBE_NAME = 'load-sample'
@@ -23,6 +23,8 @@ pipeline {
     SERVER_JVM_OPTS = '-XX:+UseZGC -Xms32G -Xmx32G'
     LOADER_JVM_OPTS = '-XX:+UseZGC -Xms8G -Xmx8G'
     PROBE_JVM_OPTS = '-XX:+UseZGC -Xms8G -Xmx8G'
+    WARMUP_DURATION = '90'
+    RUN_DURATION = '180'
   }
 
   stages {
