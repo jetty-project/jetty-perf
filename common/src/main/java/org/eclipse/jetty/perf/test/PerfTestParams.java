@@ -212,13 +212,14 @@ public class PerfTestParams implements Serializable
 
     private String[] defaultJvmOpts(String extraArgLine)
     {
-        List<String> extra = Arrays.stream(extraArgLine.split(" ")).map(String::trim).toList();
-
         Collection<String> result = new LinkedHashSet<>();
-        if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
-            result.addAll(List.of("-Xlog:async", "-Xlog:gc*:file=gc.log:time,level,tags")); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
         result.add("-XX:+AlwaysPreTouch");
-        if (containsMonitoredItems("ASYNC_PROF"))
+        if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
+        {
+            result.add("-Xlog:async"); // -Xlog:async requires jdk 17, see https://aws.amazon.com/blogs/developer/asynchronous-logging-corretto-17/
+            result.add("-Xlog:gc*:file=gc.log:time,level,tags");
+        }
+        if (containsMonitoredItems("ASYNC_PROF.*"))
         {
             result.add("-XX:+UnlockDiagnosticVMOptions");
             result.add("-XX:+DebugNonSafepoints");
@@ -231,15 +232,16 @@ public class PerfTestParams implements Serializable
             result.add("-XX:+DumpPerfMapAtExit");
             result.add("-XX:+PreserveFramePointer");
         }
+        List<String> extra = Arrays.stream(extraArgLine.split(" ")).map(String::trim).toList();
         result.addAll(extra);
         return result.toArray(new String[0]);
     }
 
-    private boolean containsMonitoredItems(String namePrefix)
+    private boolean containsMonitoredItems(String regex)
     {
         for (ConfigurableMonitor.Item monitoredItem : monitoredItems)
         {
-            if (monitoredItem.name().startsWith(namePrefix))
+            if (monitoredItem.name().matches(regex))
                 return true;
         }
         return false;
