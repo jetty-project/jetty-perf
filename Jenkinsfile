@@ -3,7 +3,9 @@
 pipeline {
   agent { node { label 'linux-light' } }
   triggers {
-    cron '@daily'
+    // Run everyday between 8am and 8pm, as 8pm to 8am the load machines are allowed to run builds.
+    // Note that the above time ranges are relative to CE(S)T.
+    cron('0 8 * * *')
   }
   options {
     buildDiscarder logRotator(numToKeepStr: '100')
