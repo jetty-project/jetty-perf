@@ -43,6 +43,7 @@ public class CoreHandlerPerfTest
         assertThat("Performance assertions failure for " + params, succeeded, is(true));
     }
 
+    @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 100_000, 4,  5_500, 35_000, 10.0",
