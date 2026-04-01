@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 public class EE9ServletPerfTest
 {
     @Test
-    public void testNoGzipAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
@@ -31,7 +31,7 @@ public class EE9ServletPerfTest
     }
 
     @Test
-    public void testNoGzipSync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCSync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {

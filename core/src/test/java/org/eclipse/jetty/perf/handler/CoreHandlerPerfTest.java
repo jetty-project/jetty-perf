@@ -12,7 +12,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class CoreHandlerPerfTest
 {
     @Test
-    public void testNoGzipAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
@@ -28,7 +28,7 @@ public class CoreHandlerPerfTest
     }
 
     @Test
-    public void testNoGzipAsyncNonBlocking(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testPCAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {

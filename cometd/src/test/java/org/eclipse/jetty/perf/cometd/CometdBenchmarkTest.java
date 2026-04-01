@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Test;
 public class CometdBenchmarkTest implements Serializable
 {
     @Test
-    public void testStandard(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         CometdClusteredPerfTest.runTest(clusteredTestContext, Invocable.InvocationType.BLOCKING);
     }
 
     @Test
-    public void testStandardNonBlocking(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testPCAsync(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         CometdClusteredPerfTest.runTest(clusteredTestContext, Invocable.InvocationType.NON_BLOCKING);
     }

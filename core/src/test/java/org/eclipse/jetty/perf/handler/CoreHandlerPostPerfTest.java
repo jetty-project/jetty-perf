@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 public class CoreHandlerPostPerfTest
 {
     @Test
-    public void testNoGzipAsyncPost(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCAsyncPost(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
@@ -26,7 +26,7 @@ public class CoreHandlerPostPerfTest
         });
     }
     @Test
-    public void testNoGzipAsyncPostNonBlocking(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testPCAsyncPost(@ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, () ->
         {
