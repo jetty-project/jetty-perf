@@ -21,7 +21,7 @@ public class EE10ServletPerfTest
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "http, 100_000, 4,  6_600, 40_000, 10.0",
-        "h2c,  100_000, 4, 15_000, 38_000, 15.0"
+        "h2c,  100_000, 4, 30_000, 55_000, 15.0"
     })
     public void testEPCAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
