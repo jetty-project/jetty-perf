@@ -213,6 +213,7 @@ public class PerfTestParams implements Serializable
     private String[] defaultJvmOpts(String extraArgLine)
     {
         Collection<String> result = new LinkedHashSet<>();
+        result.add("--enable-native-access=ALL-UNNAMED");
         result.add("-XX:+AlwaysPreTouch");
         if (monitoredItems.contains(ConfigurableMonitor.Item.GC_LOGS))
         {
