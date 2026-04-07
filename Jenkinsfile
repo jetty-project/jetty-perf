@@ -25,7 +25,7 @@ pipeline {
     SERVER_JVM_OPTS = '-XX:+UseZGC -Xms32G -Xmx32G'
     LOADER_JVM_OPTS = '-XX:+UseZGC -Xms8G -Xmx8G'
     PROBE_JVM_OPTS = '-XX:+UseZGC -Xms8G -Xmx8G'
-    WARMUP_DURATION = '90'
+    WARMUP_DURATION = '180'
     RUN_DURATION = '180'
   }
 
