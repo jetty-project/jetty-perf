@@ -19,15 +19,16 @@ public class CoreHandlerPerfTest
 {
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 100_000, 4,  5_500, 35_000, 10.0",
-        "h2c,  100_000, 4, 25_000, 50_000, 15.0"
+        "http, 300, 100_000, 4,  5_500, 35_000, 10.0",
+        "h2c,  900, 100_000, 4, 25_000, 50_000, 15.0"
     })
-    public void testEPCAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCAsync(String protocol, int warmupDuration, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
+        params.WARMUP_DURATION = warmupDuration;
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
@@ -46,15 +47,16 @@ public class CoreHandlerPerfTest
     @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 100_000, 4,  5_500, 35_000, 10.0",
-        "h2c,  100_000, 4, 15_000, 38_000, 15.0"
+        "http, 300, 100_000, 4,  5_500, 35_000, 10.0",
+        "h2c,  900, 100_000, 4, 15_000, 38_000, 15.0"
     })
-    public void testPECAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testPECAsync(String protocol, int warmupDuration, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
+        params.WARMUP_DURATION = warmupDuration;
         params.SERVER_RESERVED_THREADS = 0;
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
@@ -73,15 +75,16 @@ public class CoreHandlerPerfTest
 
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 100_000, 4,  4_000, 31_000, 10.0",
-        "h2c,  100_000, 4, 10_500, 31_000, 15.0"
+        "http, 300, 100_000, 4,  4_000, 31_000, 10.0",
+        "h2c,  900, 100_000, 4, 10_500, 31_000, 15.0"
     })
-    public void testPCAsync(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testPCAsync(String protocol, int warmupDuration, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
+        params.WARMUP_DURATION = warmupDuration;
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection(false);
@@ -100,15 +103,16 @@ public class CoreHandlerPerfTest
     @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 100_000, 4,  4_300, 25_000, 10.0",
-        "h2c,  100_000, 4, 16_000, 38_000, 15.0"
+        "http, 300, 100_000, 4,  4_300, 25_000, 10.0",
+        "h2c,  900, 100_000, 4, 16_000, 38_000, 15.0"
     })
-    public void testEPCSyncUsingBlocker(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCSyncUsingBlocker(String protocol, int warmupDuration, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
+        params.WARMUP_DURATION = warmupDuration;
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
@@ -127,15 +131,16 @@ public class CoreHandlerPerfTest
     @Disabled
     @ParameterizedTest(name = "{0}")
     @CsvSource({
-        "http, 100_000, 4,  4_500, 25_000, 10.0",
-        "h2c,  100_000, 4, 19_000, 38_000, 15.0"
+        "http, 300, 100_000, 4,  4_500, 25_000, 10.0",
+        "h2c,  900, 100_000, 4, 19_000, 38_000, 15.0"
     })
-    public void testEPCSyncUsingOutputStream(String protocol, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
+    public void testEPCSyncUsingOutputStream(String protocol, int warmupDuration, int loaderRate, int loaderThreads, long expectedP99ServerLatency, long expectedP99ProbeLatency, double expectedP99ErrorMargin, @ClusteredTest ClusteredTestContext clusteredTestContext) throws Exception
     {
         PerfTestParams params = new PerfTestParams();
         params.HTTP_PROTOCOL = protocol;
         params.LOADER_RATE = loaderRate;
         params.LOADER_THREADS = loaderThreads;
+        params.WARMUP_DURATION = warmupDuration;
         Jetty12ClusteredPerfTest.runTest(clusteredTestContext, params, () ->
         {
             ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
