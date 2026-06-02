@@ -8,7 +8,7 @@ pipeline {
     parameters {
         // These settings are only used in this script.
         string(defaultValue: 'jetty-12.1.x', description: 'Jetty Branch', name: 'JETTY_BRANCH')
-        string(defaultValue: '12.1.10-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
+        string(defaultValue: '12.1.11-SNAPSHOT', description: 'Jetty Version', name: 'JETTY_VERSION')
         string(defaultValue: 'profiler-12.1.x', description: 'Profiler Branch', name: 'PROFILER_BRANCH')
         string(defaultValue: 'CoreHandlerPerfTest', description: 'Test Pattern to use, e.g.: CoreHandlerPerfTest, EE9ServletPerfTest, EE10ServletPerfTest, EE11ServletPerfTest, CometdBenchmarkTest', name: 'TEST_TO_RUN')
 
